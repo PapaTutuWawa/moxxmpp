@@ -9,6 +9,7 @@ environment:
   flutter: '>=2.13.0-0.1'
 
 dependencies:
+  logging: 1.0.2
   moxdns:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
     version: 0.1.4
