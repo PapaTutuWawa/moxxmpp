@@ -1,5 +1,5 @@
 {
-  description = "Moxxy v2";
+  description = "moxxmpp";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -30,21 +30,15 @@
       useGoogleTVAddOns = false;
     };
     pinnedJDK = pkgs.jdk;
-
-    pythonEnv = pkgs.python3.withPackages (ps: with ps; [
-      requests pyyaml # For the build scripts
-      pycryptodome # For the Monal UDP Logger
-    ]);
   in {
     devShell = pkgs.mkShell {
       buildInputs = with pkgs; [
-        flutter pinnedJDK android.platform-tools dart scrcpy # Flutter/Android
-	      pythonEnv gnumake # Build scripts
-	      gitlint jq # Code hygiene
+        flutter pinnedJDK android.platform-tools dart # Flutter/Android
+	      gitlint # Code hygiene
 	      ripgrep # General utilities
       ];
 
-      ANDROID_HOME = "/home/alexander/Development/Moxxy/moxxyv2/.android/sdk";
+      ANDROID_HOME = (toString ./.) + "/.android/sdk";
       JAVA_HOME = pinnedJDK;
       ANDROID_AVD_HOME = (toString ./.) + "/.android/avd";
     };
