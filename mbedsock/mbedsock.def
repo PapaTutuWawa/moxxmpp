@@ -1,0 +1,4 @@
+LIBRARY   mbedsock
+EXPORTS
+   mbedsock_ctx_new
+   mbedsock_new
