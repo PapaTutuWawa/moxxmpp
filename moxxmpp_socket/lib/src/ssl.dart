@@ -26,12 +26,12 @@ class MbedSockCtx {
 }
 
 class MbedSock {
-  late Pointer<libmbedsock.mbedsock> sock;
+  late Pointer<libmbedsock.mbedsock> _sock;
   late Pointer<Uint8> _readBuf;
   late Pointer<Uint8> _writeBuf;
 
   MbedSock(MbedSockCtx ctx) {
-    sock = lib.mbedsock_new_ex(ctx.ctx);
+    _sock = lib.mbedsock_new_ex(ctx.ctx);
     _readBuf = malloc.call<Uint8>(2048);
     _writeBuf = malloc.call<Uint8>(2048);
   }
@@ -39,7 +39,7 @@ class MbedSock {
   bool connect(String host, int port) {
     final nativeHost = host.toNativeUtf8();
     final nativePort = port.toString().toNativeUtf8();
-    final ret = lib.mbedsock_connect(sock, nativeHost.cast(), nativePort.cast());
+    final ret = lib.mbedsock_connect(_sock, nativeHost.cast(), nativePort.cast());
 
     malloc
       ..free(nativeHost)
@@ -55,7 +55,7 @@ class MbedSock {
     final nativeHostname = hostname != null ? hostname.toNativeUtf8() : nullptr;
 
     final ret = lib.mbedsock_connect_secure(
-      sock,
+      _sock,
       nativeHost.cast(),
       nativePort.cast(),
       nativeAlpn.cast(),
@@ -78,7 +78,7 @@ class MbedSock {
   }
 
   bool isSecure() {
-    return lib.mbedsock_is_secure(sock) == 1;
+    return lib.mbedsock_is_secure(_sock) == 1;
   }
   
   int write(String data) {
@@ -89,7 +89,7 @@ class MbedSock {
 
     _writeBuf.asTypedList(2048).setAll(0, rawData);
     return lib.mbedsock_write(
-      sock,
+      _sock,
       _writeBuf,
       rawData.length,
     );
@@ -97,7 +97,7 @@ class MbedSock {
 
   Uint8List? read() {
     final result = lib.mbedsock_read(
-      sock,
+      _sock,
       _readBuf,
       2048,
     );
@@ -117,7 +117,7 @@ class MbedSock {
   }
   
   void free() {
-    lib.mbedsock_free_ex(sock);
+    lib.mbedsock_free_ex(_sock);
     malloc.free(_readBuf);
     malloc.free(_writeBuf);
   }
