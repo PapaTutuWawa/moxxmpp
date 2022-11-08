@@ -1,15 +1,5 @@
-include: package:very_good_analysis/analysis_options.yaml
-linter:
-  rules:
-    public_member_api_docs: false
-    lines_longer_than_80_chars: false
-    use_setters_to_change_properties: false
-    avoid_positional_boolean_parameters: false
-    avoid_bool_literals_in_conditional_expressions: false
+include: ../analysis_options.yaml
 
 analyzer:
   exclude:
-    - "**/*.g.dart"
-    - "**/*.freezed.dart"
     - "lib/src/generated/*.dart"
-    - "test/"
