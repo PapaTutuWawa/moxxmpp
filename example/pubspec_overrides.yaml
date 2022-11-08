@@ -1,0 +1,6 @@
+# melos_managed_dependency_overrides: moxxmpp,moxxmpp_socket
+dependency_overrides:
+  moxxmpp:
+    path: ../moxxmpp
+  moxxmpp_socket:
+    path: ../moxxmpp_socket

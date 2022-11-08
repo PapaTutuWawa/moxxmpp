@@ -1,0 +1,10 @@
+name: moxxmpp
+
+packages:
+  - moxxmpp
+  - moxxmpp_socket
+  - example
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
