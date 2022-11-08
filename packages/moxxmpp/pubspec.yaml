@@ -8,23 +8,23 @@ environment:
   sdk: '>=2.18.0 <3.0.0'
 
 dependencies:
-  cryptography: 2.0.5
+  cryptography: ^2.0.5
   freezed: ^2.1.0+1
-  freezed_annotation: 2.1.0
-  hex: 0.2.0
+  freezed_annotation: ^2.1.0
+  hex: ^0.2.0
   json_serializable: ^6.3.1
-  logging: 1.0.2
+  logging: ^1.0.2
   meta: ^1.7.0
   moxlib:
    hosted: https://git.polynom.me/api/packages/Moxxy/pub
-   version: 0.1.5
+   version: ^0.1.5
   omemo_dart:
    hosted: https://git.polynom.me/api/packages/PapaTutuWawa/pub
-   version: 0.3.2
-  random_string: 2.3.1
-  saslprep: 1.0.2
-  synchronized: 3.0.0+2
-  uuid: 3.0.5
+   version: ^0.3.2
+  random_string: ^2.3.1
+  saslprep: ^1.0.2
+  synchronized: ^3.0.0+2
+  uuid: ^3.0.5
   xml: ^6.1.0
 
 dev_dependencies:
