@@ -52,7 +52,7 @@ class DataFormField {
       children: [
         ...description != null ? [XMLNode(tag: 'desc', text: description)] : [],
         ...isRequired ? [XMLNode(tag: 'required')] : [],
-        ...values.map((value) => XMLNode(tag: 'value', text: value)).toList(),
+        ...values.map((value) => XMLNode(tag: 'value', text: value)),
         ...options.map((option) => option.toXml())
       ],
     );
@@ -88,14 +88,14 @@ class DataForm {
         'type': type
       },
       children: [
-        ...instructions.map((i) => XMLNode(tag: 'instruction', text: i)).toList(),
+        ...instructions.map((i) => XMLNode(tag: 'instruction', text: i)),
         ...title != null ? [XMLNode(tag: 'title', text: title)] : [],
-        ...fields.map((field) => field.toXml()).toList(),
-        ...reported.map((report) => report.toXml()).toList(),
+        ...fields.map((field) => field.toXml()),
+        ...reported.map((report) => report.toXml()),
         ...items.map((item) => XMLNode(
               tag: 'item',
               children: item.map((i) => i.toXml()).toList(),
-          ),).toList(),
+          ),),
       ],
     );
   }

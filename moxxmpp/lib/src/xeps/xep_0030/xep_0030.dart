@@ -204,13 +204,13 @@ class DiscoManager extends XmppManagerBase {
               }
             },
             children: [
-              ...getIdentities().map((identity) => identity.toXMLNode()).toList(),
+              ...getIdentities().map((identity) => identity.toXMLNode()),
               ..._features.map((feat) {
                 return XMLNode(
                   tag: 'feature',
                   attributes: <String, dynamic>{ 'var': feat },
                 );
-              }).toList(),
+              }),
             ],
           ),
         ],

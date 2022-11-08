@@ -2,7 +2,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 class Stanza extends XMLNode {
-
+  // ignore: use_super_parameters
   Stanza({ this.to, this.from, this.type, this.id, List<XMLNode> children = const [], required String tag, Map<String, String> attributes = const {} }) : super(
     tag: tag,
     attributes: <String, dynamic>{

@@ -72,7 +72,7 @@ class XmppConnectionResult {
 }
 
 class XmppConnection {
-  /// [socket] is for debugging purposes.
+  /// [_socket] is for debugging purposes.
   /// [connectionPingDuration] is the duration after which a ping will be sent to keep
   /// the connection open. Defaults to 15 minutes.
   XmppConnection(

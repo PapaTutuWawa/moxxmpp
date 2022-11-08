@@ -78,7 +78,7 @@ class StanzaHandler extends Handler {
     } else if (tagXmlns != null) {
       return listContains(
         node.children,
-        (XMLNode _node) => _node.attributes.containsKey('xmlns') && _node.attributes['xmlns'] == tagXmlns,
+        (XMLNode node_) => node_.attributes.containsKey('xmlns') && node_.attributes['xmlns'] == tagXmlns,
       );
     }
 
