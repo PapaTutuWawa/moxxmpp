@@ -1,7 +1,7 @@
-import 'package:moxdns/moxdns.dart';
+import 'package:moxxmpp_socket/src/record.dart';
 
 /// Sorts the SRV records according to priority and weight.
-int srvRecordSortComparator(SrvRecord a, SrvRecord b) {
+int srvRecordSortComparator(MoxSrvRecord a, MoxSrvRecord b) {
   if (a.priority < b.priority) {
     return -1;
   } else {

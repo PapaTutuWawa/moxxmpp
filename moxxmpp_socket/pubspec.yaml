@@ -1,18 +1,15 @@
 name: moxxmpp_socket
-description: A socket for moxxmpp that resolves SRV records
+description: A socket for moxxmpp that implements the RFC6120 connection algorithm
 version: 0.1.0
 homepage: https://codeberg.org/moxxy/moxxmpp
 publish_to: https://git.polynom.me/api/packages/Moxxy/pub
 
 environment:
   sdk: '>=2.18.0 <3.0.0'
-  flutter: '>=2.13.0-0.1'
 
 dependencies:
   logging: 1.0.2
-  moxdns:
-    hosted: https://git.polynom.me/api/packages/Moxxy/pub
-    version: 0.1.4
+  meta: ^1.6.0
   moxxmpp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
     version: 0.1.0

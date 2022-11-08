@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:logging/logging.dart';
-import 'package:moxdns/moxdns.dart';
+import 'package:meta/meta.dart';
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp_socket/src/record.dart';
 import 'package:moxxmpp_socket/src/rfc_2782.dart';
 
 /// TCP socket implementation for XmppConnection
@@ -38,6 +39,16 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   void destroy() {
     _socketSubscription?.cancel();
   }
+
+  /// Called on connect to perform a SRV query against [domain]. If [dnssec] is true,
+  /// then DNSSEC validation should be performed.
+  ///
+  /// Returns a list of SRV records. If none are available or an error occured, an empty
+  /// list is returned.
+  @visibleForOverriding
+  Future<List<MoxSrvRecord>> srvQuery(String domain, bool dnssec) async {
+    return <MoxSrvRecord>[];
+  }
   
   bool _onBadCertificate(dynamic certificate, String domain) {
     _log.fine('Bad certificate: ${certificate.toString()}');
@@ -49,7 +60,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   
   Future<bool> _xep368Connect(String domain) async {
     // TODO(Unknown): Maybe do DNSSEC one day
-    final results = await MoxdnsPlugin.srvQuery('_xmpps-client._tcp.$domain', false);
+    final results = await srvQuery('_xmpps-client._tcp.$domain', false);
     if (results.isEmpty) {
       return false;
     }
@@ -90,7 +101,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   
   Future<bool> _rfc6120Connect(String domain) async {
     // TODO(Unknown): Maybe do DNSSEC one day
-    final results = await MoxdnsPlugin.srvQuery('_xmpp-client._tcp.$domain', false);
+    final results = await srvQuery('_xmpp-client._tcp.$domain', false);
     results.sort(srvRecordSortComparator);
 
     for (final srv in results) {
