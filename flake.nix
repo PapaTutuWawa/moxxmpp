@@ -30,13 +30,7 @@
       useGoogleTVAddOns = false;
     };
     pinnedJDK = pkgs.jdk;
-
-    mbedsock = pkgs.callPackage ./packages/mbedsock.nix {};
   in {
-    packages = {
-      inherit mbedsock;
-    };
-
     devShell = pkgs.mkShell {
       buildInputs = with pkgs; [
         flutter pinnedJDK android.platform-tools dart # Flutter/Android
@@ -59,13 +53,10 @@
         pkg-config
         xorg.libX11
         xorg.xorgproto
-
-        # moxxmpp_socket
-        mbedtls
       ];
 
       CPATH = "${pkgs.xorg.libX11.dev}/include:${pkgs.xorg.xorgproto}/include";
-      LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [ atk cairo epoxy gdk-pixbuf glib gtk3 harfbuzz pango mbedtls mbedsock ];
+      LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [ atk cairo epoxy gdk-pixbuf glib gtk3 harfbuzz pango ];
 
       ANDROID_HOME = (toString ./.) + "/.android/sdk";
       JAVA_HOME = pinnedJDK;

@@ -3,7 +3,7 @@ project(mbedsock VERSION 1.0.0 LANGUAGES C)
 add_library(mbedsock SHARED mbedsock.c mbedsock.h mbedsock.def)
 
 target_include_directories(mbedsock PUBLIC ${MBEDTLS_ROOT_DIR}/include)
-target_link_libraries(mbedsock mbedtls mbedx509 mbedcrypto)
+target_link_libraries(mbedsock mbedtls mbedx509 mbedcrypto pthread)
 link_directories(${MBEDTLS_ROOT_DIR}/lib)
 
 set_target_properties(mbedsock PROPERTIES

@@ -9,7 +9,6 @@ environment:
   flutter: '>=2.13.0-0.1'
 
 dependencies:
-  ffi:
   logging: 1.0.2
   moxdns:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
@@ -17,20 +16,8 @@ dependencies:
   moxxmpp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
     version: 0.1.0
-  path: 1.8.2
 
 dev_dependencies:
-  integration_test:
-    sdk: flutter
-  ffigen: ^4.1.2
   lints: ^2.0.0
   test: ^1.16.0
   very_good_analysis: ^3.0.1
-
-ffigen:
-  output: 'lib/src/generated/ffi.dart'
-  llvm-path:
-    - '/nix/store/zq6966rjlmmwjym4jlnymjwwgjhcgryz-clang-11.1.0-lib'
-  headers:
-    entry-points:
-      - ../mbedsock/mbedsock.h

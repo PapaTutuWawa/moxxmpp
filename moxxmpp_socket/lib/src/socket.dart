@@ -59,10 +59,18 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       try {
         _log.finest('Attempting secure connection to ${srv.target}:${srv.port}...');
         _ignoreSocketClosure = true;
-        _socket = await SecureSocket.connect(
+
+        // Workaround: We cannot set the SNI directly when using SecureSocket.connect.
+        // instead, we connect using a regular socket and then secure it. This allows
+        // us to set the SNI to whatever we want.
+        final sock = await Socket.connect(
           srv.target,
           srv.port,
           timeout: const Duration(seconds: 5),
+        );
+        _socket = await SecureSocket.secure(
+          sock,
+          host: domain,
           supportedProtocols: const [ xmppClientALPNId ],
           onBadCertificate: (cert) => _onBadCertificate(cert, domain),
         );

@@ -35,7 +35,7 @@ int mbedsock_ctx_new(struct mbedsock_ctx *ctx, const char *capath) {
 
   if((ret = mbedtls_x509_crt_parse_path(&ctx->chain, capath)) < 0 )
     return ret;
-
+  
   return 0;
 }
 
@@ -58,6 +58,7 @@ int mbedsock_new(struct mbedsock_ctx *ctx, struct mbedsock *sock) {
     return ret;
 
   sock->secure = false;
+  sock->read_cb = NULL;
   
   return 0;
 }
@@ -185,4 +186,55 @@ int mbedsock_read(struct mbedsock *sock, unsigned char *buf, int len) {
 
 bool mbedsock_is_secure(struct mbedsock *sock) {
   return sock->secure;
+}
+
+void mbedsock_set_read_cb(struct mbedsock *sock, void (*read_cb)(int)) {
+  sock->read_cb = read_cb;
+}
+
+struct mbedsock_thread_data {
+  struct mbedsock *sock;
+  unsigned char *buf;
+  int len;
+};
+
+void _mbedsock_read_loop(void *args) {
+  struct mbedsock_thread_data *data = (struct mbedsock_thread_data *) args;
+  struct mbedsock *sock = data->sock;
+  unsigned char *buf = data->buf;
+  int len = data->len;
+  int result = 1;
+
+  printf("args2: %p\n", args);
+  printf("bufptr2: %p\n", buf);
+  printf("len: %d\n", len);
+
+  free(data);
+
+  while (true) {
+    result = mbedsock_read(sock, buf, len);
+    sock->read_cb(result);
+
+    if (result <= 0)
+      break;
+  }
+
+  pthread_exit(NULL);
+}
+
+int mbedsock_run_read_loop(struct mbedsock *sock, unsigned char *buf, int len) {
+  if (sock->read_cb == NULL)
+    return -1;
+
+  sock->read_cb(42);
+  
+  struct mbedsock_thread_data *data = malloc(sizeof(struct mbedsock_thread_data));
+  data->sock = sock;
+  data->buf = buf;
+  data->len = len;
+
+  printf("bufptr: %p\n", buf);
+  printf("args: %p\n", &data);
+  pthread_create(&sock->thread, NULL, &_mbedsock_read_loop, (void *) data);
+  return 0;
 }

@@ -7,6 +7,7 @@
 #include "mbedtls/ctr_drbg.h"
 
 #include <stdbool.h>
+#include <pthread.h>
 
 #define SSL_PERS "moxxmpp_socket"
 #define SSL_PERS_LEN sizeof(SSL_PERS)/sizeof(char)
@@ -29,6 +30,12 @@ struct mbedsock {
   mbedtls_ssl_config conf;
   mbedtls_net_context server_fd;
 
+  // The thread the socket runs in
+  pthread_t thread;
+
+  // The callback function when the read loop is running
+  void (*read_cb)(int);
+  
   // Indicates whether the socket is secured using TLS (true) or not (false).
   bool secure;
 };
@@ -105,5 +112,9 @@ int mbedsock_write(struct mbedsock *sock, const unsigned char *data, int len);
 int mbedsock_read(struct mbedsock *sock, unsigned char *buf, int len);
 
 bool mbedsock_is_secure(struct mbedsock *sock);
+
+void mbedsock_set_read_cb(struct mbedsock *sock, void (*read_cb)(int));
+
+int mbedsock_run_read_loop(struct mbedsock *sock, unsigned char *buf, int len);
 
 #endif // __MBEDSOCK_H__
