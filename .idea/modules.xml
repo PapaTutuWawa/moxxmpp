@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/moxxmpp/melos_moxxmpp.iml" filepath="$PROJECT_DIR$/moxxmpp/melos_moxxmpp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/packages/moxxmpp/melos_moxxmpp.iml" filepath="$PROJECT_DIR$/packages/moxxmpp/melos_moxxmpp.iml" />
       <module fileurl="file://$PROJECT_DIR$/example/melos_moxxmpp_example.iml" filepath="$PROJECT_DIR$/example/melos_moxxmpp_example.iml" />
-      <module fileurl="file://$PROJECT_DIR$/moxxmpp_socket/melos_moxxmpp_socket.iml" filepath="$PROJECT_DIR$/moxxmpp_socket/melos_moxxmpp_socket.iml" />
+      <module fileurl="file://$PROJECT_DIR$/packages/moxxmpp_socket_tcp/melos_moxxmpp_socket_tcp.iml" filepath="$PROJECT_DIR$/packages/moxxmpp_socket_tcp/melos_moxxmpp_socket_tcp.iml" />
       <module fileurl="file://$PROJECT_DIR$/melos_moxxmpp.iml" filepath="$PROJECT_DIR$/melos_moxxmpp.iml" />
     </modules>
   </component>

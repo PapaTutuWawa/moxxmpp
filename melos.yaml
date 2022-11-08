@@ -1,8 +1,7 @@
 name: moxxmpp
 
 packages:
-  - moxxmpp
-  - moxxmpp_socket
+  - packages/*
   - example
 
 command:

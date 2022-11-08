@@ -1,4 +1,4 @@
-import 'package:moxxmpp_socket/src/record.dart';
+import 'package:moxxmpp_socket_tcp/src/record.dart';
 
 /// Sorts the SRV records according to priority and weight.
 int srvRecordSortComparator(MoxSrvRecord a, MoxSrvRecord b) {

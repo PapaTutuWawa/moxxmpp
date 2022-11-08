@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:moxdns/moxdns.dart';
 import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp_socket/moxxmpp_socket.dart';
+import 'package:moxxmpp_socket_tcp/moxxmpp_socket_tcp.dart';
 
 class ExampleTcpSocketWrapper extends TCPSocketWrapper {
   ExampleTcpSocketWrapper() : super(false);

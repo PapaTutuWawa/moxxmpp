@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp_socket/src/record.dart';
-import 'package:moxxmpp_socket/src/rfc_2782.dart';
+import 'package:moxxmpp_socket_tcp/src/record.dart';
+import 'package:moxxmpp_socket_tcp/src/rfc_2782.dart';
 
 /// TCP socket implementation for XmppConnection
 class TCPSocketWrapper extends BaseSocketWrapper {
