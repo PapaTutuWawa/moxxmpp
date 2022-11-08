@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'dart:convert';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
@@ -26,9 +27,13 @@ class MbedSockCtx {
 
 class MbedSock {
   late Pointer<libmbedsock.mbedsock> sock;
+  late Pointer<Uint8> _readBuf;
+  late Pointer<Uint8> _writeBuf;
 
   MbedSock(MbedSockCtx ctx) {
     sock = lib.mbedsock_new_ex(ctx.ctx);
+    _readBuf = malloc.call<Uint8>(2048);
+    _writeBuf = malloc.call<Uint8>(2048);
   }
 
   bool connect(String host, int port) {
@@ -75,12 +80,45 @@ class MbedSock {
   bool isSecure() {
     return lib.mbedsock_is_secure(sock) == 1;
   }
+  
+  int write(String data) {
+    final rawData = utf8.encode(data);
 
-  void write(String data) {
-    //lib.mbedsock_write(sock, data, data.length);
+    // TODO: Buffer the write
+    assert(rawData.length <= 2048);
+
+    _writeBuf.asTypedList(2048).setAll(0, rawData);
+    return lib.mbedsock_write(
+      sock,
+      _writeBuf,
+      rawData.length,
+    );
+  }
+
+  Uint8List? read() {
+    final result = lib.mbedsock_read(
+      sock,
+      _readBuf,
+      2048,
+    );
+
+    // TODO: Buffer the read
+    assert(result <= 2048);
+    
+    if (result < 0) {
+      print('Socket error');
+      return null;
+    } else if (result == 0) {
+      print('Socket closed');
+      return null;
+    } else {
+      return _readBuf.asTypedList(result) as Uint8List;
+    }
   }
   
   void free() {
     lib.mbedsock_free_ex(sock);
+    malloc.free(_readBuf);
+    malloc.free(_writeBuf);
   }
 }
