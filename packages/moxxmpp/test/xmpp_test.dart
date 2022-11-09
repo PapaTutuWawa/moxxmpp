@@ -104,7 +104,7 @@ void main() {
                   attributes: {
                     // TODO: Somehow make the test ignore this attribute
                     'ver': 'QRTBC5cg/oYd+UOTYazSQR4zb/I=',
-                    'node': 'http://moxxy.im',
+                    'node': 'http://moxxmpp.example',
                     'hash': 'sha-1'
                   },
                 )
@@ -126,7 +126,7 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-        PresenceManager(),
+        PresenceManager('http://moxxmpp.example'),
         RosterManager(),
         DiscoManager(),
         PingManager(),
@@ -180,7 +180,7 @@ void main() {
         allowPlainAuth: true,
       ),);
       conn.registerManagers([
-        PresenceManager(),
+        PresenceManager('http://moxxmpp.example'),
         RosterManager(),
         DiscoManager(),
         PingManager(),
@@ -234,7 +234,7 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-        PresenceManager(),
+        PresenceManager('http://moxxmpp.example'),
         RosterManager(),
         DiscoManager(),
         PingManager(),
@@ -289,7 +289,7 @@ void main() {
         allowPlainAuth: false,
       ),);
       conn.registerManagers([
-        PresenceManager(),
+        PresenceManager('http://moxxmpp.example'),
         RosterManager(),
         DiscoManager(),
         PingManager(),

@@ -242,7 +242,7 @@ void main() {
       ),);
       final sm = StreamManagementManager();
       conn.registerManagers([
-          PresenceManager(),
+          PresenceManager('http://moxxmpp.example'),
           RosterManager(),
           DiscoManager(),
           PingManager(),
@@ -343,7 +343,7 @@ void main() {
             '<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true" />',
           ),
           StringExpectation(
-            "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxy.im' ver='QRTBC5cg/oYd+UOTYazSQR4zb/I=' /></presence>",
+            "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='QRTBC5cg/oYd+UOTYazSQR4zb/I=' /></presence>",
             '<iq type="result" />',
           ),
           StanzaExpectation(
@@ -364,7 +364,7 @@ void main() {
       ),);
       final sm = StreamManagementManager();
       conn.registerManagers([
-          PresenceManager(),
+          PresenceManager('http://moxxmpp.example'),
           RosterManager(),
           DiscoManager(),
           PingManager(),
@@ -518,7 +518,7 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-          PresenceManager(),
+          PresenceManager('http://moxxmpp.example'),
           RosterManager(),
           DiscoManager(),
           PingManager(),
@@ -610,7 +610,7 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-          PresenceManager(),
+          PresenceManager('http://moxxmpp.example'),
           RosterManager(),
           DiscoManager(),
           PingManager(),
@@ -702,7 +702,7 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-          PresenceManager(),
+          PresenceManager('http://moxxmpp.example'),
           RosterManager(),
           DiscoManager(),
           PingManager(),

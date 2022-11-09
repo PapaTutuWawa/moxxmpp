@@ -60,7 +60,7 @@ void main() {
       StubNegotiator2(),
     ])
     ..registerManagers([
-      PresenceManager(),
+      PresenceManager('http://moxxmpp.example'),
       RosterManager(),
       DiscoManager(),
       PingManager(),

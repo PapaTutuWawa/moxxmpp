@@ -14,9 +14,11 @@ import 'package:moxxmpp/src/xeps/xep_0115.dart';
 import 'package:moxxmpp/src/xeps/xep_0414.dart';
 
 class PresenceManager extends XmppManagerBase {
-
-  PresenceManager() : _capabilityHash = null, super();
+  PresenceManager(this._capHashNode) : _capabilityHash = null, super();
   String? _capabilityHash;
+  final String _capHashNode;
+
+  String get capabilityHashNode => _capHashNode;
   
   @override
   String getId() => presenceManager;
@@ -93,7 +95,7 @@ class PresenceManager extends XmppManagerBase {
             xmlns: capsXmlns,
             attributes: {
               'hash': 'sha-1',
-              'node': 'http://moxxy.im',
+              'node': _capHashNode,
               'ver': await getCapabilityHash()
             },
           )

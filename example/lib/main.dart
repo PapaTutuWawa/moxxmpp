@@ -69,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
         RosterManager(),
         PingManager(),
         MessageManager(),
-        PresenceManager(),
+        PresenceManager('http://moxxmpp.example'),
       ])
       ..registerFeatureNegotiators([
         ResourceBindingNegotiator(),

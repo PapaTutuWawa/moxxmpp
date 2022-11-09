@@ -157,7 +157,7 @@ class DiscoManager extends XmppManagerBase {
     final query = stanza.firstTag('query')!;
     final node = query.attributes['node'] as String?;
     final capHash = await presence.getCapabilityHash();
-    final isCapabilityNode = node == 'http://moxxy.im#$capHash';
+    final isCapabilityNode = node == '${presence.capabilityHashNode}#$capHash';
 
     if (!isCapabilityNode && node != null) {
       await getAttributes().sendStanza(Stanza.iq(
@@ -200,7 +200,7 @@ class DiscoManager extends XmppManagerBase {
             xmlns: discoInfoXmlns,
             attributes: {
               ...!isCapabilityNode ? {} : {
-                  'node': 'http://moxxy.im#$capHash'
+                'node': '${presence.capabilityHashNode}#$capHash'
               }
             },
             children: [
