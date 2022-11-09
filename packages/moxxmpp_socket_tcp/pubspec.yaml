@@ -1,18 +1,18 @@
 name: moxxmpp_socket_tcp
 description: A socket for moxxmpp using TCP that implements the RFC6120 connection algorithm and XEP-0368
-version: 0.1.0
+version: 0.1.1
 homepage: https://codeberg.org/moxxy/moxxmpp
 publish_to: https://git.polynom.me/api/packages/Moxxy/pub
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=2.17.5 <3.0.0'
 
 dependencies:
   logging: ^1.0.2
   meta: ^1.6.0
   moxxmpp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
-    version: ^0.1.0
+    version: ^0.1.1
 
 dev_dependencies:
   lints: ^2.0.0
