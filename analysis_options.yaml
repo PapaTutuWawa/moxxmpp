@@ -12,3 +12,4 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "test/"
+    - "integration_test/"

@@ -796,6 +796,15 @@ class XmppConnection {
 
       _updateRoutingState(RoutingState.handleStanzas);
       await _onNegotiationsDone();
+    } else if (_currentNegotiator!.state == NegotiatorState.error) {
+      _log.severe('Negotiator returned an error');
+
+      _updateRoutingState(RoutingState.error);
+      await _setConnectionState(XmppConnectionState.error);
+      _connectionCompleter?.complete(const XmppConnectionResult(false));
+      _connectionCompleter = null;
+
+      _closeSocket();
     }
   }
 

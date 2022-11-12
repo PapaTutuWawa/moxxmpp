@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp_socket_tcp/src/events.dart';
 import 'package:moxxmpp_socket_tcp/src/record.dart';
 import 'package:moxxmpp_socket_tcp/src/rfc_2782.dart';
 
@@ -66,6 +67,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       return false;
     }
 
+    var failedDueToTLS = false;
     results.sort(srvRecordSortComparator);
     for (final srv in results) {
       try {
@@ -91,12 +93,20 @@ class TCPSocketWrapper extends BaseSocketWrapper {
         _secure = true;
         _log.finest('Success!');
         return true;
-      } on SocketException catch(e) {
+      } on Exception catch(e) {
         _log.finest('Failure! $e');
         _ignoreSocketClosure = false;
+
+        if (e is HandshakeException) {
+          failedDueToTLS = true;
+        }
       }
     }
 
+    if (failedDueToTLS) {
+      _eventStream.add(XmppSocketTLSFailedEvent());
+    }
+    
     return false;
   }
   
@@ -118,7 +128,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
         _ignoreSocketClosure = false;
         _log.finest('Success!');
         return true;
-      } on SocketException catch(e) {
+      } on Exception catch(e) {
         _log.finest('Failure! $e');
         _ignoreSocketClosure = false;
         continue;
@@ -142,7 +152,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       );
       _log.finest('Success!');
       return true;
-    } on SocketException catch(e) {
+    } on Exception catch(e) {
       _log.finest('Failure! $e');
       _ignoreSocketClosure = false;
       return false;
@@ -183,8 +193,14 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       _ignoreSocketClosure = false;
       _setupStreams();
       return true;
-    } on SocketException {
+    } on Exception catch (e) {
+      _log.severe('Failed to secure socket: $e');
       _ignoreSocketClosure = false;
+
+      if (e is HandshakeException) {
+        _eventStream.add(XmppSocketTLSFailedEvent());
+      }
+
       return false;
     }
   }
@@ -293,7 +309,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
 
     try {
       _socket!.write(data);
-    } on SocketException catch (e) {
+    } on Exception catch (e) {
       _log.severe(e);
       _eventStream.add(XmppSocketErrorEvent(e));
     }
