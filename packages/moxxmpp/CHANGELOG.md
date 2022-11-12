@@ -1,3 +1,7 @@
+## 0.1.2+1
+
+ - **FIX**: A certificate rejection does not crash the connection.
+
 ## 0.1.2
 
  - **FEAT**: Remove Moxxy specific strings.
