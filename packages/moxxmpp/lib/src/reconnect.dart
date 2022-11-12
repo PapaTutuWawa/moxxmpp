@@ -93,6 +93,7 @@ class ExponentialBackoffReconnectionPolicy extends ReconnectionPolicy {
     final isReconnecting = await isReconnectionRunning();
     if (shouldReconnect) {
       if (!isReconnecting) {
+        await setIsReconnecting(true);
         await performReconnect!();
       } else {
         // Should never happen.
@@ -117,7 +118,6 @@ class ExponentialBackoffReconnectionPolicy extends ReconnectionPolicy {
   Future<void> onFailure() async {
     _log.finest('Failure occured. Starting exponential backoff');
     _counter++;
-    await setIsReconnecting(true);
 
     if (_timer != null) {
       _timer!.cancel();
@@ -144,6 +144,26 @@ class TestingReconnectionPolicy extends ReconnectionPolicy {
 
   @override
   Future<void> onFailure() async {}
+
+  @override
+  Future<void> reset() async {}
+}
+
+/// A reconnection policy for tests that waits a constant number of seconds before
+/// attempting a reconnection.
+@visibleForTesting
+class TestingSleepReconnectionPolicy extends ReconnectionPolicy {
+  TestingSleepReconnectionPolicy(this._sleepAmount) : super();
+  final int _sleepAmount;
+  
+  @override
+  Future<void> onSuccess() async {}
+
+  @override
+  Future<void> onFailure() async {
+    await Future<void>.delayed(Duration(seconds: _sleepAmount));
+    await performReconnect!();
+  }
 
   @override
   Future<void> reset() async {}

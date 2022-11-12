@@ -163,6 +163,8 @@ class XmppConnection {
   /// Completers for certain actions
   // ignore: use_late_for_private_fields_and_variables
   Completer<XmppConnectionResult>? _connectionCompleter;
+  /// Controls whether an XmppSocketClosureEvent triggers a reconnection.
+  bool _socketClosureTriggersReconnect = true;
 
   /// Negotiators
   final Map<String, XmppFeatureNegotiatorBase> _featureNegotiators;
@@ -350,8 +352,18 @@ class XmppConnection {
       _log.severe('handleError: Called with null');
     } 
 
-    // TODO(Unknown): This may be too harsh for every error
-    await _setConnectionState(XmppConnectionState.notConnected);
+    // Whenever we encounter an error that would trigger a reconnection attempt while
+    // the connection result is being awaited, don't attempt a reconnection but instead
+    // try to gracefully disconnect.
+    if (_connectionCompleter != null) {
+      _log.info('Not triggering reconnection since connection result is being awaited');
+      await _disconnect(triggeredByUser: false, state: XmppConnectionState.error);
+      _connectionCompleter?.complete(const XmppConnectionResult(false));
+      _connectionCompleter = null;
+      return;
+    }
+
+    await _setConnectionState(XmppConnectionState.error);
     await _reconnectionPolicy.onFailure();
   }
 
@@ -360,8 +372,12 @@ class XmppConnection {
     if (event is XmppSocketErrorEvent) {
       await handleError(event.error);
     } else if (event is XmppSocketClosureEvent) {
-      _log.fine('Received XmppSocketClosureEvent. Reconnecting...');
-      await _reconnectionPolicy.onFailure();
+      if (_socketClosureTriggersReconnect) {
+        _log.fine('Received XmppSocketClosureEvent. Reconnecting...');
+        await _reconnectionPolicy.onFailure();
+      } else {
+        _log.fine('Received XmppSocketClosureEvent. No reconnection attempt since _socketClosureTriggersReconnect is false...');
+      }
     }
   }
 
@@ -798,16 +814,10 @@ class XmppConnection {
       await _onNegotiationsDone();
     } else if (_currentNegotiator!.state == NegotiatorState.error) {
       _log.severe('Negotiator returned an error');
-
-      _updateRoutingState(RoutingState.error);
-      await _setConnectionState(XmppConnectionState.error);
-      _connectionCompleter?.complete(const XmppConnectionResult(false));
-      _connectionCompleter = null;
-
-      _closeSocket();
+      await handleError(null);
     }
   }
-
+  
   void _closeSocket() {
     _socket.close();
   }
@@ -965,17 +975,32 @@ class XmppConnection {
 
   /// Attempt to gracefully close the session
   Future<void> disconnect() async {
-    _reconnectionPolicy.setShouldReconnect(false);
-    getPresenceManager().sendUnavailablePresence();
-    _socket.prepareDisconnect();
-    sendRawString('</stream:stream>');
-    await _setConnectionState(XmppConnectionState.notConnected);
-    _socket.close();
-
-    // Clear Stream Management state, if available
-    await getStreamManagementManager()?.resetState();
+    await _disconnect(state: XmppConnectionState.notConnected);
   }
 
+  Future<void> _disconnect({required XmppConnectionState state, bool triggeredByUser = true}) async {
+    _reconnectionPolicy.setShouldReconnect(false);
+    _socketClosureTriggersReconnect = false;
+
+    if (triggeredByUser) {
+      getPresenceManager().sendUnavailablePresence();
+    }
+
+    _socket.prepareDisconnect();
+
+    if (triggeredByUser) {
+      sendRawString('</stream:stream>');
+    }
+
+    await _setConnectionState(state);
+    _socket.close();
+
+    if (triggeredByUser) {
+      // Clear Stream Management state, if available
+      await getStreamManagementManager()?.resetState();
+    }
+  }
+  
   /// Make sure that all required managers are registered
   void _runPreConnectionAssertions() {
     assert(_xmppManagers.containsKey(presenceManager), 'A PresenceManager is mandatory');
@@ -1009,7 +1034,7 @@ class XmppConnection {
     }
 
     await _reconnectionPolicy.reset();
-
+    _socketClosureTriggersReconnect = true;
     await _sendEvent(ConnectingEvent());
 
     final smManager = getStreamManagementManager();
