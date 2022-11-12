@@ -18,6 +18,10 @@ if a DNS implementation is given, and supports StartTLS.
 To begin, use [melos](https://github.com/invertase/melos) to bootstrap the project: `melos bootstrap`. Then, the example
 can be run with `flutter run` on Linux or Android.
 
+To run the example, make sure that Flutter is correctly set up and working. If you use
+the development shell provided by the NixOS Flake, ensure that `ANDROID_HOME` and
+`ANDROID_AVD_HOME` are pointing to the correct directories.
+
 ## License
 
 See `./LICENSE`.

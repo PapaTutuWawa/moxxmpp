@@ -58,9 +58,7 @@
       CPATH = "${pkgs.xorg.libX11.dev}/include:${pkgs.xorg.xorgproto}/include";
       LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [ atk cairo epoxy gdk-pixbuf glib gtk3 harfbuzz pango ];
 
-      ANDROID_HOME = (toString ./.) + "/.android/sdk";
       JAVA_HOME = pinnedJDK;
-      ANDROID_AVD_HOME = (toString ./.) + "/.android/avd";
     };
   });
 }
