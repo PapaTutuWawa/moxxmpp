@@ -49,12 +49,13 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   Future<List<MoxSrvRecord>> srvQuery(String domain, bool dnssec) async {
     return <MoxSrvRecord>[];
   }
-  
-  bool _onBadCertificate(dynamic certificate, String domain) {
-    _log.fine('Bad certificate: ${certificate.toString()}');
-    //final isExpired = certificate.endValidity.isAfter(DateTime.now());
-    // TODO(Unknown): Either validate the certificate ourselves or use a platform native
-    //                hostname verifier (or Dart adds it themselves)
+
+  /// Called when we encounter a certificate we cannot verify. [certificate] refers to the certificate
+  /// in question, while [domain] refers to the domain we try to validate the certificate against.
+  ///
+  /// Return true if the certificate should be accepted. Return false if it should be rejected.
+  @visibleForOverriding
+  bool onBadCertificate(dynamic certificate, String domain) {
     return false;
   }
   
@@ -83,7 +84,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
           sock,
           host: domain,
           supportedProtocols: const [ xmppClientALPNId ],
-          onBadCertificate: (cert) => _onBadCertificate(cert, domain),
+          onBadCertificate: (cert) => onBadCertificate(cert, domain),
         );
 
         _ignoreSocketClosure = false;
@@ -175,7 +176,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       _socket = await SecureSocket.secure(
         _socket!,
         supportedProtocols: const [ xmppClientALPNId ],
-        onBadCertificate: (cert) => _onBadCertificate(cert, domain),
+        onBadCertificate: (cert) => onBadCertificate(cert, domain),
       );
 
       _secure = true;
