@@ -1,3 +1,7 @@
+## 0.1.2+2
+
+ - **FIX**: Fix reconnections when the connection is awaited.
+
 ## 0.1.2+1
 
  - **FIX**: A certificate rejection does not crash the connection.

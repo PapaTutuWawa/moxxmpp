@@ -16,10 +16,10 @@ dependencies:
     version: 0.1.4+1
   moxxmpp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
-    version: 0.1.2+1
+    version: 0.1.2+2
   moxxmpp_socket_tcp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
-    version: 0.1.2+1
+    version: 0.1.2+2
 
 dev_dependencies:
   flutter_test:
