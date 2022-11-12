@@ -1,3 +1,7 @@
+## 0.1.2
+
+ - **FEAT**: Remove Moxxy specific strings.
+
 ## 0.1.1
 
  - **REFACTOR**: Move packages into packages/.

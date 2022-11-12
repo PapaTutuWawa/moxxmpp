@@ -1,3 +1,7 @@
+## 0.1.2
+
+ - **FEAT**: Make onBadCertificate available.
+
 ## 0.1.1
 
  - **REFACTOR**: Move packages into packages/.
