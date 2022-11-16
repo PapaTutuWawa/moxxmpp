@@ -80,10 +80,11 @@ abstract class ReconnectionPolicy {
 /// for every failed attempt.
 class ExponentialBackoffReconnectionPolicy extends ReconnectionPolicy {
 
-  ExponentialBackoffReconnectionPolicy()
+  ExponentialBackoffReconnectionPolicy(this._maxBackoffTime)
   : _counter = 0,
     _log = Logger('ExponentialBackoffReconnectionPolicy'),
     super();
+  final int _maxBackoffTime;
   int _counter;
   Timer? _timer;
   final Logger _log;
@@ -124,7 +125,7 @@ class ExponentialBackoffReconnectionPolicy extends ReconnectionPolicy {
     }
 
     // Wait at max 80 seconds.
-    final seconds = min(pow(2, _counter).toInt(), 80);
+    final seconds = min(min(pow(2, _counter).toInt(), 80), _maxBackoffTime);
     _timer = Timer(Duration(seconds: seconds), _onTimerElapsed);
   }
 
