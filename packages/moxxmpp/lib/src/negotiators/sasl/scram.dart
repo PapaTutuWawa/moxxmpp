@@ -30,6 +30,17 @@ HashAlgorithm hashFromType(ScramHashType type) {
   }
 }
 
+int pbkdfBitsFromHash(ScramHashType type) {
+  switch (type) {
+    // NOTE: SHA1 is 20 octets long => 20 octets * 8 bits/octet
+    case ScramHashType.sha1: return 160;
+    // NOTE: SHA256 is 32 octets long => 32 octets * 8 bits/octet
+    case ScramHashType.sha256: return 256;
+    // NOTE: SHA512 is 64 octets long => 64 octets * 8 bits/octet
+    case ScramHashType.sha512: return 512;
+  }
+}
+
 const scramSha1Mechanism = 'SCRAM-SHA-1';
 const scramSha256Mechanism = 'SCRAM-SHA-256';
 const scramSha512Mechanism = 'SCRAM-SHA-512';
@@ -106,7 +117,7 @@ class SaslScramNegotiator extends SaslNegotiator {
     final pbkdf2 = Pbkdf2(
       macAlgorithm: Hmac(_hash),
       iterations: iterations,
-      bits: 160, // NOTE: RFC says 20 octets => 20 octets * 8 bits/octet
+      bits: pbkdfBitsFromHash(hashType),
     );
 
     final saltedPasswordRaw = await pbkdf2.deriveKey(
