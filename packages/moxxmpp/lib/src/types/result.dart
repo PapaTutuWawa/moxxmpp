@@ -1,13 +1,13 @@
-/// Class that is supposed to by used with a state type S and a value type V.
-/// The state indicates if an action was successful or not, while the value
-/// type indicates the return value, i.e. a result in a computation or the
-/// actual error description.
-class Result<S, V> {
+class Result<T, V> {
 
-  Result(S state, V value) : _state = state, _value = value;
-  final S _state;
-  final V _value;
+  const Result(this._data) : assert(_data is T || _data is V, 'Invalid data type: Must be either $T or $V');
+  final dynamic _data;
 
-  S getState() => _state;
-  V getValue() => _value;
+  bool isType<S>() => _data is S;
+
+  S get<S>() {
+    assert(_data is S, 'Data is not $S');
+
+    return _data as S;
+  }
 }
