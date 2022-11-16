@@ -1,3 +1,7 @@
+## 0.1.2+3
+
+ - **FIX**: SASL SCRAM-SHA-{256,512} should now work.
+
 ## 0.1.2+2
 
  - **FIX**: Fix reconnections when the connection is awaited.

@@ -1,3 +1,7 @@
+## 0.1.2+3
+
+ - Update a dependency to the latest release.
+
 ## 0.1.2+2
 
  - **FIX**: Fix reconnections when the connection is awaited.
