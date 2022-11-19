@@ -7,16 +7,12 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/roster/errors.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/error.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
-const rosterErrorNoQuery = 1;
-const rosterErrorNonResult = 2;
-
 class XmppRosterItem {
-
   XmppRosterItem({ required this.jid, required this.subscription, this.ask, this.name, this.groups = const [] });
   final String jid;
   final String? name;
@@ -32,14 +28,12 @@ enum RosterRemovalResult {
 }
 
 class RosterRequestResult {
-
   RosterRequestResult({ required this.items, this.ver });
   List<XmppRosterItem> items;
   String? ver;
 }
 
 class RosterPushEvent extends XmppEvent {
-
   RosterPushEvent({ required this.item, this.ver });
   final XmppRosterItem item;
   final String? ver;
@@ -149,7 +143,7 @@ class RosterManager extends XmppManagerBase {
 
   /// Shared code between requesting rosters without and with roster versioning, if
   /// the server deems a regular roster response more efficient than n roster pushes.
-  Future<MayFail<RosterRequestResult>> _handleRosterResponse(XMLNode? query) async {
+  Future<Result<RosterRequestResult, RosterError>> _handleRosterResponse(XMLNode? query) async {
     final List<XmppRosterItem> items;
     if (query != null) {
       items = query.children.map((item) => XmppRosterItem(
@@ -167,7 +161,7 @@ class RosterManager extends XmppManagerBase {
       }
     } else {
       logger.warning('Server response to roster request without roster versioning does not contain a <query /> element, while the type is not error. This violates RFC6121');
-      return MayFail.failure(rosterErrorNoQuery);
+      return Result(NoQueryError());
     }
 
     final ver = query.attributes['ver'] as String?;
@@ -176,7 +170,7 @@ class RosterManager extends XmppManagerBase {
       await commitLastRosterVersion(ver);
     }
     
-    return MayFail.success(
+    return Result(
       RosterRequestResult(
         items: items,
         ver: ver,
@@ -186,7 +180,7 @@ class RosterManager extends XmppManagerBase {
   }
   
   /// Requests the roster following RFC 6121 without using roster versioning.
-  Future<MayFail<RosterRequestResult>> requestRoster() async {
+  Future<Result<RosterRequestResult, RosterError>> requestRoster() async {
     final attrs = getAttributes();
     final response = await attrs.sendStanza(
       Stanza.iq(
@@ -202,7 +196,7 @@ class RosterManager extends XmppManagerBase {
 
     if (response.attributes['type'] != 'result') {
       logger.warning('Error requesting roster without roster versioning: ${response.toXml()}');
-      return MayFail.failure(rosterErrorNonResult);
+      return Result(UnknownError());
     }
 
     final query = response.firstTag('query', xmlns: rosterXmlns);
@@ -211,7 +205,7 @@ class RosterManager extends XmppManagerBase {
 
   /// Requests a series of roster pushes according to RFC6121. Requires that the server
   /// advertises urn:xmpp:features:rosterver in the stream features.
-  Future<MayFail<RosterRequestResult?>> requestRosterPushes() async {
+  Future<Result<RosterRequestResult?, RosterError>> requestRosterPushes() async {
     if (_rosterVersion == null) {
       await loadLastRosterVersion();
     }
@@ -234,7 +228,7 @@ class RosterManager extends XmppManagerBase {
 
     if (result.attributes['type'] != 'result') {
       logger.warning('Requesting roster pushes failed: ${result.toXml()}');
-      return MayFail.failure(rosterErrorNonResult);
+      return Result(UnknownError());
     }
 
     final query = result.firstTag('query', xmlns: rosterXmlns);

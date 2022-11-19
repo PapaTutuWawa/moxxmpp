@@ -7,19 +7,15 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/error.dart';
+import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
-
-const errorNoUploadServer = 1;
-const errorFileTooBig = 2;
-const errorGeneric = 3;
+import 'package:moxxmpp/src/xeps/xep_0363/errors.dart';
 
 const allowedHTTPHeaders = [ 'authorization', 'cookie', 'expires' ];
 
 class HttpFileUploadSlot {
-
   const HttpFileUploadSlot(this.putUrl, this.getUrl, this.headers);
   final String putUrl;
   final String getUrl;
@@ -45,7 +41,6 @@ Map<String, String> prepareHeaders(Map<String, String> headers) {
 }
 
 class HttpFileUploadManager extends XmppManagerBase {
-
   HttpFileUploadManager() : _gotSupported = false, _supported = false, super();
   JID? _entityJid;
   int? _maxUploadSize;
@@ -119,17 +114,17 @@ class HttpFileUploadManager extends XmppManagerBase {
   /// the file's size in octets. [contentType] is optional and refers to the file's
   /// Mime type.
   /// Returns an [HttpFileUploadSlot] if the request was successful; null otherwise.
-  Future<MayFail<HttpFileUploadSlot>> requestUploadSlot(String filename, int filesize, { String? contentType }) async {
-    if (!(await isSupported())) return MayFail.failure(errorNoUploadServer);
+  Future<Result<HttpFileUploadSlot, HttpFileUploadError>> requestUploadSlot(String filename, int filesize, { String? contentType }) async {
+    if (!(await isSupported())) return Result(NoEntityKnownError());
 
     if (_entityJid == null) {
       logger.warning('Attempted to request HTTP File Upload slot but no entity is known to send this request to.');
-      return MayFail.failure(errorNoUploadServer);
+      return Result(NoEntityKnownError());
     }
 
     if (_maxUploadSize != null && filesize > _maxUploadSize!) {
       logger.warning('Attempted to request HTTP File Upload slot for a file that exceeds the filesize limit');
-      return MayFail.failure(errorFileTooBig);
+      return Result(FileTooBigError());
     }
     
     final attrs = getAttributes();
@@ -154,7 +149,7 @@ class HttpFileUploadManager extends XmppManagerBase {
     if (response.attributes['type']! != 'result') {
       logger.severe('Failed to request HTTP File Upload slot.');
       // TODO(Unknown): Be more precise
-      return MayFail.failure(errorGeneric);
+      return Result(UnknownHttpFileUploadError());
     }
 
     final slot = response.firstTag('slot', xmlns: httpFileUploadXmlns)!;
@@ -169,7 +164,7 @@ class HttpFileUploadManager extends XmppManagerBase {
       }),
     );
 
-    return MayFail.success(
+    return Result(
       HttpFileUploadSlot(
         putUrl,
         getUrl,

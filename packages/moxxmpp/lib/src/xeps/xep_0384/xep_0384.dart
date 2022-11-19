@@ -44,7 +44,6 @@ const _doNotEncryptList = [
 ];
 
 abstract class OmemoManager extends XmppManagerBase {
-
   OmemoManager() : _handlerLock = Lock(), _handlerFutures = {}, super();
 
   final Lock _handlerLock;

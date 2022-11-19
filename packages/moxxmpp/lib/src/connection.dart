@@ -15,7 +15,7 @@ import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/presence.dart';
 import 'package:moxxmpp/src/reconnect.dart';
-import 'package:moxxmpp/src/roster.dart';
+import 'package:moxxmpp/src/roster/roster.dart';
 import 'package:moxxmpp/src/routing.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
