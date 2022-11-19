@@ -1,6 +1,7 @@
 library moxxmpp;
 
 export 'package:moxxmpp/src/connection.dart';
+export 'package:moxxmpp/src/errors.dart';
 export 'package:moxxmpp/src/events.dart';
 export 'package:moxxmpp/src/iq.dart';
 export 'package:moxxmpp/src/jid.dart';
@@ -16,6 +17,7 @@ export 'package:moxxmpp/src/negotiators/manager.dart';
 export 'package:moxxmpp/src/negotiators/namespaces.dart';
 export 'package:moxxmpp/src/negotiators/negotiator.dart';
 export 'package:moxxmpp/src/negotiators/resource_binding.dart';
+export 'package:moxxmpp/src/negotiators/sasl/errors.dart';
 export 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 export 'package:moxxmpp/src/negotiators/sasl/plain.dart';
 export 'package:moxxmpp/src/negotiators/sasl/scram.dart';
