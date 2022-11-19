@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/buffer.dart';
+import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/iq.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
@@ -61,14 +62,14 @@ class XmppConnectionResult {
   const XmppConnectionResult(
     this.success,
     {
-      this.reason,
+      this.error,
     }
   );
 
   final bool success;
-  // NOTE: [reason] is not human-readable, but the type of SASL error.
-  //       See sasl/errors.dart
-  final String? reason;
+  // If a connection attempt fails, i.e. success is false, then this indicates the
+  // reason the connection failed.
+  final XmppError? error;
 }
 
 class XmppConnection {
@@ -345,12 +346,8 @@ class XmppConnection {
   }
   
   /// Called when a stream ending error has occurred
-  Future<void> handleError(Object? error) async {
-    if (error != null) {
-      _log.severe('handleError: $error');
-    } else {
-      _log.severe('handleError: Called with null');
-    } 
+  Future<void> handleError(XmppError error) async {
+    _log.severe('handleError called with ${error.toString()}');
 
     // Whenever we encounter an error that would trigger a reconnection attempt while
     // the connection result is being awaited, don't attempt a reconnection but instead
@@ -358,7 +355,12 @@ class XmppConnection {
     if (_connectionCompleter != null) {
       _log.info('Not triggering reconnection since connection result is being awaited');
       await _disconnect(triggeredByUser: false, state: XmppConnectionState.error);
-      _connectionCompleter?.complete(const XmppConnectionResult(false));
+      _connectionCompleter?.complete(
+        XmppConnectionResult(
+          false,
+          error: error,
+        ),
+      );
       _connectionCompleter = null;
       return;
     }
@@ -370,7 +372,7 @@ class XmppConnection {
   /// Called whenever the socket creates an event
   Future<void> _handleSocketEvent(XmppSocketEvent event) async {
     if (event is XmppSocketErrorEvent) {
-      await handleError(event.error);
+      await handleError(SocketError(event));
     } else if (event is XmppSocketClosureEvent) {
       if (_socketClosureTriggersReconnect) {
         _log.fine('Received XmppSocketClosureEvent. Reconnecting...');
@@ -525,7 +527,7 @@ class XmppConnection {
   /// Called when we timeout during connecting
   Future<void> _onConnectingTimeout() async {
     _log.severe('Connection stuck in "connecting". Causing a reconnection...');
-    await handleError('Connecting timeout');
+    await handleError(TimeoutError());
   }
 
   void _destroyConnectingTimer() {
@@ -749,20 +751,34 @@ class XmppConnection {
     // Send out initial presence
     await getPresenceManager().sendInitialPresence();
   }
-  
-  /// To be called after _currentNegotiator!.negotiate(..) has been called. Checks the
-  /// state of the negotiator and picks the next negotiatior, ends negotiation or
-  /// waits, depending on what the negotiator did.
-  Future<void> _checkCurrentNegotiator() async {
-    if (_currentNegotiator!.state == NegotiatorState.done) {
-      _log.finest('Negotiator ${_currentNegotiator!.id} done');
 
+  Future<void> _executeCurrentNegotiator(XMLNode nonza) async {
+    // If we don't have a negotiator get one
+    _currentNegotiator ??= getNextNegotiator(_streamFeatures);
+    if (_currentNegotiator == null && _isMandatoryNegotiationDone(_streamFeatures) && !_isNegotiationPossible(_streamFeatures)) {
+      _log.finest('Negotiations done!');
+      _updateRoutingState(RoutingState.handleStanzas);
+      await _onNegotiationsDone();
+      return;
+    }
+
+    final result = await _currentNegotiator!.negotiate(nonza);
+    if (result.isType<NegotiatorError>()) {
+      _log.severe('Negotiator returned an error');
+      await handleError(result.get<NegotiatorError>());
+      return;
+    }
+
+    final state = result.get<NegotiatorState>();
+    _currentNegotiator!.state = state;
+    switch (state) {
+      case NegotiatorState.ready: return;
+      case NegotiatorState.done:
       if (_currentNegotiator!.sendStreamHeaderWhenDone) {
         _currentNegotiator = null;
         _streamFeatures.clear();
         _sendStreamHeader();
       } else {
-        // Track what features we still have
         _streamFeatures
           .removeWhere((node) {
             return node.attributes['xmlns'] == _currentNegotiator!.negotiatingXmlns;
@@ -772,7 +788,6 @@ class XmppConnection {
         if (_isMandatoryNegotiationDone(_streamFeatures) && !_isNegotiationPossible(_streamFeatures)) {
           _log.finest('Negotiations done!');
           _updateRoutingState(RoutingState.handleStanzas);
-
           await _onNegotiationsDone();
         } else {
           _currentNegotiator = getNextNegotiator(_streamFeatures);
@@ -782,15 +797,16 @@ class XmppConnection {
             tag: 'stream:features',
             children: _streamFeatures,
           );
-          await _currentNegotiator!.negotiate(fakeStanza);
-          await _checkCurrentNegotiator();
+
+          await _executeCurrentNegotiator(fakeStanza);
         }
       }
-    } else if (_currentNegotiator!.state == NegotiatorState.retryLater) {
+      break;
+      case NegotiatorState.retryLater:
       _log.finest('Negotiator wants to continue later. Picking new one...');
-
       _currentNegotiator!.state = NegotiatorState.ready;
 
+      
       if (_isMandatoryNegotiationDone(_streamFeatures) && !_isNegotiationPossible(_streamFeatures)) {
         _log.finest('Negotiations done!');
 
@@ -804,22 +820,16 @@ class XmppConnection {
           tag: 'stream:features',
           children: _streamFeatures,
         );
-        await _currentNegotiator!.negotiate(fakeStanza);
-        await _checkCurrentNegotiator();
+        await _executeCurrentNegotiator(fakeStanza);
       }
-    } else if (_currentNegotiator!.state == NegotiatorState.skipRest) {
+      break;
+      case NegotiatorState.skipRest:
       _log.finest('Negotiator wants to skip the remaining negotiation... Negotiations (assumed) done!');
 
       _updateRoutingState(RoutingState.handleStanzas);
       await _onNegotiationsDone();
-    } else if (_currentNegotiator!.state == NegotiatorState.error) {
-      _log.severe('Negotiator returned an error');
-      await handleError(null);
+      break;
     }
-  }
-  
-  void _closeSocket() {
-    _socket.close();
   }
   
   /// Called whenever we receive data that has been parsed as XML.
@@ -829,7 +839,7 @@ class XmppConnection {
       _log
         ..finest('<== ${node.toXml()}')
         ..severe('Received a stream error! Attempting reconnection');
-      await handleError('Stream error');
+      await handleError(StreamError());
       
       return;
     }
@@ -849,53 +859,14 @@ class XmppConnection {
             return;
           }
 
-          if (_currentNegotiator != null) {
-            // If we already have a negotiator, just let it do its thing
-            _log.finest('Negotiator currently active...');
-
-            await _currentNegotiator!.negotiate(node);
-            await _checkCurrentNegotiator();
-          } else {
+          if (node.tag == 'stream:features') {
+            // Store the received stream features
             _streamFeatures
-            ..clear()
-            ..addAll(node.children);
-
-            // We need to pick a new one
-            if (_isMandatoryNegotiationDone(node.children)) {
-              // Mandatory features are done but can we still negotiate more?
-              if (_isNegotiationPossible(node.children)) {// We can still negotiate features, so do that.
-                _log.finest('All required stream features done! Continuing negotiation');
-                _currentNegotiator = getNextNegotiator(node.children);
-                _log.finest('Chose $_currentNegotiator as next negotiator');
-                await _currentNegotiator!.negotiate(node);
-                await _checkCurrentNegotiator();
-              } else {
-                _updateRoutingState(RoutingState.handleStanzas);
-              }
-            } else {
-              // There still are mandatory features
-              if (!_isNegotiationPossible(node.children)) {
-                _log.severe('Mandatory negotiations not done but continuation not possible');
-                _updateRoutingState(RoutingState.error);
-                await _setConnectionState(XmppConnectionState.error);
-
-                // Resolve the connection completion future
-                _connectionCompleter?.complete(
-                  const XmppConnectionResult(
-                    false,
-                    reason: 'Could not complete connection negotiations',
-                  ),
-                );
-                _connectionCompleter = null;
-                return;
-              }
-
-              _currentNegotiator = getNextNegotiator(node.children);
-              _log.finest('Chose $_currentNegotiator as next negotiator');
-              await _currentNegotiator!.negotiate(node);
-              await _checkCurrentNegotiator();
-            }
+              ..clear()
+              ..addAll(node.children);
           }
+
+          await _executeCurrentNegotiator(node);
         });
         break;
       case RoutingState.handleStanzas:        
@@ -927,20 +898,6 @@ class XmppConnection {
     } else if (event is AuthenticationSuccessEvent) {
       _log.finest('Received AuthenticationSuccessEvent. Setting _isAuthenticated to true');
       _isAuthenticated = true;
-    } else if (event is AuthenticationFailedEvent) {
-      _log.finest('Failed authentication');
-      _updateRoutingState(RoutingState.error);
-      await _setConnectionState(XmppConnectionState.error);
-
-      // Resolve the connection completion future
-      _connectionCompleter?.complete(
-        XmppConnectionResult(
-          false,
-          reason: 'Authentication failed: ${event.saslError}',
-        ),
-      );
-      _connectionCompleter = null;
-      _closeSocket();
     }
     
     for (final manager in _xmppManagers.values) {
@@ -1053,7 +1010,7 @@ class XmppConnection {
       port: port,
     );
     if (!result) {
-      await handleError(null);
+      await handleError(NoConnectionError());
     } else {
       await _reconnectionPolicy.onSuccess();
       _log.fine('Preparing the internal state for a connection attempt');

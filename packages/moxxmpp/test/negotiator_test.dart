@@ -3,10 +3,10 @@ import 'package:test/test.dart';
 import 'helpers/logging.dart';
 import 'helpers/xmpp.dart';
 
-const exampleXmlns1 = 'im:moxxy:example1';
-const exampleNamespace1 = 'im.moxxy.test.example1';
-const exampleXmlns2 = 'im:moxxy:example2';
-const exampleNamespace2 = 'im.moxxy.test.example2';
+const exampleXmlns1 = 'im:moxxmpp:example1';
+const exampleNamespace1 = 'im.moxxmpp.test.example1';
+const exampleXmlns2 = 'im:moxxmpp:example2';
+const exampleNamespace2 = 'im.moxxmpp.test.example2';
 
 class StubNegotiator1 extends XmppFeatureNegotiatorBase {
   StubNegotiator1() : called = false, super(1, false, exampleXmlns1, exampleNamespace1);
@@ -14,9 +14,9 @@ class StubNegotiator1 extends XmppFeatureNegotiatorBase {
   bool called;
   
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     called = true;
-    state = NegotiatorState.done;
+    return const Result(NegotiatorState.done);
   }
 }
 
@@ -26,9 +26,9 @@ class StubNegotiator2 extends XmppFeatureNegotiatorBase {
   bool called;
   
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     called = true;
-    state = NegotiatorState.done;
+    return const Result(NegotiatorState.done);
   }
 }
 
@@ -47,8 +47,8 @@ void main() {
     from="test.server"
     xml:lang="en">
   <stream:features xmlns="http://etherx.jabber.org/streams">
-    <example1 xmlns="im:moxxy:example1" />
-    <example2 xmlns="im:moxxy:example2" />
+    <example1 xmlns="im:moxxmpp:example1" />
+    <example2 xmlns="im:moxxmpp:example2" />
   </stream:features>''',
       ),
     ],

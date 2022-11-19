@@ -1,12 +1,13 @@
 import 'dart:convert';
-
 import 'package:logging/logging.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/negotiators/sasl/errors.dart';
 import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/nonza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 
 class SaslPlainAuthNonza extends SaslAuthNonza {
   SaslPlainAuthNonza(String username, String password) : super(
@@ -15,7 +16,6 @@ class SaslPlainAuthNonza extends SaslAuthNonza {
 }
 
 class SaslPlainNegotiator extends SaslNegotiator {
-  
   SaslPlainNegotiator()
     : _authSent = false,
       _log = Logger('SaslPlainNegotiator'),
@@ -41,7 +41,7 @@ class SaslPlainNegotiator extends SaslNegotiator {
   }
 
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     if (!_authSent) {
       final settings = attributes.getConnectionSettings();
       attributes.sendNonza(
@@ -49,17 +49,17 @@ class SaslPlainNegotiator extends SaslNegotiator {
         redact: SaslPlainAuthNonza('******', '******').toXml(),
       );
       _authSent = true;
+      return const Result(NegotiatorState.ready);
     } else {
       final tag = nonza.tag;
       if (tag == 'success') {
         await attributes.sendEvent(AuthenticationSuccessEvent());
-        state = NegotiatorState.done;
+        return const Result(NegotiatorState.done);
       } else {
         // We assume it's a <failure/>
         final error = nonza.children.first.tag;
         await attributes.sendEvent(AuthenticationFailedEvent(error));
-        
-        state = NegotiatorState.error;
+        return Result(SaslFailedError());
       }
     }
   }

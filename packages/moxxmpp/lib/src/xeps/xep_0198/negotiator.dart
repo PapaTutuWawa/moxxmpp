@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/state.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
@@ -23,7 +24,6 @@ enum _StreamManagementNegotiatorState {
 ///       StreamManagementManager at least once before connecting, if stream resumption
 ///       is wanted.
 class StreamManagementNegotiator extends XmppFeatureNegotiatorBase {
-  
   StreamManagementNegotiator()
     : _state = _StreamManagementNegotiatorState.ready,
       _supported = false,
@@ -59,7 +59,7 @@ class StreamManagementNegotiator extends XmppFeatureNegotiatorBase {
   }
       
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     // negotiate is only called when we matched the stream feature, so we know
     // that the server advertises it.
     _supported = true;
@@ -80,7 +80,8 @@ class StreamManagementNegotiator extends XmppFeatureNegotiatorBase {
           _state = _StreamManagementNegotiatorState.enableRequested;
           attributes.sendNonza(StreamManagementEnableNonza());
         }
-        break;
+
+        return const Result(NegotiatorState.ready);
         case _StreamManagementNegotiatorState.resumeRequested:
           if (nonza.tag == 'resumed') {
             _log.finest('Stream Management resumption successful');
@@ -97,7 +98,7 @@ class StreamManagementNegotiator extends XmppFeatureNegotiatorBase {
 
             _resumeFailed = false;
             _isResumed = true;
-            state = NegotiatorState.skipRest;
+            return const Result(NegotiatorState.skipRest);
           } else {
             // We assume it is <failed />
             _log.info('Stream resumption failed. Expected <resumed />, got ${nonza.tag}, Proceeding with new stream...');
@@ -113,9 +114,8 @@ class StreamManagementNegotiator extends XmppFeatureNegotiatorBase {
             _resumeFailed = true;
             _isResumed = false;
             _state = _StreamManagementNegotiatorState.ready;
-            state = NegotiatorState.retryLater;
+            return const Result(NegotiatorState.retryLater);
           }
-        break;
       case _StreamManagementNegotiatorState.enableRequested:
         if (nonza.tag == 'enabled') {
           _log.finest('Stream Management enabled');
@@ -133,14 +133,12 @@ class StreamManagementNegotiator extends XmppFeatureNegotiatorBase {
             ),
           );
 
-          state = NegotiatorState.done;
+          return const Result(NegotiatorState.done);
         } else {
           // We assume a <failed />
           _log.warning('Stream Management enablement failed');
-          state = NegotiatorState.done;
+          return const Result(NegotiatorState.done);
         }
-
-        break;
     }
   }
 

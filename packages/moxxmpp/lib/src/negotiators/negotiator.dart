@@ -1,10 +1,12 @@
 import 'package:moxlib/moxlib.dart';
+import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 
 /// The state a negotiator is currently in
 enum NegotiatorState {
@@ -14,15 +16,15 @@ enum NegotiatorState {
   done,
   // Cancel the current attempt but we are not done
   retryLater,
-  // The negotiator is in an error state
-  error,
   // Skip the rest of the negotiation and assume the stream ready. Only use this when
   // using stream restoration XEPs, like Stream Management.
   skipRest,
 }
 
-class NegotiatorAttributes {
+/// A base class for all errors that may occur during feature negotiation
+abstract class NegotiatorError extends XmppError {}
 
+class NegotiatorAttributes {
   const NegotiatorAttributes(
     this.sendNonza,
     this.getConnectionSettings,
@@ -97,7 +99,7 @@ abstract class XmppFeatureNegotiatorBase {
   /// must switch some internal state to prevent getting matched immediately again.
   /// If ready is returned, then the negotiator indicates that it is not done with
   /// negotiation.
-  Future<void> negotiate(XMLNode nonza);
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza);
 
   /// Reset the negotiator to a state that negotation can happen again.
   void reset() {

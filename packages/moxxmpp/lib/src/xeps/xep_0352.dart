@@ -4,6 +4,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 
 class CSIActiveNonza extends XMLNode {
   CSIActiveNonza() : super(
@@ -32,11 +33,11 @@ class CSINegotiator extends XmppFeatureNegotiatorBase {
   bool get isSupported => _supported;
   
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     // negotiate is only called when the negotiator matched, meaning the server
     // advertises CSI.
     _supported = true;
-    state = NegotiatorState.done;
+    return const Result(NegotiatorState.done);
   }
 
   @override

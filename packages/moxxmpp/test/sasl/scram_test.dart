@@ -128,9 +128,9 @@ void main() {
         'c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=',
       );
 
-      await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj02cnJpVFJCaTIzV3BSUi93dHVwK21NaFVaVW4vZEI1bkxUSlJzamw5NUc0PQ==</success>"));
+      final result = await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj02cnJpVFJCaTIzV3BSUi93dHVwK21NaFVaVW4vZEI1bkxUSlJzamw5NUc0PQ==</success>"));
 
-      expect(negotiator.state, NegotiatorState.done);
+      expect(result.get<NegotiatorState>(), NegotiatorState.done);
   });
   
   test('Test a positive server signature check', () async {
@@ -150,9 +150,9 @@ void main() {
 
       await negotiator.negotiate(scramSha1StreamFeatures);
       await negotiator.negotiate(XMLNode.fromString("<challenge xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>cj1meWtvK2QybGJiRmdPTlJ2OXFreGRhd0wzcmZjTkhZSlkxWlZ2V1ZzN2oscz1RU1hDUitRNnNlazhiZjkyLGk9NDA5Ng==</challenge>"));
-      await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1ybUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
+      final result = await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1ybUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
 
-      expect(negotiator.state, NegotiatorState.done);
+      expect(result.get<NegotiatorState>(), NegotiatorState.done);
   });
 
   test('Test a negative server signature check', () async {
@@ -170,11 +170,15 @@ void main() {
         ),
       );
 
-      await negotiator.negotiate(scramSha1StreamFeatures);
-      await negotiator.negotiate(XMLNode.fromString("<challenge xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>cj1meWtvK2QybGJiRmdPTlJ2OXFreGRhd0wzcmZjTkhZSlkxWlZ2V1ZzN2oscz1RU1hDUitRNnNlazhiZjkyLGk9NDA5Ng==</challenge>"));
-      await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1zbUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
+      var result;
+      result = await negotiator.negotiate(scramSha1StreamFeatures);
+      expect(result.isType<NegotiatorState>(), true);
 
-      expect(negotiator.state, NegotiatorState.error);
+      result = await negotiator.negotiate(XMLNode.fromString("<challenge xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>cj1meWtvK2QybGJiRmdPTlJ2OXFreGRhd0wzcmZjTkhZSlkxWlZ2V1ZzN2oscz1RU1hDUitRNnNlazhiZjkyLGk9NDA5Ng==</challenge>"));
+      expect(result.isType<NegotiatorState>(), true);
+
+      result = await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1zbUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
+      expect(result.isType<NegotiatorError>(), true);
   });
 
   test('Test a resetting the SCRAM negotiator', () async {
@@ -194,14 +198,14 @@ void main() {
 
       await negotiator.negotiate(scramSha1StreamFeatures);
       await negotiator.negotiate(XMLNode.fromString("<challenge xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>cj1meWtvK2QybGJiRmdPTlJ2OXFreGRhd0wzcmZjTkhZSlkxWlZ2V1ZzN2oscz1RU1hDUitRNnNlazhiZjkyLGk9NDA5Ng==</challenge>"));
-      await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1ybUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
-      expect(negotiator.state, NegotiatorState.done);
+      final result1 = await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1ybUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
+      expect(result1.get<NegotiatorState>(), NegotiatorState.done);
 
       // Reset and try again
       negotiator.reset();
       await negotiator.negotiate(scramSha1StreamFeatures);
       await negotiator.negotiate(XMLNode.fromString("<challenge xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>cj1meWtvK2QybGJiRmdPTlJ2OXFreGRhd0wzcmZjTkhZSlkxWlZ2V1ZzN2oscz1RU1hDUitRNnNlazhiZjkyLGk9NDA5Ng==</challenge>"));
-      await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1ybUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
-      expect(negotiator.state, NegotiatorState.done);
+      final result2 = await negotiator.negotiate(XMLNode.fromString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>dj1ybUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</success>"));
+      expect(result2.get<NegotiatorState>(), NegotiatorState.done);
   });
 }

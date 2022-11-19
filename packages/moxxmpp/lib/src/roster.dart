@@ -10,6 +10,7 @@ import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/error.dart';
+import 'package:moxxmpp/src/types/result.dart';
 
 const rosterErrorNoQuery = 1;
 const rosterErrorNonResult = 2;
@@ -53,11 +54,11 @@ class RosterFeatureNegotiator extends XmppFeatureNegotiatorBase {
   bool get isSupported => _supported;
   
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     // negotiate is only called when the negotiator matched, meaning the server
     // advertises roster versioning.
     _supported = true;
-    state = NegotiatorState.done;
+    return const Result(NegotiatorState.done);
   }
 
   @override

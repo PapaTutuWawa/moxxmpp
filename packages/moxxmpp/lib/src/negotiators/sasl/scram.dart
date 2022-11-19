@@ -1,16 +1,17 @@
 import 'dart:convert';
 import 'dart:math' show Random;
-
 import 'package:cryptography/cryptography.dart';
 import 'package:logging/logging.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/negotiators/sasl/errors.dart';
 import 'package:moxxmpp/src/negotiators/sasl/kv.dart';
 import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/nonza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 import 'package:random_string/random_string.dart';
 import 'package:saslprep/saslprep.dart';
 
@@ -89,7 +90,6 @@ enum ScramState {
 const gs2Header = 'n,,';
 
 class SaslScramNegotiator extends SaslNegotiator {
-  
   // NOTE: NEVER, and I mean, NEVER set clientNonce or initalMessageNoGS2. They are just there for testing
   SaslScramNegotiator(
     int priority,
@@ -197,7 +197,7 @@ class SaslScramNegotiator extends SaslNegotiator {
   }
   
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     switch (_scramState) {
       case ScramState.preSent:
         if (clientNonce == null || clientNonce == '') {
@@ -211,15 +211,14 @@ class SaslScramNegotiator extends SaslNegotiator {
           SaslScramAuthNonza(body: base64.encode(utf8.encode(gs2Header + initialMessageNoGS2)), type: hashType),
           redact: SaslScramAuthNonza(body: '******', type: hashType).toXml(),
         );
-        break;
+        return const Result(NegotiatorState.ready);
       case ScramState.initialMessageSent:
         if (nonza.tag != 'challenge') {
           final error = nonza.children.first.tag;
           await attributes.sendEvent(AuthenticationFailedEvent(error));
 
-          state = NegotiatorState.error;
           _scramState = ScramState.error;
-          return;
+          return Result(SaslFailedError());
         }
 
         final challengeBase64 = nonza.innerText();
@@ -230,15 +229,14 @@ class SaslScramNegotiator extends SaslNegotiator {
           SaslScramResponseNonza(body: responseBase64),
           redact: SaslScramResponseNonza(body: '******').toXml(),
         );
-        return;
+        return const Result(NegotiatorState.ready);
       case ScramState.challengeResponseSent:
         if (nonza.tag != 'success') {
           // We assume it's a <failure />
           final error = nonza.children.first.tag;
           await attributes.sendEvent(AuthenticationFailedEvent(error));
           _scramState = ScramState.error;
-          state = NegotiatorState.error;
-          return;
+          return Result(SaslFailedError());
         }
 
         // NOTE: This assumes that the string is always "v=..." and contains no other parameters
@@ -248,16 +246,13 @@ class SaslScramNegotiator extends SaslNegotiator {
           //final error = nonza.children.first.tag;
           //attributes.sendEvent(AuthenticationFailedEvent(error));
           _scramState = ScramState.error;
-          state = NegotiatorState.error;
-          return;
+          return Result(SaslFailedError());
         }
 
         await attributes.sendEvent(AuthenticationSuccessEvent());
-        state = NegotiatorState.done;
-        return;
+        return const Result(NegotiatorState.done);
       case ScramState.error:
-        state = NegotiatorState.error;
-        return;
+        return Result(SaslFailedError());
     }
   }
 

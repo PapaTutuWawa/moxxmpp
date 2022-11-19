@@ -4,8 +4,11 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:uuid/uuid.dart';
+
+class ResourceBindingFailedError extends NegotiatorError {}
 
 class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
 
@@ -23,7 +26,7 @@ class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
   }
   
   @override
-  Future<void> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
     if (!_requestSent) {
       final stanza = XMLNode.xmlns(
         tag: 'iq',
@@ -42,10 +45,10 @@ class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
 
       _requestSent = true;
       attributes.sendNonza(stanza);
+      return const Result(NegotiatorState.ready);
     } else {
       if (nonza.tag != 'iq' || nonza.attributes['type'] != 'result') {
-        state = NegotiatorState.error;
-        return;
+        return Result(ResourceBindingFailedError());
       }
 
       final bind = nonza.firstTag('bind')!;
@@ -53,7 +56,7 @@ class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
       final resource = jid.innerText().split('/')[1];
 
       await attributes.sendEvent(ResourceBindingSuccessEvent(resource: resource));
-      state = NegotiatorState.done;
+      return const Result(NegotiatorState.done);
     }
   }
   
