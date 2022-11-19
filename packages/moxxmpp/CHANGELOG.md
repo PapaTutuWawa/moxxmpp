@@ -1,3 +1,9 @@
+## 0.1.3
+
+ - **REFACTOR**: Replace MayFail by Result.
+ - **FIX**: Remove the old Results API.
+ - **FEAT**: Rework how the negotiator system works.
+
 ## 0.1.2+3
 
  - **FIX**: SASL SCRAM-SHA-{256,512} should now work.
