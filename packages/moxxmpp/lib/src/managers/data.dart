@@ -6,6 +6,7 @@ import 'package:moxxmpp/src/xeps/xep_0203.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0380.dart';
 import 'package:moxxmpp/src/xeps/xep_0385.dart';
+import 'package:moxxmpp/src/xeps/xep_0424.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
@@ -55,6 +56,9 @@ class StanzaHandlerData with _$StanzaHandlerData {
       // This is for stanza handlers that are not part of the XMPP library but still need
       // pass data around.
       @Default(<String, dynamic>{}) Map<String, dynamic> other,
+      // If non-null, then it indicates the origin Id of the message that should be
+      // retracted
+      MessageRetractionData? messageRetraction,
     }
   ) = _StanzaHandlerData;
 }

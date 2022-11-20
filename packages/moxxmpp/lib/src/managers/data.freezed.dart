@@ -54,7 +54,11 @@ mixin _$StanzaHandlerData {
   DelayedDelivery? get delayedDelivery =>
       throw _privateConstructorUsedError; // This is for stanza handlers that are not part of the XMPP library but still need
 // pass data around.
-  Map<String, dynamic> get other => throw _privateConstructorUsedError;
+  Map<String, dynamic> get other =>
+      throw _privateConstructorUsedError; // If non-null, then it indicates the origin Id of the message that should be
+// retracted
+  MessageRetractionData? get messageRetraction =>
+      throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $StanzaHandlerDataCopyWith<StanzaHandlerData> get copyWith =>
@@ -87,7 +91,8 @@ abstract class $StanzaHandlerDataCopyWith<$Res> {
       bool encrypted,
       ExplicitEncryptionType? encryptionType,
       DelayedDelivery? delayedDelivery,
-      Map<String, dynamic> other});
+      Map<String, dynamic> other,
+      MessageRetractionData? messageRetraction});
 }
 
 /// @nodoc
@@ -122,6 +127,7 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
     Object? encryptionType = freezed,
     Object? delayedDelivery = freezed,
     Object? other = freezed,
+    Object? messageRetraction = freezed,
   }) {
     return _then(_value.copyWith(
       done: done == freezed
@@ -208,6 +214,10 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
           ? _value.other
           : other // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>,
+      messageRetraction: messageRetraction == freezed
+          ? _value.messageRetraction
+          : messageRetraction // ignore: cast_nullable_to_non_nullable
+              as MessageRetractionData?,
     ));
   }
 }
@@ -240,7 +250,8 @@ abstract class _$$_StanzaHandlerDataCopyWith<$Res>
       bool encrypted,
       ExplicitEncryptionType? encryptionType,
       DelayedDelivery? delayedDelivery,
-      Map<String, dynamic> other});
+      Map<String, dynamic> other,
+      MessageRetractionData? messageRetraction});
 }
 
 /// @nodoc
@@ -277,6 +288,7 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
     Object? encryptionType = freezed,
     Object? delayedDelivery = freezed,
     Object? other = freezed,
+    Object? messageRetraction = freezed,
   }) {
     return _then(_$_StanzaHandlerData(
       done == freezed
@@ -363,6 +375,10 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
           ? _value._other
           : other // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>,
+      messageRetraction: messageRetraction == freezed
+          ? _value.messageRetraction
+          : messageRetraction // ignore: cast_nullable_to_non_nullable
+              as MessageRetractionData?,
     ));
   }
 }
@@ -387,7 +403,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
       this.encrypted = false,
       this.encryptionType,
       this.delayedDelivery,
-      final Map<String, dynamic> other = const <String, dynamic>{}})
+      final Map<String, dynamic> other = const <String, dynamic>{},
+      this.messageRetraction})
       : _other = other;
 
 // Indicates to the runner that processing is now done. This means that all
@@ -463,9 +480,14 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
     return EqualUnmodifiableMapView(_other);
   }
 
+// If non-null, then it indicates the origin Id of the message that should be
+// retracted
+  @override
+  final MessageRetractionData? messageRetraction;
+
   @override
   String toString() {
-    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other)';
+    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction)';
   }
 
   @override
@@ -501,7 +523,9 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
                 .equals(other.encryptionType, encryptionType) &&
             const DeepCollectionEquality()
                 .equals(other.delayedDelivery, delayedDelivery) &&
-            const DeepCollectionEquality().equals(other._other, this._other));
+            const DeepCollectionEquality().equals(other._other, this._other) &&
+            const DeepCollectionEquality()
+                .equals(other.messageRetraction, messageRetraction));
   }
 
   @override
@@ -527,7 +551,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
         const DeepCollectionEquality().hash(encrypted),
         const DeepCollectionEquality().hash(encryptionType),
         const DeepCollectionEquality().hash(delayedDelivery),
-        const DeepCollectionEquality().hash(_other)
+        const DeepCollectionEquality().hash(_other),
+        const DeepCollectionEquality().hash(messageRetraction)
       ]);
 
   @JsonKey(ignore: true)
@@ -556,7 +581,8 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
       final bool encrypted,
       final ExplicitEncryptionType? encryptionType,
       final DelayedDelivery? delayedDelivery,
-      final Map<String, dynamic> other}) = _$_StanzaHandlerData;
+      final Map<String, dynamic> other,
+      final MessageRetractionData? messageRetraction}) = _$_StanzaHandlerData;
 
   @override // Indicates to the runner that processing is now done. This means that all
 // pre-processing is done and no other handlers should be consulted.
@@ -606,6 +632,9 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
   @override // This is for stanza handlers that are not part of the XMPP library but still need
 // pass data around.
   Map<String, dynamic> get other;
+  @override // If non-null, then it indicates the origin Id of the message that should be
+// retracted
+  MessageRetractionData? get messageRetraction;
   @override
   @JsonKey(ignore: true)
   _$$_StanzaHandlerDataCopyWith<_$_StanzaHandlerData> get copyWith =>

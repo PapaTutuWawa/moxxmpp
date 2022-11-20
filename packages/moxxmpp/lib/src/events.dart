@@ -8,6 +8,7 @@ import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0385.dart';
+import 'package:moxxmpp/src/xeps/xep_0424.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
@@ -71,6 +72,7 @@ class MessageEvent extends XmppEvent {
     this.fun,
     this.funReplacement,
     this.funCancellation,
+    this.messageRetraction,
   });
   final String body;
   final JID fromJid;
@@ -90,6 +92,7 @@ class MessageEvent extends XmppEvent {
   final String? funReplacement;
   final String? funCancellation;
   final bool encrypted;
+  final MessageRetractionData? messageRetraction;
   final Map<String, dynamic> other;
 }
 

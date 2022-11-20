@@ -13,12 +13,12 @@ import 'package:moxxmpp/src/xeps/xep_0085.dart';
 import 'package:moxxmpp/src/xeps/xep_0184.dart';
 import 'package:moxxmpp/src/xeps/xep_0333.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
+import 'package:moxxmpp/src/xeps/xep_0424.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
 
 class MessageDetails {
-
   const MessageDetails({
     required this.to,
     this.body,
@@ -35,6 +35,7 @@ class MessageDetails {
     this.funReplacement,
     this.funCancellation,
     this.shouldEncrypt = false,
+    this.messageRetraction,
   });
   final String to;
   final String? body;
@@ -51,6 +52,7 @@ class MessageDetails {
   final String? funReplacement;
   final String? funCancellation;
   final bool shouldEncrypt;
+  final MessageRetractionData? messageRetraction;
 }
 
 class MessageManager extends XmppManagerBase {
@@ -95,6 +97,7 @@ class MessageManager extends XmppManagerBase {
       funReplacement: state.funReplacement,
       funCancellation: state.funCancellation,
       encrypted: state.encrypted,
+      messageRetraction: state.messageRetraction,
       other: state.other,
     ),);
 
@@ -159,6 +162,8 @@ class MessageManager extends XmppManagerBase {
         } else if (firstSource is StatelessFileSharingEncryptedSource) {
           body = firstSource.source.url;
         }
+      } else if (details.messageRetraction?.fallback != null) {
+        body = details.messageRetraction!.fallback;
       }
 
       stanza.addChild(
@@ -215,6 +220,33 @@ class MessageManager extends XmppManagerBase {
           },
         ),
       );
+    }
+
+    if (details.messageRetraction != null) {
+      stanza.addChild(
+        XMLNode.xmlns(
+          tag: 'apply-to',
+          xmlns: fasteningXmlns,
+          attributes: <String, String>{
+            'id': details.messageRetraction!.id,
+          },
+          children: [
+            XMLNode.xmlns(
+              tag: 'retract',
+              xmlns: messageRetractionXmlns,
+            ),
+          ],
+        ),
+      );
+
+      if (details.messageRetraction!.fallback != null) {
+        stanza.addChild(
+          XMLNode.xmlns(
+            tag: 'fallback',
+            xmlns: fallbackIndicationXmlns,
+          ),
+        );
+      }
     }
     
     getAttributes().sendStanza(stanza, awaitable: false);

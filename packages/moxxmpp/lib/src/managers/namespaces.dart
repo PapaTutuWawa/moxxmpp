@@ -24,3 +24,4 @@ const omemoManager = 'org.moxxmpp.omemomanager';
 const emeManager = 'org.moxxmpp.ememanager';
 const cryptographicHashManager = 'org.moxxmpp.cryptographichashmanager';
 const delayedDeliveryManager = 'org.moxxmpp.delayeddeliverymanager';
+const messageRetractionManager = 'org.moxxmpp.messageretractionmanager';

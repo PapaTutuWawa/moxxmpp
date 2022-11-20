@@ -114,6 +114,15 @@ const simsXmlns = 'urn:xmpp:sims:1';
 // XEP-0420
 const sceXmlns = 'urn:xmpp:sce:1';
 
+// XEP-0422
+const fasteningXmlns = 'urn:xmpp:fasten:0';
+
+// XEP-0424
+const messageRetractionXmlns = 'urn:xmpp:message-retract:0';
+
+// XEp-0428
+const fallbackIndicationXmlns = 'urn:xmpp:fallback:0';
+
 // XEP-0446
 const fileMetadataXmlns = 'urn:xmpp:file:metadata:0';
 
