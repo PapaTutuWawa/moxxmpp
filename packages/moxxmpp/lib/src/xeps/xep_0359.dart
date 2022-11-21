@@ -58,8 +58,16 @@ class StableIdManager extends XmppManagerBase {
     String? stanzaIdBy;
     final originIdTag = message.firstTag('origin-id', xmlns: stableIdXmlns);
     final stanzaIdTag = message.firstTag('stanza-id', xmlns: stableIdXmlns);
-    if (originIdTag != null || stanzaIdTag != null) {
-      logger.finest('Found Unique and Stable Stanza Id tag');
+
+    // Process the origin id
+    if (originIdTag != null) {
+      logger.finest('Found origin Id tag');
+      originId = originIdTag.attributes['id']! as String;
+    }
+
+    // Process the stanza id tag
+    if (stanzaIdTag != null) {
+      logger.finest('Found stanza Id tag');
       final attrs = getAttributes();
       final disco = attrs.getManagerById<DiscoManager>(discoManager)!;
       final result = await disco.discoInfoQuery(from.toString());
@@ -68,17 +76,10 @@ class StableIdManager extends XmppManagerBase {
         logger.finest('Got info for ${from.toString()}');
         if (info.features.contains(stableIdXmlns)) {
           logger.finest('${from.toString()} supports $stableIdXmlns.');
-
-          if (originIdTag != null) {
-            originId = originIdTag.attributes['id']! as String;
-          }
-
-          if (stanzaIdTag != null) {
-            stanzaId = stanzaIdTag.attributes['id']! as String;
-            stanzaIdBy = stanzaIdTag.attributes['by']! as String;
-          }
+          stanzaId = stanzaIdTag.attributes['id']! as String;
+          stanzaIdBy = stanzaIdTag.attributes['by']! as String;
         } else {
-          logger.finest('${from.toString()} does not support $stableIdXmlns. Ignoring... ');
+          logger.finest('${from.toString()} does not support $stableIdXmlns. Ignoring stanza id... ');
         }
       } else {
         logger.finest('Failed to find out if ${from.toString()} supports $stableIdXmlns. Ignoring... ');
