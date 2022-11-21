@@ -1,3 +1,8 @@
+## 0.1.4
+
+ - **FIX**: Only stanza-id required 'sid:0' support.
+ - **FEAT**: Implement parsing and sending of retractions.
+
 ## 0.1.3+1
 
  - **FIX**: Expose the error classes.
