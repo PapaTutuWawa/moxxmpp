@@ -63,6 +63,7 @@ class MessageEvent extends XmppEvent {
     required this.isMarkable,
     required this.encrypted,
     required this.other,
+    this.error,
     this.type,
     this.oob,
     this.sfs,
@@ -74,6 +75,7 @@ class MessageEvent extends XmppEvent {
     this.funCancellation,
     this.messageRetraction,
   });
+  final StanzaError? error;
   final String body;
   final JID fromJid;
   final JID toJid;

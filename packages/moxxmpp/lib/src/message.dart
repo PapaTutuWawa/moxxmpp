@@ -99,6 +99,7 @@ class MessageManager extends XmppManagerBase {
       encrypted: state.encrypted,
       messageRetraction: state.messageRetraction,
       other: state.other,
+      error: StanzaError.fromStanza(message),
     ),);
 
     return state.copyWith(done: true);

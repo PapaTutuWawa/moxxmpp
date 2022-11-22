@@ -1,6 +1,28 @@
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
+/// A simple description of the <error /> element that may be inside a stanza
+class StanzaError {
+  StanzaError(this.type, this.error);
+  String type;
+  String error;
+
+  /// Returns a StanzaError if [stanza] contains a <error /> element. If not, returns
+  /// null.
+  static StanzaError? fromStanza(Stanza stanza) {
+    final error = stanza.firstTag('error');
+    if (error == null) return null;
+
+    final stanzaError = error.firstTagByXmlns(fullStanzaXmlns);
+    if (stanzaError == null) return null;
+
+    return StanzaError(
+      error.attributes['type']! as String,
+      stanzaError.tag,
+    );
+  }
+}
+
 class Stanza extends XMLNode {
   // ignore: use_super_parameters
   Stanza({ this.to, this.from, this.type, this.id, List<XMLNode> children = const [], required String tag, Map<String, String> attributes = const {} }) : super(
