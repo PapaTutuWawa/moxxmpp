@@ -1,3 +1,7 @@
+## 0.1.5
+
+ - **FEAT**: Message events now contain the stanza error, if available.
+
 ## 0.1.4
 
  - **FIX**: Only stanza-id required 'sid:0' support.
