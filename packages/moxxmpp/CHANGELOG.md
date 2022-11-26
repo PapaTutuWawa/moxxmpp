@@ -1,3 +1,7 @@
+## 0.1.6+1
+
+ - **FIX**: Fix LMC not working.
+
 ## 0.1.6
 
  - **FEAT**: Implement XEP-0308.
