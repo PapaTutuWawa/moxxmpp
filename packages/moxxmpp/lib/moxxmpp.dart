@@ -59,6 +59,7 @@ export 'package:moxxmpp/src/xeps/xep_0203.dart';
 export 'package:moxxmpp/src/xeps/xep_0280.dart';
 export 'package:moxxmpp/src/xeps/xep_0297.dart';
 export 'package:moxxmpp/src/xeps/xep_0300.dart';
+export 'package:moxxmpp/src/xeps/xep_0308.dart';
 export 'package:moxxmpp/src/xeps/xep_0333.dart';
 export 'package:moxxmpp/src/xeps/xep_0334.dart';
 export 'package:moxxmpp/src/xeps/xep_0352.dart';

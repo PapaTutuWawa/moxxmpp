@@ -30,8 +30,8 @@ class LastMessageCorrectionManager extends XmppManagerBase {
   List<StanzaHandler> getIncomingStanzaHandlers() => [
     StanzaHandler(
       stanzaTag: 'message',
-      tagName: 'reply',
-      tagXmlns: replyXmlns,
+      tagName: 'replace',
+      tagXmlns: lmcXmlns,
       callback: _onMessage,
       // Before the message handler
       priority: -99,
@@ -42,9 +42,7 @@ class LastMessageCorrectionManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
   
   Future<StanzaHandlerData> _onMessage(Stanza stanza, StanzaHandlerData state) async {
-    final edit = stanza.firstTag('replace', xmlns: lmcXmlns);
-    if (edit == null) return state;
-
+    final edit = stanza.firstTag('replace', xmlns: lmcXmlns)!;
     return state.copyWith(
       lastMessageCorrectionSid: edit.attributes['id']! as String,
     );
