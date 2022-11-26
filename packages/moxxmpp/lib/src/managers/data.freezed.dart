@@ -58,7 +58,8 @@ mixin _$StanzaHandlerData {
       throw _privateConstructorUsedError; // If non-null, then it indicates the origin Id of the message that should be
 // retracted
   MessageRetractionData? get messageRetraction =>
-      throw _privateConstructorUsedError;
+      throw _privateConstructorUsedError; // If non-null, then the message is a correction for the specified stanza Id
+  String? get lastMessageCorrectionSid => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $StanzaHandlerDataCopyWith<StanzaHandlerData> get copyWith =>
@@ -92,7 +93,8 @@ abstract class $StanzaHandlerDataCopyWith<$Res> {
       ExplicitEncryptionType? encryptionType,
       DelayedDelivery? delayedDelivery,
       Map<String, dynamic> other,
-      MessageRetractionData? messageRetraction});
+      MessageRetractionData? messageRetraction,
+      String? lastMessageCorrectionSid});
 }
 
 /// @nodoc
@@ -128,6 +130,7 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
     Object? delayedDelivery = freezed,
     Object? other = freezed,
     Object? messageRetraction = freezed,
+    Object? lastMessageCorrectionSid = freezed,
   }) {
     return _then(_value.copyWith(
       done: done == freezed
@@ -218,6 +221,10 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
           ? _value.messageRetraction
           : messageRetraction // ignore: cast_nullable_to_non_nullable
               as MessageRetractionData?,
+      lastMessageCorrectionSid: lastMessageCorrectionSid == freezed
+          ? _value.lastMessageCorrectionSid
+          : lastMessageCorrectionSid // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -251,7 +258,8 @@ abstract class _$$_StanzaHandlerDataCopyWith<$Res>
       ExplicitEncryptionType? encryptionType,
       DelayedDelivery? delayedDelivery,
       Map<String, dynamic> other,
-      MessageRetractionData? messageRetraction});
+      MessageRetractionData? messageRetraction,
+      String? lastMessageCorrectionSid});
 }
 
 /// @nodoc
@@ -289,6 +297,7 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
     Object? delayedDelivery = freezed,
     Object? other = freezed,
     Object? messageRetraction = freezed,
+    Object? lastMessageCorrectionSid = freezed,
   }) {
     return _then(_$_StanzaHandlerData(
       done == freezed
@@ -379,6 +388,10 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
           ? _value.messageRetraction
           : messageRetraction // ignore: cast_nullable_to_non_nullable
               as MessageRetractionData?,
+      lastMessageCorrectionSid: lastMessageCorrectionSid == freezed
+          ? _value.lastMessageCorrectionSid
+          : lastMessageCorrectionSid // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -404,7 +417,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
       this.encryptionType,
       this.delayedDelivery,
       final Map<String, dynamic> other = const <String, dynamic>{},
-      this.messageRetraction})
+      this.messageRetraction,
+      this.lastMessageCorrectionSid})
       : _other = other;
 
 // Indicates to the runner that processing is now done. This means that all
@@ -484,10 +498,13 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
 // retracted
   @override
   final MessageRetractionData? messageRetraction;
+// If non-null, then the message is a correction for the specified stanza Id
+  @override
+  final String? lastMessageCorrectionSid;
 
   @override
   String toString() {
-    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction)';
+    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction, lastMessageCorrectionSid: $lastMessageCorrectionSid)';
   }
 
   @override
@@ -525,7 +542,9 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
                 .equals(other.delayedDelivery, delayedDelivery) &&
             const DeepCollectionEquality().equals(other._other, this._other) &&
             const DeepCollectionEquality()
-                .equals(other.messageRetraction, messageRetraction));
+                .equals(other.messageRetraction, messageRetraction) &&
+            const DeepCollectionEquality().equals(
+                other.lastMessageCorrectionSid, lastMessageCorrectionSid));
   }
 
   @override
@@ -552,7 +571,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
         const DeepCollectionEquality().hash(encryptionType),
         const DeepCollectionEquality().hash(delayedDelivery),
         const DeepCollectionEquality().hash(_other),
-        const DeepCollectionEquality().hash(messageRetraction)
+        const DeepCollectionEquality().hash(messageRetraction),
+        const DeepCollectionEquality().hash(lastMessageCorrectionSid)
       ]);
 
   @JsonKey(ignore: true)
@@ -582,7 +602,8 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
       final ExplicitEncryptionType? encryptionType,
       final DelayedDelivery? delayedDelivery,
       final Map<String, dynamic> other,
-      final MessageRetractionData? messageRetraction}) = _$_StanzaHandlerData;
+      final MessageRetractionData? messageRetraction,
+      final String? lastMessageCorrectionSid}) = _$_StanzaHandlerData;
 
   @override // Indicates to the runner that processing is now done. This means that all
 // pre-processing is done and no other handlers should be consulted.
@@ -635,6 +656,8 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
   @override // If non-null, then it indicates the origin Id of the message that should be
 // retracted
   MessageRetractionData? get messageRetraction;
+  @override // If non-null, then the message is a correction for the specified stanza Id
+  String? get lastMessageCorrectionSid;
   @override
   @JsonKey(ignore: true)
   _$$_StanzaHandlerDataCopyWith<_$_StanzaHandlerData> get copyWith =>

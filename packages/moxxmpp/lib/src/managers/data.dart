@@ -59,6 +59,8 @@ class StanzaHandlerData with _$StanzaHandlerData {
       // If non-null, then it indicates the origin Id of the message that should be
       // retracted
       MessageRetractionData? messageRetraction,
+      // If non-null, then the message is a correction for the specified stanza Id
+      String? lastMessageCorrectionSid,
     }
   ) = _StanzaHandlerData;
 }

@@ -74,6 +74,7 @@ class MessageEvent extends XmppEvent {
     this.funReplacement,
     this.funCancellation,
     this.messageRetraction,
+    this.messageCorrectionId,
   });
   final StanzaError? error;
   final String body;
@@ -95,6 +96,7 @@ class MessageEvent extends XmppEvent {
   final String? funCancellation;
   final bool encrypted;
   final MessageRetractionData? messageRetraction;
+  final String? messageCorrectionId;
   final Map<String, dynamic> other;
 }
 

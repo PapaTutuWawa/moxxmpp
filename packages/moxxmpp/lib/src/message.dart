@@ -11,6 +11,7 @@ import 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
 import 'package:moxxmpp/src/xeps/xep_0184.dart';
+import 'package:moxxmpp/src/xeps/xep_0308.dart';
 import 'package:moxxmpp/src/xeps/xep_0333.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0424.dart';
@@ -36,6 +37,7 @@ class MessageDetails {
     this.funCancellation,
     this.shouldEncrypt = false,
     this.messageRetraction,
+    this.lastMessageCorrectionId,
   });
   final String to;
   final String? body;
@@ -53,6 +55,7 @@ class MessageDetails {
   final String? funCancellation;
   final bool shouldEncrypt;
   final MessageRetractionData? messageRetraction;
+  final String? lastMessageCorrectionId;
 }
 
 class MessageManager extends XmppManagerBase {
@@ -98,6 +101,7 @@ class MessageManager extends XmppManagerBase {
       funCancellation: state.funCancellation,
       encrypted: state.encrypted,
       messageRetraction: state.messageRetraction,
+      messageCorrectionId: state.lastMessageCorrectionSid,
       other: state.other,
       error: StanzaError.fromStanza(message),
     ),);
@@ -248,6 +252,14 @@ class MessageManager extends XmppManagerBase {
           ),
         );
       }
+    }
+
+    if (details.lastMessageCorrectionId != null) {
+      stanza.addChild(
+        makeLastMessageCorrectionEdit(
+          details.lastMessageCorrectionId!,
+        ),
+      );
     }
     
     getAttributes().sendStanza(stanza, awaitable: false);

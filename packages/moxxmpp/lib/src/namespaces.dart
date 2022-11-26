@@ -76,6 +76,9 @@ const hashSha3512 = 'sha3-512';
 const hashBlake2b256 = 'blake2b-256';
 const hashBlake2b512 = 'blake2b-512';
 
+// XEP-0308
+const lmcXmlns = 'urn:xmpp:message-correct:0';
+
 // XEP-0333
 const chatMarkersXmlns = 'urn:xmpp:chat-markers:0';
 
