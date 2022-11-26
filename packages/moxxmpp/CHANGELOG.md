@@ -1,3 +1,7 @@
+## 0.1.6
+
+ - **FEAT**: Implement XEP-0308.
+
 ## 0.1.5
 
  - **FEAT**: Message events now contain the stanza error, if available.
