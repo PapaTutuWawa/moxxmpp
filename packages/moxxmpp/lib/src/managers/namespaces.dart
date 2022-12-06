@@ -26,3 +26,4 @@ const cryptographicHashManager = 'org.moxxmpp.cryptographichashmanager';
 const delayedDeliveryManager = 'org.moxxmpp.delayeddeliverymanager';
 const messageRetractionManager = 'org.moxxmpp.messageretractionmanager';
 const lastMessageCorrectionManager = 'org.moxxmpp.lastmessagecorrectionmanager';
+const messageReactionsManager = 'org.moxxmpp.messagereactionsmanager';

@@ -15,6 +15,7 @@ import 'package:moxxmpp/src/xeps/xep_0308.dart';
 import 'package:moxxmpp/src/xeps/xep_0333.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0424.dart';
+import 'package:moxxmpp/src/xeps/xep_0444.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
@@ -38,6 +39,7 @@ class MessageDetails {
     this.shouldEncrypt = false,
     this.messageRetraction,
     this.lastMessageCorrectionId,
+    this.messageReactions,
   });
   final String to;
   final String? body;
@@ -56,6 +58,7 @@ class MessageDetails {
   final bool shouldEncrypt;
   final MessageRetractionData? messageRetraction;
   final String? lastMessageCorrectionId;
+  final MessageReactions? messageReactions;
 }
 
 class MessageManager extends XmppManagerBase {
@@ -102,6 +105,7 @@ class MessageManager extends XmppManagerBase {
       encrypted: state.encrypted,
       messageRetraction: state.messageRetraction,
       messageCorrectionId: state.lastMessageCorrectionSid,
+      messageReactions: state.messageReactions,
       other: state.other,
       error: StanzaError.fromStanza(message),
     ),);
@@ -260,6 +264,10 @@ class MessageManager extends XmppManagerBase {
           details.lastMessageCorrectionId!,
         ),
       );
+    }
+
+    if (details.messageReactions != null) {
+      stanza.addChild(details.messageReactions!.toXml());
     }
     
     getAttributes().sendStanza(stanza, awaitable: false);

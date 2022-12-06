@@ -123,8 +123,11 @@ const fasteningXmlns = 'urn:xmpp:fasten:0';
 // XEP-0424
 const messageRetractionXmlns = 'urn:xmpp:message-retract:0';
 
-// XEp-0428
+// XEP-0428
 const fallbackIndicationXmlns = 'urn:xmpp:fallback:0';
+
+// XEP-0444
+const messageReactionsXmlns = 'urn:xmpp:reactions:0';
 
 // XEP-0446
 const fileMetadataXmlns = 'urn:xmpp:file:metadata:0';

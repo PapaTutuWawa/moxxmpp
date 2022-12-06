@@ -7,6 +7,7 @@ import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0380.dart';
 import 'package:moxxmpp/src/xeps/xep_0385.dart';
 import 'package:moxxmpp/src/xeps/xep_0424.dart';
+import 'package:moxxmpp/src/xeps/xep_0444.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
@@ -61,6 +62,8 @@ class StanzaHandlerData with _$StanzaHandlerData {
       MessageRetractionData? messageRetraction,
       // If non-null, then the message is a correction for the specified stanza Id
       String? lastMessageCorrectionSid,
+      // Reactions data
+      MessageReactions? messageReactions,
     }
   ) = _StanzaHandlerData;
 }
