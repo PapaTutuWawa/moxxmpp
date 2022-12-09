@@ -6,6 +6,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
+import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0385.dart';
 import 'package:moxxmpp/src/xeps/xep_0424.dart';
@@ -77,6 +78,7 @@ class MessageEvent extends XmppEvent {
     this.messageRetraction,
     this.messageCorrectionId,
     this.messageReactions,
+    this.messageProcessingHints,
   });
   final StanzaError? error;
   final String body;
@@ -100,6 +102,7 @@ class MessageEvent extends XmppEvent {
   final MessageRetractionData? messageRetraction;
   final String? messageCorrectionId;
   final MessageReactions? messageReactions;
+  final List<MessageProcessingHint>? messageProcessingHints;
   final Map<String, dynamic> other;
 }
 

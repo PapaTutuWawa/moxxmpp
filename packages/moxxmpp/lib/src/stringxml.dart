@@ -129,6 +129,12 @@ class XMLNode {
     }).toList();
   }
   
+  List<XMLNode> findTagsByXmlns(String xmlns) {
+    return children
+      .where((element) => element.attributes['xmlns'] == xmlns)
+      .toList();
+  }
+  
   /// Returns the inner text of the node. If none is set, returns the "".
   String innerText() {
     return text ?? '';

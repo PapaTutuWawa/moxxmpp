@@ -8,8 +8,18 @@ enum MessageProcessingHint {
   store,
 }
 
-/// NOTE: We do not define a function for turning a Message Processing Hint element into
-///       an enum value since the elements do not concern us as a client.
+MessageProcessingHint messageProcessingHintFromXml(XMLNode element) {
+  switch (element.tag) {
+    case 'no-permanent-store': return MessageProcessingHint.noPermanentStore;
+    case 'no-store': return MessageProcessingHint.noStore;
+    case 'no-copy': return MessageProcessingHint.noCopies;
+    case 'store': return MessageProcessingHint.store;
+  }
+    
+  assert(false, 'Invalid Message Processing Hint: ${element.tag}');
+  return MessageProcessingHint.noStore;
+}
+
 extension XmlExtension on MessageProcessingHint {
   XMLNode toXml() {
     String tag;

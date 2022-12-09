@@ -13,6 +13,7 @@ import 'package:moxxmpp/src/xeps/xep_0085.dart';
 import 'package:moxxmpp/src/xeps/xep_0184.dart';
 import 'package:moxxmpp/src/xeps/xep_0308.dart';
 import 'package:moxxmpp/src/xeps/xep_0333.dart';
+import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0424.dart';
 import 'package:moxxmpp/src/xeps/xep_0444.dart';
@@ -40,6 +41,7 @@ class MessageDetails {
     this.messageRetraction,
     this.lastMessageCorrectionId,
     this.messageReactions,
+    this.messageProcessingHints,
   });
   final String to;
   final String? body;
@@ -59,6 +61,7 @@ class MessageDetails {
   final MessageRetractionData? messageRetraction;
   final String? lastMessageCorrectionId;
   final MessageReactions? messageReactions;
+  final List<MessageProcessingHint>? messageProcessingHints;
 }
 
 class MessageManager extends XmppManagerBase {
@@ -84,6 +87,11 @@ class MessageManager extends XmppManagerBase {
     final message = state.stanza;
     final body = message.firstTag('body');
 
+    final hints = List<MessageProcessingHint>.empty(growable: true);
+    for (final element in message.findTagsByXmlns(messageProcessingHintsXmlns)) {
+      hints.add(messageProcessingHintFromXml(element)); 
+    }
+    
     getAttributes().sendEvent(MessageEvent(
       body: body != null ? body.innerText() : '',
       fromJid: JID.fromString(message.attributes['from']! as String),
@@ -106,6 +114,9 @@ class MessageManager extends XmppManagerBase {
       messageRetraction: state.messageRetraction,
       messageCorrectionId: state.lastMessageCorrectionSid,
       messageReactions: state.messageReactions,
+      messageProcessingHints: hints.isEmpty ?
+        null :
+        hints,
       other: state.other,
       error: StanzaError.fromStanza(message),
     ),);
@@ -268,6 +279,12 @@ class MessageManager extends XmppManagerBase {
 
     if (details.messageReactions != null) {
       stanza.addChild(details.messageReactions!.toXml());
+    }
+    
+    if (details.messageProcessingHints != null) {
+      for (final hint in details.messageProcessingHints!) {
+        stanza.addChild(hint.toXml());
+      }
     }
     
     getAttributes().sendStanza(stanza, awaitable: false);
