@@ -186,9 +186,11 @@ class MessageManager extends XmppManagerBase {
         body = details.messageRetraction!.fallback;
       }
 
-      stanza.addChild(
-        XMLNode(tag: 'body', text: body),
-      );
+      if (body != null) {
+        stanza.addChild(
+          XMLNode(tag: 'body', text: body),
+        );
+      }
     }
 
     if (details.requestDeliveryReceipt) {
