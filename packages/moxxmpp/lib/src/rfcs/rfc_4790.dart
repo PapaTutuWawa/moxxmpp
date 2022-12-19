@@ -24,3 +24,28 @@ int ioctetSortComparator(String a, String b) {
   
   return 1;
 }
+
+int ioctetSortComparatorRaw(List<int> a, List<int> b) {
+  if (a.isEmpty && b.isEmpty) {
+    return 0;
+  }
+
+  if (a.isEmpty && b.isNotEmpty) {
+    return -1;
+  }
+
+  if (a.isNotEmpty && b.isEmpty) {
+    return 1;
+  }
+
+  if (a[0] == b[0]) {
+    return ioctetSortComparatorRaw(a.sublist(1), b.sublist(1));
+  }
+
+  // TODO(Unknown): Is this correct?
+  if (a[0] < b[0]) {
+    return -1;
+  }
+  
+  return 1;
+}

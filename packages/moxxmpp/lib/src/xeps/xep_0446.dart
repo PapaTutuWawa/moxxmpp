@@ -4,7 +4,6 @@ import 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
 import 'package:moxxmpp/src/xeps/xep_0300.dart';
 
 class FileMetadataData {
-
   const FileMetadataData({
     this.mediaType,
     this.width,

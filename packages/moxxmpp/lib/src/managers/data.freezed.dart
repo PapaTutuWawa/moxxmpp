@@ -61,7 +61,9 @@ mixin _$StanzaHandlerData {
       throw _privateConstructorUsedError; // If non-null, then the message is a correction for the specified stanza Id
   String? get lastMessageCorrectionSid =>
       throw _privateConstructorUsedError; // Reactions data
-  MessageReactions? get messageReactions => throw _privateConstructorUsedError;
+  MessageReactions? get messageReactions =>
+      throw _privateConstructorUsedError; // The Id of the sticker pack this sticker belongs to
+  String? get stickerPackId => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $StanzaHandlerDataCopyWith<StanzaHandlerData> get copyWith =>
@@ -97,7 +99,8 @@ abstract class $StanzaHandlerDataCopyWith<$Res> {
       Map<String, dynamic> other,
       MessageRetractionData? messageRetraction,
       String? lastMessageCorrectionSid,
-      MessageReactions? messageReactions});
+      MessageReactions? messageReactions,
+      String? stickerPackId});
 }
 
 /// @nodoc
@@ -135,6 +138,7 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
     Object? messageRetraction = freezed,
     Object? lastMessageCorrectionSid = freezed,
     Object? messageReactions = freezed,
+    Object? stickerPackId = freezed,
   }) {
     return _then(_value.copyWith(
       done: done == freezed
@@ -233,6 +237,10 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
           ? _value.messageReactions
           : messageReactions // ignore: cast_nullable_to_non_nullable
               as MessageReactions?,
+      stickerPackId: stickerPackId == freezed
+          ? _value.stickerPackId
+          : stickerPackId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -268,7 +276,8 @@ abstract class _$$_StanzaHandlerDataCopyWith<$Res>
       Map<String, dynamic> other,
       MessageRetractionData? messageRetraction,
       String? lastMessageCorrectionSid,
-      MessageReactions? messageReactions});
+      MessageReactions? messageReactions,
+      String? stickerPackId});
 }
 
 /// @nodoc
@@ -308,6 +317,7 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
     Object? messageRetraction = freezed,
     Object? lastMessageCorrectionSid = freezed,
     Object? messageReactions = freezed,
+    Object? stickerPackId = freezed,
   }) {
     return _then(_$_StanzaHandlerData(
       done == freezed
@@ -406,6 +416,10 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
           ? _value.messageReactions
           : messageReactions // ignore: cast_nullable_to_non_nullable
               as MessageReactions?,
+      stickerPackId: stickerPackId == freezed
+          ? _value.stickerPackId
+          : stickerPackId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -433,7 +447,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
       final Map<String, dynamic> other = const <String, dynamic>{},
       this.messageRetraction,
       this.lastMessageCorrectionSid,
-      this.messageReactions})
+      this.messageReactions,
+      this.stickerPackId})
       : _other = other;
 
 // Indicates to the runner that processing is now done. This means that all
@@ -519,10 +534,13 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
 // Reactions data
   @override
   final MessageReactions? messageReactions;
+// The Id of the sticker pack this sticker belongs to
+  @override
+  final String? stickerPackId;
 
   @override
   String toString() {
-    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction, lastMessageCorrectionSid: $lastMessageCorrectionSid, messageReactions: $messageReactions)';
+    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction, lastMessageCorrectionSid: $lastMessageCorrectionSid, messageReactions: $messageReactions, stickerPackId: $stickerPackId)';
   }
 
   @override
@@ -564,7 +582,9 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
             const DeepCollectionEquality().equals(
                 other.lastMessageCorrectionSid, lastMessageCorrectionSid) &&
             const DeepCollectionEquality()
-                .equals(other.messageReactions, messageReactions));
+                .equals(other.messageReactions, messageReactions) &&
+            const DeepCollectionEquality()
+                .equals(other.stickerPackId, stickerPackId));
   }
 
   @override
@@ -593,7 +613,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
         const DeepCollectionEquality().hash(_other),
         const DeepCollectionEquality().hash(messageRetraction),
         const DeepCollectionEquality().hash(lastMessageCorrectionSid),
-        const DeepCollectionEquality().hash(messageReactions)
+        const DeepCollectionEquality().hash(messageReactions),
+        const DeepCollectionEquality().hash(stickerPackId)
       ]);
 
   @JsonKey(ignore: true)
@@ -625,7 +646,8 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
       final Map<String, dynamic> other,
       final MessageRetractionData? messageRetraction,
       final String? lastMessageCorrectionSid,
-      final MessageReactions? messageReactions}) = _$_StanzaHandlerData;
+      final MessageReactions? messageReactions,
+      final String? stickerPackId}) = _$_StanzaHandlerData;
 
   @override // Indicates to the runner that processing is now done. This means that all
 // pre-processing is done and no other handlers should be consulted.
@@ -682,6 +704,8 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
   String? get lastMessageCorrectionSid;
   @override // Reactions data
   MessageReactions? get messageReactions;
+  @override // The Id of the sticker pack this sticker belongs to
+  String? get stickerPackId;
   @override
   @JsonKey(ignore: true)
   _$$_StanzaHandlerDataCopyWith<_$_StanzaHandlerData> get copyWith =>

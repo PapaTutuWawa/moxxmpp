@@ -16,7 +16,6 @@ import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/helpers.dart';
 
 class PubSubPublishOptions {
-
   const PubSubPublishOptions({
     this.accessModel,
     this.maxItems,
@@ -60,7 +59,6 @@ class PubSubPublishOptions {
 }
 
 class PubSubItem {
-
   const PubSubItem({ required this.id, required this.node, required this.payload });
   final String id;
   final String node;

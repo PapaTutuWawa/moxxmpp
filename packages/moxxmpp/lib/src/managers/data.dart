@@ -64,6 +64,8 @@ class StanzaHandlerData with _$StanzaHandlerData {
       String? lastMessageCorrectionSid,
       // Reactions data
       MessageReactions? messageReactions,
+      // The Id of the sticker pack this sticker belongs to
+      String? stickerPackId,
     }
   ) = _StanzaHandlerData;
 }

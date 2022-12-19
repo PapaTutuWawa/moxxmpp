@@ -141,6 +141,9 @@ const sfsEncryptionAes128GcmNoPaddingXmlns = 'urn:xmpp:ciphers:aes-128-gcm-nopad
 const sfsEncryptionAes256GcmNoPaddingXmlns = 'urn:xmpp:ciphers:aes-256-gcm-nopadding:0';
 const sfsEncryptionAes256CbcPkcs7Xmlns = 'urn:xmpp:ciphers:aes-256-cbc-pkcs7:0';
 
+// XEP-0449
+const stickersXmlns = 'urn:xmpp:stickers:0';
+
 // XEP-0461
 const replyXmlns = 'urn:xmpp:reply:0';
 const fallbackXmlns = 'urn:xmpp:feature-fallback:0';

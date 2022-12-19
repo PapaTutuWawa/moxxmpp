@@ -21,6 +21,11 @@ import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
 
+/// Data used to build a message stanza.
+///
+/// [setOOBFallbackBody] indicates, when using SFS, whether a OOB fallback should be
+/// added. This is recommended when sharing files but may cause issues when the message
+/// stanza should include a SFS element without any fallbacks.
 class MessageDetails {
   const MessageDetails({
     required this.to,
@@ -42,6 +47,8 @@ class MessageDetails {
     this.lastMessageCorrectionId,
     this.messageReactions,
     this.messageProcessingHints,
+    this.stickerPackId,
+    this.setOOBFallbackBody = true,
   });
   final String to;
   final String? body;
@@ -61,7 +68,9 @@ class MessageDetails {
   final MessageRetractionData? messageRetraction;
   final String? lastMessageCorrectionId;
   final MessageReactions? messageReactions;
+  final String? stickerPackId;
   final List<MessageProcessingHint>? messageProcessingHints;
+  final bool setOOBFallbackBody;
 }
 
 class MessageManager extends XmppManagerBase {
@@ -117,6 +126,7 @@ class MessageManager extends XmppManagerBase {
       messageProcessingHints: hints.isEmpty ?
         null :
         hints,
+      stickerPackId: state.stickerPackId,
       other: state.other,
       error: StanzaError.fromStanza(message),
     ),);
@@ -174,7 +184,7 @@ class MessageManager extends XmppManagerBase {
         );
     } else {
       var body = details.body;
-      if (details.sfs != null) {
+      if (details.sfs != null && details.setOOBFallbackBody) {
         // TODO(Unknown): Maybe find a better solution
         final firstSource = details.sfs!.sources.first;
         if (firstSource is StatelessFileSharingUrlSource) {
@@ -207,7 +217,7 @@ class MessageManager extends XmppManagerBase {
       stanza.addChild(details.sfs!.toXML());
 
       final source = details.sfs!.sources.first;
-      if (source is StatelessFileSharingUrlSource) {
+      if (source is StatelessFileSharingUrlSource && details.setOOBFallbackBody) {
         // SFS recommends OOB as a fallback
         stanza.addChild(constructOOBNode(OOBData(url: source.url)));
       }
@@ -287,6 +297,18 @@ class MessageManager extends XmppManagerBase {
       for (final hint in details.messageProcessingHints!) {
         stanza.addChild(hint.toXml());
       }
+    }
+
+    if (details.stickerPackId != null) {
+      stanza.addChild(
+        XMLNode.xmlns(
+          tag: 'sticker',
+          xmlns: stickersXmlns,
+          attributes: {
+            'pack': details.stickerPackId!,
+          },
+        ),
+      );
     }
     
     getAttributes().sendStanza(stanza, awaitable: false);

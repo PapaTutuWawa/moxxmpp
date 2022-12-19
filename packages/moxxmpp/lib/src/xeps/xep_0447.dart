@@ -18,7 +18,6 @@ abstract class StatelessFileSharingSource {
 
 /// Implementation for url-data source elements.
 class StatelessFileSharingUrlSource extends StatelessFileSharingSource {
-
   StatelessFileSharingUrlSource(this.url);
 
   factory StatelessFileSharingUrlSource.fromXml(XMLNode element) {
@@ -41,8 +40,29 @@ class StatelessFileSharingUrlSource extends StatelessFileSharingSource {
   }
 }
 
-class StatelessFileSharingData {
+/// Finds the <sources/> element in [node] and returns the list of
+/// StatelessFileSharingSources contained with it.
+/// If [checkXmlns] is true, then the sources element must also have an xmlns attribute
+/// of "urn:xmpp:sfs:0".
+List<StatelessFileSharingSource> processStatelessFileSharingSources(XMLNode node, { bool checkXmlns = true }) {
+  final sources = List<StatelessFileSharingSource>.empty(growable: true);
+  
+  final sourcesElement = node.firstTag(
+    'sources',
+    xmlns: checkXmlns ? sfsXmlns : null,
+  )!;
+  for (final source in sourcesElement.children) {
+    if (source.attributes['xmlns'] == urlDataXmlns) {
+      sources.add(StatelessFileSharingUrlSource.fromXml(source));
+    } else if (source.attributes['xmlns'] == sfsEncryptionXmlns) {
+      sources.add(StatelessFileSharingEncryptedSource.fromXml(source));
+    }
+  }
 
+  return sources;
+}
+
+class StatelessFileSharingData {
   const StatelessFileSharingData(this.metadata, this.sources);
 
   /// Parse [node] as a StatelessFileSharingData element.
@@ -50,20 +70,10 @@ class StatelessFileSharingData {
     assert(node.attributes['xmlns'] == sfsXmlns, 'Invalid element xmlns');
     assert(node.tag == 'file-sharing', 'Invalid element name');
 
-    final sources = List<StatelessFileSharingSource>.empty(growable: true);
-    
-    final sourcesElement = node.firstTag('sources')!;
-    for (final source in sourcesElement.children) {
-      if (source.attributes['xmlns'] == urlDataXmlns) {
-        sources.add(StatelessFileSharingUrlSource.fromXml(source));
-      } else if (source.attributes['xmlns'] == sfsEncryptionXmlns) {
-        sources.add(StatelessFileSharingEncryptedSource.fromXml(source));
-      }
-    }
-
     return StatelessFileSharingData(
       FileMetadataData.fromXML(node.firstTag('file')!),
-      sources,
+      // TODO(PapaTutuWawa): This is a work around for Stickers where the source element has a XMLNS but SFS does not have one.
+      processStatelessFileSharingSources(node, checkXmlns: false),
     );
   }
 
@@ -120,7 +130,7 @@ class SFSManager extends XmppManagerBase {
     final sfs = message.firstTag('file-sharing', xmlns: sfsXmlns)!;
 
     return state.copyWith(
-      sfs: StatelessFileSharingData.fromXML(sfs),
+      sfs: StatelessFileSharingData.fromXML(sfs, ),
     );
   }
 }

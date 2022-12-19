@@ -8,14 +8,12 @@ import 'package:moxxmpp/src/stanza.dart';
 
 @immutable
 class DelayedDelivery {
-
   const DelayedDelivery(this.from, this.timestamp);
   final DateTime timestamp;
   final String from;
 }
 
 class DelayedDeliveryManager extends XmppManagerBase {
-
   @override
   String getId() => delayedDeliveryManager;
 

@@ -79,6 +79,7 @@ class MessageEvent extends XmppEvent {
     this.messageCorrectionId,
     this.messageReactions,
     this.messageProcessingHints,
+    this.stickerPackId,
   });
   final StanzaError? error;
   final String body;
@@ -103,6 +104,7 @@ class MessageEvent extends XmppEvent {
   final String? messageCorrectionId;
   final MessageReactions? messageReactions;
   final List<MessageProcessingHint>? messageProcessingHints;
+  final String? stickerPackId;
   final Map<String, dynamic> other;
 }
 
