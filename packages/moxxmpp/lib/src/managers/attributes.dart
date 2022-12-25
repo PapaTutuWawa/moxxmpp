@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
@@ -11,7 +10,6 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 class XmppManagerAttributes {
-  
   XmppManagerAttributes({
     required this.sendStanza,
     required this.sendNonza,

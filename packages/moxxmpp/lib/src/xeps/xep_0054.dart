@@ -7,15 +7,20 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
+
+abstract class VCardError {}
+
+class UnknownVCardError extends VCardError {}
+
+class InvalidVCardError extends VCardError {}
 
 class VCardPhoto {
-
   const VCardPhoto({ this.binval });
   final String? binval;
 }
 
 class VCard {
-
   const VCard({ this.nickname, this.url, this.photo });
   final String? nickname;
   final String? url;
@@ -23,7 +28,6 @@ class VCard {
 }
 
 class VCardManager extends XmppManagerBase {
-
   VCardManager() : _lastHash = {}, super();
   final Map<String, String> _lastHash;
   
@@ -59,12 +63,18 @@ class VCardManager extends XmppManagerBase {
     final lastHash = _lastHash[from];
     if (lastHash != hash) {
       _lastHash[from] = hash;
-      final vcard = await requestVCard(from);
+      final vcardResult = await requestVCard(from);
 
-      if (vcard != null) {
-        final binval = vcard.photo?.binval;
+      if (vcardResult.isType<VCard>()) {
+        final binval = vcardResult.get<VCard>().photo?.binval;
         if (binval != null) {
-          getAttributes().sendEvent(AvatarUpdatedEvent(jid: from, base64: binval, hash: hash));
+          getAttributes().sendEvent(
+            AvatarUpdatedEvent(
+              jid: from,
+              base64: binval,
+              hash: hash,
+            ),
+          );
         } else {
           logger.warning('No avatar data found');
         }
@@ -95,7 +105,7 @@ class VCardManager extends XmppManagerBase {
     );
   }
   
-  Future<VCard?> requestVCard(String jid) async {
+  Future<Result<VCardError, VCard>> requestVCard(String jid) async {
     final result = await getAttributes().sendStanza(
       Stanza.iq(
         to: jid,
@@ -107,12 +117,13 @@ class VCardManager extends XmppManagerBase {
           )
         ],
       ),
+      encrypted: true,
     );
 
-    if (result.attributes['type'] != 'result') return null;
+    if (result.attributes['type'] != 'result') return Result(UnknownVCardError());
     final vcard = result.firstTag('vCard', xmlns: vCardTempXmlns);
-    if (vcard == null) return null;
+    if (vcard == null) return Result(UnknownVCardError());
     
-    return _parseVCard(vcard);
+    return Result(_parseVCard(vcard));
   } 
 }

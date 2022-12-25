@@ -289,7 +289,7 @@ class DiscoManager extends XmppManagerBase {
   }
   
   /// Sends a disco info query to the (full) jid [entity], optionally with node=[node].
-  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(String entity, { String? node}) async {
+  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(String entity, { String? node, bool shouldEncrypt = true }) async {
     final cacheKey = DiscoCacheKey(entity, node);
     DiscoInfo? info;
     Completer<Result<DiscoError, DiscoInfo>>? completer;
@@ -316,6 +316,7 @@ class DiscoManager extends XmppManagerBase {
 
     final stanza = await getAttributes().sendStanza(
       buildDiscoInfoQueryStanza(entity, node),
+      encrypted: !shouldEncrypt,
     );
     final query = stanza.firstTag('query');
     if (query == null) {
@@ -359,9 +360,12 @@ class DiscoManager extends XmppManagerBase {
   }
 
   /// Sends a disco items query to the (full) jid [entity], optionally with node=[node].
-  Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(String entity, { String? node }) async {
+  Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(String entity, { String? node, bool shouldEncrypt = true }) async {
     final stanza = await getAttributes()
-      .sendStanza(buildDiscoItemsQueryStanza(entity, node: node)) as Stanza;
+      .sendStanza(
+        buildDiscoItemsQueryStanza(entity, node: node),
+        encrypted: !shouldEncrypt,
+      ) as Stanza;
 
     final query = stanza.firstTag('query');
     if (query == null) return Result(InvalidResponseDiscoError());
