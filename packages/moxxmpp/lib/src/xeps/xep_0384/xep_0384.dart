@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'package:meta/meta.dart';
-import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -25,7 +23,6 @@ import 'package:moxxmpp/src/xeps/xep_0384/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/helpers.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/types.dart';
 import 'package:omemo_dart/omemo_dart.dart';
-import 'package:synchronized/synchronized.dart';
 
 const _doNotEncryptList = [
   // XEP-0033
@@ -43,14 +40,7 @@ const _doNotEncryptList = [
   DoNotEncrypt('stanza-id', stableIdXmlns),
 ];
 
-abstract class OmemoManager extends XmppManagerBase {
-  OmemoManager() : _handlerLock = Lock(), _handlerFutures = {}, super();
-
-  final Lock _handlerLock;
-  final Map<JID, Queue<Completer<void>>> _handlerFutures;
-
-  final Map<JID, List<int>> _deviceMap = {};
-
+abstract class BaseOmemoManager extends XmppManagerBase {
   // Mapping whether we already tried to subscribe to the JID's devices node
   final Map<JID, bool> _subscriptionMap = {};
   
@@ -127,60 +117,31 @@ abstract class OmemoManager extends XmppManagerBase {
       } else {
         // Someone published to their device list node
         logger.finest('Got devices $ids');
-        _deviceMap[jid] = ids;
       }
+
+      // Tell the OmemoManager
+      (await getOmemoManager())
+        .onDeviceListUpdate(jid.toString(), ids);
 
       // Generate an event
       getAttributes().sendEvent(OmemoDeviceListUpdatedEvent(jid, ids));
     }
   }
-  
+
   @visibleForOverriding
-  Future<OmemoSessionManager> getSessionManager();
+  Future<OmemoManager> getOmemoManager();
 
-  /// Wrapper around using getSessionManager and then calling encryptToJids on it.
-  Future<EncryptionResult> _encryptToJids(List<String> jids, String? plaintext, { List<OmemoBundle>? newSessions }) async {
-    final session = await getSessionManager();
-    return session.encryptToJids(jids, plaintext, newSessions: newSessions);
-  }
-
-  /// Wrapper around using getSessionManager and then calling encryptToJids on it.
-  Future<String?> _decryptMessage(List<int>? ciphertext, String senderJid, int senderDeviceId, List<EncryptedKey> keys, int sendTimestamp) async {
-    final session = await getSessionManager();
-    return session.decryptMessage(
-      ciphertext,
-      senderJid,
-      senderDeviceId,
-      keys,
-      sendTimestamp,
-    );
-  }
   
   /// Wrapper around using getSessionManager and then calling getDeviceId on it.
-  Future<int> _getDeviceId() async {
-    final session = await getSessionManager();
-    return session.getDeviceId();
-  }
+  Future<int> _getDeviceId() async => (await getOmemoManager()).getDeviceId();
 
   /// Wrapper around using getSessionManager and then calling getDeviceId on it.
   Future<OmemoBundle> _getDeviceBundle() async {
-    final session = await getSessionManager();
-    return session.getDeviceBundle();
+    final om = await getOmemoManager();
+    final device = await om.getDevice();
+    return device.toBundle();
   }
 
-  /// Wrapper around using getSessionManager and then calling isRatchetAcknowledged on it.
-  Future<bool> _isRatchetAcknowledged(String jid, int deviceId) async {
-    final session = await getSessionManager();
-    return session.isRatchetAcknowledged(jid, deviceId);
-  }
-
-  /// Wrapper around checking if [jid] appears in the session manager's device map.
-  Future<bool> _hasSessionWith(String jid) async {
-    final session = await getSessionManager();
-    final deviceMap = await session.getDeviceMap();
-    return deviceMap.containsKey(jid);
-  }
-  
   /// Determines what child elements of a stanza should be encrypted. If shouldEncrypt
   /// returns true for [element], then [element] will be encrypted. If shouldEncrypt
   /// returns false, then [element] won't be encrypted.
@@ -205,56 +166,51 @@ abstract class OmemoManager extends XmppManagerBase {
   /// an attached payload, if [children] is not null, or an empty OMEMO message if
   /// [children] is null. This function takes care of creating the affix elements as
   /// specified by both XEP-0420 and XEP-0384.
-  /// [jids] is the list of JIDs the payload should be encrypted for.
-  Future<XMLNode> _encryptChildren(List<XMLNode>? children, List<String> jids, String toJid, List<OmemoBundle> newSessions) async {
-    XMLNode? payload;
-    if (children != null) {
-      payload = XMLNode.xmlns(
-        tag: 'envelope',
-        xmlns: sceXmlns,
-        children: [
-          XMLNode(
-            tag: 'content',
-            children: children,
-          ),
+  /// [toJid] is the list of JIDs the payload should be encrypted for.
+  String _buildEnvelope(List<XMLNode> children, String toJid) {
+    final payload = XMLNode.xmlns(
+      tag: 'envelope',
+      xmlns: sceXmlns,
+      children: [
+        XMLNode(
+          tag: 'content',
+          children: children,
+        ),
 
-          XMLNode(
-            tag: 'rpad',
-            text: generateRpad(),
-          ),
-          XMLNode(
-            tag: 'to',
-            attributes: <String, String>{
-              'jid': toJid,
-            },
-          ),
-          XMLNode(
-            tag: 'from',
-            attributes: <String, String>{
-              'jid': getAttributes().getFullJID().toString(),
-            },
-          ),
-          /*
-          XMLNode(
-            tag: 'time',
-            // TODO(Unknown): Implement
-            attributes: <String, String>{
-              'stamp': '',
-            },
-          ),
-          */
-        ],
-      );
-    }
-
-    final encryptedEnvelope = await _encryptToJids(
-      jids,
-      payload?.toXml(),
-      newSessions: newSessions,
+        XMLNode(
+          tag: 'rpad',
+          text: generateRpad(),
+        ),
+        XMLNode(
+          tag: 'to',
+          attributes: <String, String>{
+            'jid': toJid,
+          },
+        ),
+        XMLNode(
+          tag: 'from',
+          attributes: <String, String>{
+            'jid': getAttributes().getFullJID().toString(),
+          },
+        ),
+        /*
+        XMLNode(
+          tag: 'time',
+          // TODO(Unknown): Implement
+          attributes: <String, String>{
+            'stamp': '',
+          },
+        ),
+        */
+      ],
     );
 
+    return payload.toString();
+  }
+
+  XMLNode _buildEncryptedElement(EncryptionResult result, String recipientJid, int deviceId) {
     final keyElements = <String, List<XMLNode>>{};
-    for (final key in encryptedEnvelope.encryptedKeys) {
+    for (final key in result.encryptedKeys) {
       final keyElement = XMLNode(
         tag: 'key',
         attributes: <String, String>{
@@ -282,11 +238,11 @@ abstract class OmemoManager extends XmppManagerBase {
     }).toList();
 
     var payloadElement = <XMLNode>[];
-    if (payload != null) {
+    if (result.ciphertext != null) {
       payloadElement = [
         XMLNode(
           tag: 'payload',
-          text: base64.encode(encryptedEnvelope.ciphertext!),
+          text: base64.encode(result.ciphertext!),
         ),
       ];
     }
@@ -299,7 +255,7 @@ abstract class OmemoManager extends XmppManagerBase {
         XMLNode(
           tag: 'header',
           attributes: <String, String>{
-            'sid': (await _getDeviceId()).toString(),
+            'sid': deviceId.toString(),
           },
           children: keysElements,
         ),
@@ -307,136 +263,18 @@ abstract class OmemoManager extends XmppManagerBase {
     );
   }
 
-  /// A logging wrapper around acking the ratchet with [jid] with identifier [deviceId].
-  Future<void> _ackRatchet(String jid, int deviceId) async {
-    logger.finest('Acking ratchet $jid:$deviceId');
-    final session = await getSessionManager();
-    await session.ratchetAcknowledged(jid, deviceId);
-  }
-
-  /// Figure out if new sessions need to be built. [toJid] is the JID of the entity we
-  /// want to send a message to. [children] refers to the unencrypted children of the
-  /// message. They are required to be passed because shouldIgnoreUnackedRatchets is
-  /// called here.
-  ///
-  /// Either returns a list of bundles we "need" to build a session with or an OmemoError.
-  Future<Result<OmemoError, List<OmemoBundle>>> _findNewSessions(JID toJid, List<XMLNode> children) async {
-    final ownJid = getAttributes().getFullJID().toBare();
-    final session = await getSessionManager();
-    final ownId = await session.getDeviceId();
-
-    // Ignore our own device if it is the only published device on our devices node
-    if (toJid.toBare() == ownJid) {
-      final deviceList = await getDeviceList(ownJid);
-      if (deviceList.isType<List<int>>()) {
-        final devices = deviceList.get<List<int>>();
-        if (devices.length == 1 && devices.first == ownId) {
-          return const Result(<OmemoBundle>[]);
-        }
-      }
-    }
-
-    final newSessions = List<OmemoBundle>.empty(growable: true);
-    final sessionAvailable = await _hasSessionWith(toJid.toString());   
-    if (!sessionAvailable) {
-      logger.finest('No session for $toJid. Retrieving bundles to build a new session.');
-      final result = await retrieveDeviceBundles(toJid);
-      if (result.isType<List<OmemoBundle>>()) {
-        final bundles = result.get<List<OmemoBundle>>();
-
-        if (ownJid == toJid) {
-          logger.finest('Requesting bundles for own JID. Ignoring current device');
-          newSessions.addAll(bundles.where((bundle) => bundle.id != ownId));
-        } else {
-          newSessions.addAll(bundles);
-        }
-      } else {
-        logger.warning('Failed to retrieve device bundles for $toJid');
-        return Result(OmemoNotSupportedForContactException());
-      }
-
-      if (!_subscriptionMap.containsKey(toJid)) {
-        await subscribeToDeviceList(toJid);
-      }
-    } else {
-      final toBare = toJid.toBare();
-      final ratchetSessions = (await session.getDeviceMap())[toBare.toString()]!;
-      final deviceMapRaw = await getDeviceList(toBare);
-      if (!_subscriptionMap.containsKey(toBare)) {
-        unawaited(subscribeToDeviceList(toBare));
-      }
-
-      if (deviceMapRaw.isType<OmemoError>()) {
-        logger.warning('Failed to get device list');
-        return Result(UnknownOmemoError());
-      }
-
-      final deviceList = deviceMapRaw.get<List<int>>();
-      for (final id in deviceList) {
-        // We already have a session with that device
-        if (ratchetSessions.contains(id)) continue;
-
-        // Ignore requests for our own device.
-        if (toJid == ownJid && id == ownId) {
-          logger.finest('Attempted to request bundle for our own device $id, which is the current device. Skipping request...');
-          continue;
-        }
-
-        logger.finest('Retrieving bundle for $toJid:$id');
-        final bundle = await retrieveDeviceBundle(toJid, id);
-        if (bundle.isType<OmemoBundle>()) {
-          newSessions.add(bundle.get<OmemoBundle>());
-        } else {
-          logger.warning('Failed to retrieve bundle for $toJid:$id');
-        }
-      }
-    }
-    
-    return Result(newSessions);
-  }
-
-  /// Sends an empty Omemo message to [toJid].
-  ///
-  /// If [findNewSessions] is true, then
-  /// new devices will be looked for first before sending the message. This means that
-  /// the new sessions will be included in the empty Omemo message. If false, then no
-  /// new sessions will be looked for before encrypting.
-  ///
-  /// [calledFromCriticalSection] MUST NOT be used from outside the manager. If true, then
-  /// sendEmptyMessage will not attempt to enter the critical section guarding the
-  /// encryption and decryption. If false, then the critical section will be entered before
-  /// encryption and left after sending the message.
-  Future<void> sendEmptyMessage(JID toJid, {
-    bool findNewSessions = false,
-    @protected
-    bool calledFromCriticalSection = false,
-  }) async {
-    if (!calledFromCriticalSection) {
-      final completer = await _handlerEntry(toJid);
-      if (completer != null) {
-        await completer.future;
-      }
-    }
-
-    var newSessions = <OmemoBundle>[];
-    if (findNewSessions) {
-      final result = await _findNewSessions(toJid, <XMLNode>[]);
-      if (!result.isType<OmemoError>()) newSessions = result.get<List<OmemoBundle>>();
-    }
-
-    final empty = await _encryptChildren(
-      null,
-      [toJid.toString()],
-      toJid.toString(),
-      newSessions,
-    );
-
+  /// For usage with omemo_dart's OmemoManager.
+  Future<void> sendEmptyMessageImpl(EncryptionResult result, String toJid) async {
     await getAttributes().sendStanza(
       Stanza.message(
-        to: toJid.toString(),
+        to: toJid,
         type: 'chat',
         children: [
-          empty,
+          _buildEncryptedElement(
+            result,
+            toJid,
+            await _getDeviceId(),
+          ),
 
           // Add a storage hint in case this is a message
           // Taken from the example at
@@ -447,10 +285,28 @@ abstract class OmemoManager extends XmppManagerBase {
       awaitable: false,
       encrypted: true,
     );
+  }
 
-    if (!calledFromCriticalSection) {
-      await _handlerExit(toJid);
-    }
+  /// Send a heartbeat message to [jid].
+  Future<void> sendOmemoHeartbeat(String jid) async {
+    final om = await getOmemoManager();
+    await om.sendOmemoHeartbeat(jid);
+  }
+  
+  /// For usage with omemo_dart's OmemoManager
+  Future<List<int>?> fetchDeviceList(String jid) async {
+    final result = await getDeviceList(JID.fromString(jid));
+    if (result.isType<OmemoError>()) return null;
+
+    return result.get<List<int>>();
+  }
+
+  /// For usage with omemo_dart's OmemoManager
+  Future<OmemoBundle?> fetchDeviceBundle(String jid, int id) async {
+    final result = await retrieveDeviceBundle(JID.fromString(jid), id);
+    if (result.isType<OmemoError>()) return null;
+
+    return result.get<OmemoBundle>();
   }
   
   Future<StanzaHandlerData> _onOutgoingStanza(Stanza stanza, StanzaHandlerData state) async {
@@ -465,40 +321,20 @@ abstract class OmemoManager extends XmppManagerBase {
     }
 
     final toJid = JID.fromString(stanza.to!).toBare();
+    if (_subscriptionMap[toJid] != true) {
+      unawaited(
+        subscribeToDeviceList(toJid),
+      );
+      _subscriptionMap[toJid] = true;
+    }
+    
     if (!(await shouldEncryptStanza(toJid, stanza))) {
       logger.finest('shouldEncryptStanza returned false for message to $toJid. Not encrypting.');
       return state;
     } else {
       logger.finest('shouldEncryptStanza returned true for message to $toJid.');
     }
-    
-    final completer = await _handlerEntry(toJid);
-    if (completer != null) {
-      await completer.future;
-    }
 
-    final newSessions = List<OmemoBundle>.empty(growable: true);
-    // Try to find new sessions for [toJid].
-    final resultToJid = await _findNewSessions(toJid, stanza.children);
-    if (resultToJid.isType<List<OmemoBundle>>()) {
-      newSessions.addAll(resultToJid.get<List<OmemoBundle>>());
-    } else {
-      if (resultToJid.isType<OmemoNotSupportedForContactException>()) {
-        await _handlerExit(toJid);
-        return state.copyWith(
-          cancel: true,
-          cancelReason: resultToJid.get<OmemoNotSupportedForContactException>(),
-        );
-      }
-    }
-
-    // Try to find new sessions for our own Jid.
-    final ownJid = getAttributes().getFullJID().toBare();
-    final resultOwnJid = await _findNewSessions(ownJid, stanza.children);
-    if (resultOwnJid.isType<List<OmemoBundle>>()) {
-      newSessions.addAll(resultOwnJid.get<List<OmemoBundle>>());
-    }
-    
     final toEncrypt = List<XMLNode>.empty(growable: true);
     final children = List<XMLNode>.empty(growable: true);
     for (final child in stanza.children) {
@@ -508,76 +344,38 @@ abstract class OmemoManager extends XmppManagerBase {
         toEncrypt.add(child);
       }
     }
+    
+    final om = await getOmemoManager();
+    final result = await om.onOutgoingStanza(
+      OmemoOutgoingStanza(
+        [toJid.toString()],
+        _buildEnvelope(toEncrypt, toJid.toString()),
+      ),
+    );
 
-    final jidsToEncryptFor = <String>[JID.fromString(stanza.to!).toBare().toString()];
-    // Prevent encrypting to self if there is only one device (ours).
-    if (await _hasSessionWith(ownJid.toString())) {
-      jidsToEncryptFor.add(ownJid.toString());
+    final encrypted = _buildEncryptedElement(
+      result,
+      toJid.toString(),
+      await _getDeviceId(),
+    );
+    children.add(encrypted);
+    
+    // Only add message specific metadata when actually sending a message
+    if (stanza.tag == 'message') {
+      children
+        // Add EME data
+        ..add(buildEmeElement(ExplicitEncryptionType.omemo2))
+        // Add a storage hint in case this is a message
+        // Taken from the example at
+        // https://xmpp.org/extensions/xep-0384.html#message-structure-description.
+        ..add(MessageProcessingHint.store.toXml());
     }
-
-    try {
-      logger.finest('Encrypting stanza');
-      final encrypted = await _encryptChildren(
-        toEncrypt,
-        jidsToEncryptFor,
-        stanza.to!,
-        newSessions,
-      );
-      logger.finest('Encryption done');
-
-      children.add(encrypted);
-
-      // Only add EME when sending a message
-      if (stanza.tag == 'message') {
-        children.add(buildEmeElement(ExplicitEncryptionType.omemo2));
-      }
-
-      // Add a storage hint in case this is a message
-      // Taken from the example at
-      // https://xmpp.org/extensions/xep-0384.html#message-structure-description.
-      if (stanza.tag == 'message') {
-        children.add(MessageProcessingHint.store.toXml());
-      }
-      
-      await _handlerExit(toJid);
-      return state.copyWith(
-        stanza: state.stanza.copyWith(
-          children: children,
-        ),
-        encrypted: true,
-      );
-    } catch (ex) {
-      logger.severe('Encryption failed! $ex');
-      await _handlerExit(toJid);
-      return state.copyWith(
-        cancel: true,
-        cancelReason: EncryptionFailedException(),
-        other: {
-          ...state.other,
-          'encryption_error': ex,
-        },
-      );
-    }
-  }
-
-  /// This function returns true if the encryption scheme should ignore unacked ratchets
-  /// and don't try to build a new ratchet even though there are unacked ones.
-  /// The current logic is that chat states with no body ignore the "ack" state of the
-  /// ratchets.
-  ///
-  /// This function may be overriden. By default, the ack status of the ratchet is ignored
-  /// if we're sending a message containing chatstates or chat markers and the message does
-  /// not contain a <body /> element.
-  @visibleForOverriding
-  bool shouldIgnoreUnackedRatchets(List<XMLNode> children) {
-    return listContains(
-      children,
-      (XMLNode child) {
-        return child.attributes['xmlns'] == chatStateXmlns || child.attributes['xmlns'] == chatMarkersXmlns;
-      },
-    ) && !listContains(
-      children,
-      (XMLNode child) => child.tag == 'body',
+    
+    return state.copyWith(
+      stanza: state.stanza.copyWith(
+        children: children,
+      ),
+      encrypted: true,
     );
   }
 
@@ -587,48 +385,12 @@ abstract class OmemoManager extends XmppManagerBase {
   @visibleForOverriding
   Future<bool> shouldEncryptStanza(JID toJid, Stanza stanza);
   
-  /// Wrapper function that attempts to enter the encryption/decryption critical section.
-  /// In case the critical section could be entered, null is returned. If not, then a
-  /// Completer is returned whose future will resolve once the critical section can be
-  /// entered.
-  Future<Completer<void>?> _handlerEntry(JID fromJid) async {
-    return _handlerLock.synchronized(() {
-      if (_handlerFutures.containsKey(fromJid)) {
-        final c = Completer<void>();
-        _handlerFutures[fromJid]!.addLast(c);
-        return c;
-      }
-
-      _handlerFutures[fromJid] = Queue();
-      return null;
-    });
-  }
-
-  /// Wrapper function that exits the critical section.
-  Future<void> _handlerExit(JID fromJid) async {
-    await _handlerLock.synchronized(() {
-      if (_handlerFutures.containsKey(fromJid)) {
-        if (_handlerFutures[fromJid]!.isEmpty) {
-          _handlerFutures.remove(fromJid);
-          return;
-        }
-
-        _handlerFutures[fromJid]!.removeFirst().complete();
-      }
-    });
-  }
-  
   Future<StanzaHandlerData> _onIncomingStanza(Stanza stanza, StanzaHandlerData state) async {
     final encrypted = stanza.firstTag('encrypted', xmlns: omemoXmlns);
     if (encrypted == null) return state;
     if (stanza.from == null) return state;
 
     final fromJid = JID.fromString(stanza.from!).toBare();
-    final completer = await _handlerEntry(fromJid);
-    if (completer != null) {
-      await completer.future;
-    }
-    
     final header = encrypted.firstTag('header')!;
     final payloadElement = encrypted.firstTag('payload');
     final keys = List<EncryptedKey>.empty(growable: true);
@@ -649,118 +411,49 @@ abstract class OmemoManager extends XmppManagerBase {
     final ourJid = getAttributes().getFullJID();
     final sid = int.parse(header.attributes['sid']! as String);
 
-    // Ensure that if we receive a message from a device that we don't know about, we
-    // ensure that _deviceMap is up-to-date.
-    final devices = _deviceMap[fromJid] ?? <int>[];
-    if (!devices.contains(sid)) {
-      await getDeviceList(fromJid);
-    }
-
-    String? decrypted;
-    try {
-      decrypted = await _decryptMessage(
-        payloadElement != null ? base64.decode(payloadElement.innerText()) : null,
+    final om = await getOmemoManager();
+    final result = await om.onIncomingStanza(
+      OmemoIncomingStanza(
         fromJid.toString(),
         sid,
-        keys,
         state.delayedDelivery?.timestamp.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch,
-      );
-    } catch (ex) {
-      logger.warning('Error occurred during message decryption: $ex');
+        keys,
+        payloadElement?.innerText(),
+      ),
+    );
 
-      await _handlerExit(fromJid);
-      return state.copyWith(
-        other: {
-          ...state.other,
-          'encryption_error': ex,
-        },
-      );
+    final children = stanza.children.where(
+      (child) => child.tag != 'encrypted' || child.attributes['xmlns'] != omemoXmlns,
+    ).toList();
+    final other = Map<String, dynamic>.from(state.other);
+    if (result.error != null) {
+      other['encryption_error'] = result.error;
     }
-    
-    final isAcked = await _isRatchetAcknowledged(fromJid.toString(), sid);
-    if (!isAcked) {
-      // Unacked ratchet decrypted this message
-      if (decrypted != null) {
-        // The message is not empty, i.e. contains content
-        logger.finest('Received non-empty OMEMO encrypted message for unacked ratchet. Acking with empty OMEMO message.');
 
-        await _ackRatchet(fromJid.toString(), sid);
-        await sendEmptyMessage(fromJid, calledFromCriticalSection: true);
+    if (result.payload != null) {
+      final envelope = XMLNode.fromString(result.payload!);
+      children.addAll(
+        envelope.firstTag('content')!.children,
+      );
 
-        final envelope = XMLNode.fromString(decrypted);
-        final children = stanza.children.where(
-          (child) => child.tag != 'encrypted' || child.attributes['xmlns'] != omemoXmlns,
-        ).toList()
-          ..addAll(envelope.firstTag('content')!.children);
-
-        final other = Map<String, dynamic>.from(state.other);
-        if (!checkAffixElements(envelope, stanza.from!, ourJid)) {
-          other['encryption_error'] = InvalidAffixElementsException();
-        }
-
-        await _handlerExit(fromJid);
-        return state.copyWith(
-          encrypted: true,
-          stanza: Stanza(
-            to: stanza.to,
-            from: stanza.from,
-            id: stanza.id,
-            type: stanza.type,
-            children: children,
-            tag: stanza.tag,
-            attributes: Map<String, String>.from(stanza.attributes),
-          ),
-          other: other,
-        );
-      } else {
-        logger.info('Received empty OMEMO message for unacked ratchet. Marking $fromJid:$sid as acked');
-        await _ackRatchet(fromJid.toString(), sid);
-
-        final ownId = await (await getSessionManager()).getDeviceId();
-        final kex = keys.any((key) => key.kex && key.rid == ownId);
-        if (kex) {
-          logger.info('Empty OMEMO message contained a kex. Answering.');
-          await sendEmptyMessage(fromJid, calledFromCriticalSection: true);
-        }
-
-        await _handlerExit(fromJid);
-        return state;
-      }
-    } else {
-      // The ratchet that decrypted the message was acked
-      if (decrypted != null) {
-        final envelope = XMLNode.fromString(decrypted);
-
-        final children = stanza.children.where(
-          (child) => child.tag != 'encrypted' || child.attributes['xmlns'] != omemoXmlns,
-        ).toList()
-          ..addAll(envelope.firstTag('content')!.children);
-
-        final other = Map<String, dynamic>.from(state.other);
-        if (!checkAffixElements(envelope, stanza.from!, ourJid)) {
-          other['encryption_error'] = InvalidAffixElementsException();
-        }
-        
-        await _handlerExit(fromJid);
-        return state.copyWith(
-          encrypted: true,
-          stanza: Stanza(
-            to: stanza.to,
-            from: stanza.from,
-            id: stanza.id,
-            type: stanza.type,
-            children: children,
-            tag: stanza.tag,
-            attributes: Map<String, String>.from(stanza.attributes),
-          ),
-          other: other,
-        );
-      } else {
-        logger.info('Received empty OMEMO message on acked ratchet. Doing nothing');
-        await _handlerExit(fromJid);
-        return state;
+      if (!checkAffixElements(envelope, stanza.from!, ourJid)) {
+        other['encryption_error'] = InvalidAffixElementsException();
       }
     }
+
+    return state.copyWith(
+      encrypted: true,
+      stanza: Stanza(
+        to: stanza.to,
+        from: stanza.from,
+        id: stanza.id,
+        type: stanza.type,
+        children: children,
+        tag: stanza.tag,
+        attributes: Map<String, String>.from(stanza.attributes),
+      ),
+      other: other,
+    );
   }
 
   /// Convenience function that attempts to retrieve the raw XML payload from the
@@ -776,15 +469,12 @@ abstract class OmemoManager extends XmppManagerBase {
   
   /// Retrieves the OMEMO device list from [jid].
   Future<Result<OmemoError, List<int>>> getDeviceList(JID jid) async {
-    if (_deviceMap.containsKey(jid)) return Result(_deviceMap[jid]);
-
     final itemsRaw = await _retrieveDeviceListPayload(jid);
     if (itemsRaw.isType<OmemoError>()) return Result(UnknownOmemoError());
 
     final ids = itemsRaw.get<XMLNode>().children
       .map((child) => int.parse(child.attributes['id']! as String))
       .toList();
-    _deviceMap[jid] = ids;
     return Result(ids);
   }
 
