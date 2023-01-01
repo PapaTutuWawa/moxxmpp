@@ -41,9 +41,6 @@ const _doNotEncryptList = [
 ];
 
 abstract class BaseOmemoManager extends XmppManagerBase {
-  // Mapping whether we already tried to subscribe to the JID's devices node
-  final Map<JID, bool> _subscriptionMap = {};
-  
   @override
   String getId() => omemoManager;
 
@@ -205,7 +202,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       ],
     );
 
-    return payload.toString();
+    return payload.toXml();
   }
 
   XMLNode _buildEncryptedElement(EncryptionResult result, String recipientJid, int deviceId) {
@@ -317,17 +314,11 @@ abstract class BaseOmemoManager extends XmppManagerBase {
 
     if (stanza.to == null) {
       // We cannot encrypt in this case.
+      logger.finest('Not encrypting since stanza.to is null');
       return state;
     }
 
     final toJid = JID.fromString(stanza.to!).toBare();
-    if (_subscriptionMap[toJid] != true) {
-      unawaited(
-        subscribeToDeviceList(toJid),
-      );
-      _subscriptionMap[toJid] = true;
-    }
-    
     if (!(await shouldEncryptStanza(toJid, stanza))) {
       logger.finest('shouldEncryptStanza returned false for message to $toJid. Not encrypting.');
       return state;
@@ -345,6 +336,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       }
     }
     
+    logger.finest('Beginning encryption');
     final om = await getOmemoManager();
     final result = await om.onOutgoingStanza(
       OmemoOutgoingStanza(
@@ -352,6 +344,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
         _buildEnvelope(toEncrypt, toJid.toString()),
       ),
     );
+    logger.finest('Encryption done');
 
     final encrypted = _buildEncryptedElement(
       result,
@@ -572,13 +565,9 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   }
 
   /// Subscribes to the device list PubSub node of [jid].
-  Future<void> subscribeToDeviceList(JID jid) async {
+  Future<void> subscribeToDeviceListImpl(String jid) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
-    final result = await pm.subscribe(jid.toString(), omemoDevicesXmlns);
-
-    if (!result.isType<PubSubError>()) {
-      _subscriptionMap[jid] = true;
-    }
+    await pm.subscribe(jid, omemoDevicesXmlns);
   }
 
   /// Attempts to find out if [jid] supports omemo:2.
