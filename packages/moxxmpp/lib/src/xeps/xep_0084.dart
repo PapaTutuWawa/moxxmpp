@@ -52,6 +52,14 @@ class UserAvatarManager extends XmppManagerBase {
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
     if (event is PubSubNotificationEvent) {
+      if (event.item.node != userAvatarDataXmlns) return;
+
+      if (event.item.payload.tag != 'data' ||
+          event.item.payload.attributes['xmlns'] != userAvatarDataXmlns) {
+        logger.warning('Received avatar update from ${event.from} but the payload is invalid. Ignoring...');
+        return;
+      }
+
       getAttributes().sendEvent(
         AvatarUpdatedEvent(
           jid: event.from,
