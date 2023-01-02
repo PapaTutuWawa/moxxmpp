@@ -6,12 +6,11 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 
 class ReplyData {
-
   const ReplyData({
-      required this.to,
-      required this.id,
-      this.start,
-      this.end,
+    required this.to,
+    required this.id,
+    this.start,
+    this.end,
   });
   final String to;
   final String id;
