@@ -13,11 +13,10 @@ import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0297.dart';
 
 class CarbonsManager extends XmppManagerBase {
-
-  CarbonsManager() : _isEnabled = false, _supported = false, _gotSupported = false, super();
-  bool _isEnabled;
-  bool _supported;
-  bool _gotSupported;
+  CarbonsManager() : super();
+  bool _isEnabled = false;
+  bool _supported = false;
+  bool _gotSupported = false;
   
   @override
   String getId() => carbonsManager;
@@ -159,6 +158,9 @@ class CarbonsManager extends XmppManagerBase {
     return true;
   }
 
+  /// True if Message Carbons are enabled. False, if not.
+  bool get isEnabled => _isEnabled;
+  
   @visibleForTesting
   void forceEnable() {
     _isEnabled = true;

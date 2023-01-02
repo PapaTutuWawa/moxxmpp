@@ -16,6 +16,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
+import 'package:moxxmpp/src/xeps/xep_0280.dart';
 import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0380.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/crypto.dart';
@@ -337,15 +338,31 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     }
     
     logger.finest('Beginning encryption');
+    final carbonsEnabled = getAttributes()
+      .getManagerById<CarbonsManager>(carbonsManager)?.isEnabled ?? false;
     final om = await getOmemoManager();
     final result = await om.onOutgoingStanza(
       OmemoOutgoingStanza(
-        [toJid.toString()],
+        [
+          toJid.toString(),
+          if (carbonsEnabled)
+            getAttributes().getFullJID().toBare().toString(),
+        ],
         _buildEnvelope(toEncrypt, toJid.toString()),
       ),
     );
     logger.finest('Encryption done');
 
+    if (!result.isSuccess(2)) {
+      final other = Map<String, dynamic>.from(state.other);
+      other['encryption_error_jids'] = result.jidEncryptionErrors;
+      other['encryption_error_devices'] = result.deviceEncryptionErrors;
+      return state.copyWith(
+        other: other,
+        cancel: true,
+      );
+    }
+    
     final encrypted = _buildEncryptedElement(
       result,
       toJid.toString(),
