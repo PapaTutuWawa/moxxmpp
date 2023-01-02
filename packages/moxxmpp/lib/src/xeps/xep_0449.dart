@@ -252,10 +252,11 @@ class StickersManager extends XmppManagerBase {
     );
   }
 
-  /// Publishes the StickerPack [pack] to the PubSub node of [jid].
+  /// Publishes the StickerPack [pack] to the PubSub node of [jid]. If specified, then
+  /// [accessModel] will be used as the PubSub node's access model.
   ///
   /// On success, returns true. On failure, returns a PubSubError.
-  Future<Result<PubSubError, bool>> publishStickerPack(JID jid, StickerPack pack) async {
+  Future<Result<PubSubError, bool>> publishStickerPack(JID jid, StickerPack pack, { String? accessModel }) async {
     assert(pack.id != '', 'The sticker pack must have an id');
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
 
@@ -264,8 +265,9 @@ class StickersManager extends XmppManagerBase {
       stickersXmlns,
       pack.toXML(),
       id: pack.id,
-      options: const PubSubPublishOptions(
+      options: PubSubPublishOptions(
         maxItems: 'max',
+        accessModel: accessModel,
       ),
     );
   }
