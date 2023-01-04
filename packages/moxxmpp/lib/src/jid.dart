@@ -6,67 +6,38 @@ class JID {
   const JID(this.local, this.domain, this.resource);
 
   factory JID.fromString(String jid) {
-    // 0: Parsing either the local or domain part
-    // 1: Parsing the domain part
-    // 2: Parsing the resource
-    var state = 0;
-    var buffer = '';
-    var local_ = '';
-    var domain_ = '';
-    var resource_ = '';
-    
-    for (var i = 0; i < jid.length; i++) {
-      final c = jid[i];
-      final eol = i == jid.length - 1;
-      
-      switch (state) {
-        case 0: {
-          if (c == '@') {
-            local_ = buffer;
-            buffer = '';
-            state = 1;
-          } else if (c == '/') {
-            domain_ = buffer;
-            buffer = '';
-            state = 2;
-          } else if (eol) {
-            domain_ = buffer + c;
-          } else {
-            buffer += c;
-          }
-        }
-        break;
-        case 1: {
-          if (c == '/') {
-            domain_ = buffer;
-            buffer = '';
-            state = 2;
-          } else if (eol) {
-            domain_ = buffer;
+    // Algorithm taken from here: https://blog.samwhited.com/2021/02/xmpp-addresses/
+    var localPart = '';
+    var domainPart = '';
+    var resourcePart = '';
 
-            if (c != ' ') {
-              domain_ = domain_ + c;
-            }
-          } else if (c != ' ') {
-            buffer += c;
-          }
-        }
-        break;
-        case 2: {
-          if (eol) {
-            resource_ = buffer;
+    final slashParts = jid.split('/');
+    if (slashParts.length == 1) {
+      resourcePart = '';
+    } else {
+      resourcePart = slashParts.sublist(1).join('/');
 
-            if (c != ' ') {
-              resource_ = resource_ + c;
-            }
-          } else if (c != ''){
-            buffer += c;
-          }
-        }
-      }
+      assert(resourcePart.isNotEmpty, 'Resource part cannot be there and empty');
     }
 
-    return JID(local_, domain_, resource_);
+    final atParts = slashParts.first.split('@');
+    if (atParts.length == 1) {
+      localPart = '';
+      domainPart = atParts.first;
+    } else {
+      localPart = atParts.first;
+      domainPart = atParts.sublist(1).join('@');
+
+      assert(localPart.isNotEmpty, 'Local part cannot be there and empty');
+    }
+
+    return JID(
+      localPart,
+      domainPart.endsWith('.') ?
+        domainPart.substring(0, domainPart.length - 1) :
+        domainPart,
+      resourcePart,
+    );
   }
   final String local;
   final String domain;
