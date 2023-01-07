@@ -173,7 +173,7 @@ abstract class BaseRosterStateManager {
       final added = List<XmppRosterItem>.empty(growable: true);
 
       await _loadRosterCache();
-
+      
       _currentVersion = result.ver;
       for (final item in result.items) {
         final result = _handleRosterItem(item);

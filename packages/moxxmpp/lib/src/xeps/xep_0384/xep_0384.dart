@@ -53,7 +53,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   @override
-  List<StanzaHandler> getIncomingStanzaHandlers() => [
+  List<StanzaHandler> getIncomingEncryptionStanzaHandlers() => [
     StanzaHandler(
       stanzaTag: 'iq',
       tagXmlns: omemoXmlns,

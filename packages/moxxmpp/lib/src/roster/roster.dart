@@ -139,6 +139,7 @@ class RosterManager extends XmppManagerBase {
     }
 
     final query = stanza.firstTag('query', xmlns: rosterXmlns)!;
+    logger.fine('Roster push: ${query.toXml()}');
     final item = query.firstTag('item');
 
     if (item == null) {
@@ -199,28 +200,34 @@ class RosterManager extends XmppManagerBase {
     return Result(result);
   }
   
-  /// Requests the roster following RFC 6121 without using roster versioning.
+  /// Requests the roster following RFC 6121.
   Future<Result<RosterRequestResult, RosterError>> requestRoster() async {
     final attrs = getAttributes();
+    final query = XMLNode.xmlns(
+      tag: 'query',
+      xmlns: rosterXmlns,
+    );
+    final rosterVersion = await _stateManager.getRosterVersion();
+    if (rosterVersion != null && rosterVersioningAvailable()) {
+      query.attributes['ver'] = rosterVersion;
+    }
+
     final response = await attrs.sendStanza(
       Stanza.iq(
         type: 'get',
         children: [
-          XMLNode.xmlns(
-            tag: 'query',
-            xmlns: rosterXmlns,
-          )
+          query,
         ],
       ),
     );
 
     if (response.attributes['type'] != 'result') {
-      logger.warning('Error requesting roster without roster versioning: ${response.toXml()}');
+      logger.warning('Error requesting roster: ${response.toXml()}');
       return Result(UnknownError());
     }
 
-    final query = response.firstTag('query', xmlns: rosterXmlns);
-    return _handleRosterResponse(query);
+    final responseQuery = response.firstTag('query', xmlns: rosterXmlns);
+    return _handleRosterResponse(responseQuery);
   }
 
   /// Requests a series of roster pushes according to RFC6121. Requires that the server

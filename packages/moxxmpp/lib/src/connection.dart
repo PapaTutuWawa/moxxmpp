@@ -94,6 +94,7 @@ class XmppConnection {
     _awaitingResponseLock = Lock(),
     _xmppManagers = {},
     _incomingStanzaHandlers = List.empty(growable: true),
+    _incomingEncryptionStanzaHandlers = List.empty(growable: true),
     _outgoingPreStanzaHandlers = List.empty(growable: true),
     _outgoingPostStanzaHandlers = List.empty(growable: true),
     _reconnectionPolicy = reconnectionPolicy,
@@ -133,6 +134,7 @@ class XmppConnection {
   /// Helpers
   ///
   final List<StanzaHandler> _incomingStanzaHandlers;
+  final List<StanzaHandler> _incomingEncryptionStanzaHandlers;
   final List<StanzaHandler> _outgoingPreStanzaHandlers;
   final List<StanzaHandler> _outgoingPostStanzaHandlers;
   final StreamController<XmppEvent> _eventStreamController;
@@ -223,11 +225,13 @@ class XmppConnection {
     }
 
     _incomingStanzaHandlers.addAll(manager.getIncomingStanzaHandlers());
+    _incomingEncryptionStanzaHandlers.addAll(manager.getIncomingEncryptionStanzaHandlers());
     _outgoingPreStanzaHandlers.addAll(manager.getOutgoingPreStanzaHandlers());
     _outgoingPostStanzaHandlers.addAll(manager.getOutgoingPostStanzaHandlers());
     
     if (sortHandlers) {
       _incomingStanzaHandlers.sort(stanzaHandlerSortComparator);
+      _incomingEncryptionStanzaHandlers.sort(stanzaHandlerSortComparator);
       _outgoingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
       _outgoingPostStanzaHandlers.sort(stanzaHandlerSortComparator);
     }
@@ -634,6 +638,10 @@ class XmppConnection {
     return _runStanzaHandlers(_incomingStanzaHandlers, stanza);
   }
 
+  Future<StanzaHandlerData> _runIncomingEncryptionStanzaHandlers(Stanza stanza) async {
+    return _runStanzaHandlers(_incomingEncryptionStanzaHandlers, stanza);
+  }
+
   Future<StanzaHandlerData> _runOutgoingPreStanzaHandlers(Stanza stanza, { StanzaHandlerData? initial }) async {
     return _runStanzaHandlers(_outgoingPreStanzaHandlers, stanza, initial: initial);
   }
@@ -673,18 +681,18 @@ class XmppConnection {
 
     // Run the incoming stanza handlers and bounce with an error if no manager handled
     // it.
-    final incomingHandlers = await _runIncomingStanzaHandlers(stanza);
-    final prefix = incomingHandlers.encrypted ?
+    final incomingEncryptionHandlers = await _runIncomingEncryptionStanzaHandlers(stanza);
+    final prefix = incomingEncryptionHandlers.encrypted ?
       '(Encrypted) ' :
       '';
-    _log.finest('<== $prefix${incomingHandlers.stanza.toXml()}');
+    _log.finest('<== $prefix${incomingEncryptionHandlers.stanza.toXml()}');
 
     // See if we are waiting for this stanza
-    final id = stanza.attributes['id'] as String?;
+    final id = incomingEncryptionHandlers.stanza.attributes['id'] as String?;
     var awaited = false;
     await _awaitingResponseLock.synchronized(() async {
       if (id != null && _awaitingResponse.containsKey(id)) {
-        _awaitingResponse[id]!.complete(incomingHandlers.stanza);
+        _awaitingResponse[id]!.complete(incomingEncryptionHandlers.stanza);
         _awaitingResponse.remove(id);
         awaited = true;
       }
@@ -695,6 +703,7 @@ class XmppConnection {
     }
 
     // Only bounce if the stanza has neither been awaited, nor handled.
+    final incomingHandlers = await _runIncomingStanzaHandlers(incomingEncryptionHandlers.stanza);
     if (!incomingHandlers.done) {
       handleUnhandledStanza(this, stanza);
     }
