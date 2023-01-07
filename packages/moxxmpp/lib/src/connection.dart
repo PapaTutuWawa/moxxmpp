@@ -710,6 +710,7 @@ class XmppConnection {
         incomingPreHandlers.cancel,
         incomingPreHandlers.cancelReason,
         incomingPreHandlers.stanza,
+        encrypted: incomingPreHandlers.encrypted,
         other: incomingPreHandlers.other,
       ),
     );
