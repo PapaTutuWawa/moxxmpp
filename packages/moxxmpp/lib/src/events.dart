@@ -61,6 +61,21 @@ class RosterPushEvent extends XmppEvent {
   final String? ver;
 }
 
+/// Triggered when the roster has been modified
+class RosterUpdatedEvent extends XmppEvent {
+  RosterUpdatedEvent(this.removed, this.modified, this.added);
+
+  /// A list of bare JIDs that are removed from the roster
+  final List<String> removed;
+
+  /// A list of XmppRosterItems that are modified. Can be correlated with one's cache
+  /// using the jid attribute.
+  final List<XmppRosterItem> modified;
+
+  /// A list of XmppRosterItems that are added to the roster.
+  final List<XmppRosterItem> added;
+}
+
 /// Triggered when a message is received
 class MessageEvent extends XmppEvent {
   MessageEvent({

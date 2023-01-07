@@ -61,7 +61,9 @@ class RosterFeatureNegotiator extends XmppFeatureNegotiatorBase {
 
 /// This manager requires a RosterFeatureNegotiator to be registered.
 class RosterManager extends XmppManagerBase {
-  RosterManager(this._stateManager) : super();
+  RosterManager(this._stateManager) : super() {
+    _stateManager.register(getAttributes().sendEvent);
+  }
   final BaseRosterStateManager _stateManager;
   
   @override

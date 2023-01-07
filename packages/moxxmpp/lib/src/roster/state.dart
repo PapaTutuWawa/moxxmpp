@@ -27,6 +27,9 @@ abstract class BaseRosterStateManager {
 
   /// A critical section locking both _currentRoster and _currentVersion.
   final Lock _lock = Lock();
+
+  /// A function to send an XmppEvent to moxxmpp's main event bus
+  late void Function(XmppEvent) _sendEvent;
   
   /// Overrideable function
   /// Loads the old cached version of the roster and optionally that roster version
@@ -49,6 +52,12 @@ abstract class BaseRosterStateManager {
   /// roster push or roster fetch request.
   Future<void> commitRoster(String? version, List<String> removed, List<XmppRosterItem> modified, List<XmppRosterItem> added);
 
+  /// Internal function. Registers functions from the RosterManger against this
+  /// instance.
+  void register(void Function(XmppEvent) sendEvent) {
+    _sendEvent = sendEvent;
+  }
+  
   /// Load and cache or return the cached roster version.
   Future<String?> getRosterVersion() async {
     return _lock.synchronized(() async {
@@ -58,6 +67,20 @@ abstract class BaseRosterStateManager {
     });
   }
 
+  /// A wrapper around _commitRoster that also sends an event to moxxmpp's event
+  /// bus.
+  Future<void> _commitRoster(String? version, List<String> removed, List<XmppRosterItem> modified, List<XmppRosterItem> added) async {
+    _sendEvent(
+      RosterUpdatedEvent(
+        removed,
+        modified,
+        added,
+      ),
+    );
+    
+    await commitRoster(version, removed, modified, added);
+  }
+  
   /// Loads the cached roster data into memory, if that has not already happened.
   /// NOTE: Must be called from within the _lock critical section.
   Future<void> _loadRosterCache() async {
@@ -111,21 +134,21 @@ abstract class BaseRosterStateManager {
       final result = _handleRosterItem(event.item);
 
       if (result.removed != null) {
-        return commitRoster(
+        return _commitRoster(
           _currentVersion,
           [result.removed!],
           [],
           [],
         );
       } else if (result.modified != null) {
-        return commitRoster(
+        return _commitRoster(
           _currentVersion,
           [],
           [result.modified!],
           [],
         );
       } else if (result.added != null) {
-        return commitRoster(
+        return _commitRoster(
           _currentVersion,
           [],
           [],
@@ -153,7 +176,7 @@ abstract class BaseRosterStateManager {
         if (result.added != null) added.add(result.added!);
       }
 
-      await commitRoster(
+      await _commitRoster(
         _currentVersion,
         removed,
         modified,
@@ -187,5 +210,4 @@ class TestingRosterStateManager extends BaseRosterStateManager {
 
   @override
   Future<void> commitRoster(String? version, List<String> removed, List<XmppRosterItem> modified, List<XmppRosterItem> added) async {}
-
 }
