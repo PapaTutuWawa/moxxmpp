@@ -65,7 +65,6 @@ class RosterFeatureNegotiator extends XmppFeatureNegotiatorBase {
 
 /// This manager requires a RosterFeatureNegotiator to be registered.
 class RosterManager extends XmppManagerBase {
-
   RosterManager() : _rosterVersion = null, super();
   String? _rosterVersion;
   
@@ -88,8 +87,10 @@ class RosterManager extends XmppManagerBase {
   @override
   Future<bool> isSupported() async => true; 
   
-  /// Override-able functions
+  /// Commit the current roster to storage.
   Future<void> commitLastRosterVersion(String version) async {}
+
+  /// Load the last roster data
   Future<void> loadLastRosterVersion() async {}
 
   void setRosterVersion(String ver) {
