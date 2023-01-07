@@ -94,7 +94,7 @@ class XmppConnection {
     _awaitingResponseLock = Lock(),
     _xmppManagers = {},
     _incomingStanzaHandlers = List.empty(growable: true),
-    _incomingEncryptionStanzaHandlers = List.empty(growable: true),
+    _incomingPreStanzaHandlers = List.empty(growable: true),
     _outgoingPreStanzaHandlers = List.empty(growable: true),
     _outgoingPostStanzaHandlers = List.empty(growable: true),
     _reconnectionPolicy = reconnectionPolicy,
@@ -134,7 +134,7 @@ class XmppConnection {
   /// Helpers
   ///
   final List<StanzaHandler> _incomingStanzaHandlers;
-  final List<StanzaHandler> _incomingEncryptionStanzaHandlers;
+  final List<StanzaHandler> _incomingPreStanzaHandlers;
   final List<StanzaHandler> _outgoingPreStanzaHandlers;
   final List<StanzaHandler> _outgoingPostStanzaHandlers;
   final StreamController<XmppEvent> _eventStreamController;
@@ -225,13 +225,13 @@ class XmppConnection {
     }
 
     _incomingStanzaHandlers.addAll(manager.getIncomingStanzaHandlers());
-    _incomingEncryptionStanzaHandlers.addAll(manager.getIncomingEncryptionStanzaHandlers());
+    _incomingPreStanzaHandlers.addAll(manager.getIncomingPreStanzaHandlers());
     _outgoingPreStanzaHandlers.addAll(manager.getOutgoingPreStanzaHandlers());
     _outgoingPostStanzaHandlers.addAll(manager.getOutgoingPostStanzaHandlers());
     
     if (sortHandlers) {
       _incomingStanzaHandlers.sort(stanzaHandlerSortComparator);
-      _incomingEncryptionStanzaHandlers.sort(stanzaHandlerSortComparator);
+      _incomingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
       _outgoingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
       _outgoingPostStanzaHandlers.sort(stanzaHandlerSortComparator);
     }
@@ -634,12 +634,12 @@ class XmppConnection {
     return state;
   }
 
-  Future<StanzaHandlerData> _runIncomingStanzaHandlers(Stanza stanza) async {
-    return _runStanzaHandlers(_incomingStanzaHandlers, stanza);
+  Future<StanzaHandlerData> _runIncomingStanzaHandlers(Stanza stanza, { StanzaHandlerData? initial }) async {
+    return _runStanzaHandlers(_incomingStanzaHandlers, stanza, initial: initial);
   }
 
-  Future<StanzaHandlerData> _runIncomingEncryptionStanzaHandlers(Stanza stanza) async {
-    return _runStanzaHandlers(_incomingEncryptionStanzaHandlers, stanza);
+  Future<StanzaHandlerData> _runIncomingPreStanzaHandlers(Stanza stanza) async {
+    return _runStanzaHandlers(_incomingPreStanzaHandlers, stanza);
   }
 
   Future<StanzaHandlerData> _runOutgoingPreStanzaHandlers(Stanza stanza, { StanzaHandlerData? initial }) async {
@@ -681,18 +681,18 @@ class XmppConnection {
 
     // Run the incoming stanza handlers and bounce with an error if no manager handled
     // it.
-    final incomingEncryptionHandlers = await _runIncomingEncryptionStanzaHandlers(stanza);
-    final prefix = incomingEncryptionHandlers.encrypted ?
+    final incomingPreHandlers = await _runIncomingPreStanzaHandlers(stanza);
+    final prefix = incomingPreHandlers.encrypted && incomingPreHandlers.other['encryption_error'] == null ?
       '(Encrypted) ' :
       '';
-    _log.finest('<== $prefix${incomingEncryptionHandlers.stanza.toXml()}');
+    _log.finest('<== $prefix${incomingPreHandlers.stanza.toXml()}');
 
     // See if we are waiting for this stanza
-    final id = incomingEncryptionHandlers.stanza.attributes['id'] as String?;
+    final id = incomingPreHandlers.stanza.attributes['id'] as String?;
     var awaited = false;
     await _awaitingResponseLock.synchronized(() async {
       if (id != null && _awaitingResponse.containsKey(id)) {
-        _awaitingResponse[id]!.complete(incomingEncryptionHandlers.stanza);
+        _awaitingResponse[id]!.complete(incomingPreHandlers.stanza);
         _awaitingResponse.remove(id);
         awaited = true;
       }
@@ -703,9 +703,18 @@ class XmppConnection {
     }
 
     // Only bounce if the stanza has neither been awaited, nor handled.
-    final incomingHandlers = await _runIncomingStanzaHandlers(incomingEncryptionHandlers.stanza);
+    final incomingHandlers = await _runIncomingStanzaHandlers(
+      incomingPreHandlers.stanza,
+      initial: StanzaHandlerData(
+        false,
+        incomingPreHandlers.cancel,
+        incomingPreHandlers.cancelReason,
+        incomingPreHandlers.stanza,
+        other: incomingPreHandlers.other,
+      ),
+    );
     if (!incomingHandlers.done) {
-      handleUnhandledStanza(this, stanza);
+      handleUnhandledStanza(this, incomingPreHandlers.stanza);
     }
   }
 

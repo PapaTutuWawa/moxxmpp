@@ -24,6 +24,7 @@ import 'package:moxxmpp/src/xeps/xep_0384/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/helpers.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/types.dart';
 import 'package:omemo_dart/omemo_dart.dart';
+import 'package:xml/xml.dart';
 
 const _doNotEncryptList = [
   // XEP-0033
@@ -53,27 +54,24 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   @override
-  List<StanzaHandler> getIncomingEncryptionStanzaHandlers() => [
+  List<StanzaHandler> getIncomingPreStanzaHandlers() => [
     StanzaHandler(
       stanzaTag: 'iq',
       tagXmlns: omemoXmlns,
       tagName: 'encrypted',
       callback: _onIncomingStanza,
-      priority: 9999,
     ),
     StanzaHandler(
       stanzaTag: 'presence',
       tagXmlns: omemoXmlns,
       tagName: 'encrypted',
       callback: _onIncomingStanza,
-      priority: 9999,
     ),
     StanzaHandler(
       stanzaTag: 'message',
       tagXmlns: omemoXmlns,
       tagName: 'encrypted',
       callback: _onIncomingStanza,
-      priority: -98,
     ),
   ];
 
@@ -432,16 +430,29 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       ),
     );
 
-    final children = stanza.children.where(
-      (child) => child.tag != 'encrypted' || child.attributes['xmlns'] != omemoXmlns,
-    ).toList();
     final other = Map<String, dynamic>.from(state.other);
+    var children = stanza.children;
     if (result.error != null) {
       other['encryption_error'] = result.error;
+    } else {
+      children = stanza.children.where(
+        (child) => child.tag != 'encrypted' || child.attributes['xmlns'] != omemoXmlns,
+      ).toList();
     }
 
     if (result.payload != null) {
-      final envelope = XMLNode.fromString(result.payload!);
+      XMLNode envelope;
+      try {
+        envelope = XMLNode.fromString(result.payload!);
+      } on XmlParserException catch (_) {
+        logger.warning('Failed to parse envelope payload: ${result.payload!}');
+        other['encryption_error'] = InvalidEnvelopePayloadException();
+        return state.copyWith(
+          encrypted: true,
+          other: other,
+        );
+      }
+
       children.addAll(
         envelope.firstTag('content')!.children,
       );
