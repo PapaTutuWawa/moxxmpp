@@ -15,11 +15,11 @@ void main() {
     );
 
     expect(
-      rs.currentRoster!.indexWhere((item) => item.jid == 'testuser@server.example') != -1,
+      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser@server.example') != -1,
       true,
     );
     expect(rs.loadCount, 1);
-    expect(rs.currentRoster!.length, 1);
+    expect(rs.getRosterItems().length, 1);
 
     // Receive another roster push
     await rs.handleRosterPush(
@@ -32,11 +32,11 @@ void main() {
     );
 
     expect(
-      rs.currentRoster!.indexWhere((item) => item.jid == 'testuser2@server2.example') != -1,
+      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser2@server2.example') != -1,
       true,
     );
     expect(rs.loadCount, 1);
-    expect(rs.currentRoster!.length, 2);
+    expect(rs.getRosterItems().length, 2);
 
     // Remove one of the items
      await rs.handleRosterPush(
@@ -49,15 +49,15 @@ void main() {
     );
 
     expect(
-      rs.currentRoster!.indexWhere((item) => item.jid == 'testuser2@server2.example') == -1,
+      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser2@server2.example') == -1,
       true,
     );
     expect(
-      rs.currentRoster!.indexWhere((item) => item.jid == 'testuser@server.example') != 1,
+      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser@server.example') != 1,
       true,
     );
     expect(rs.loadCount, 1);
-    expect(rs.currentRoster!.length, 1);   
+    expect(rs.getRosterItems().length, 1);   
   });
 
   test('Test a roster fetch', () async {
@@ -85,9 +85,9 @@ void main() {
     );
 
     expect(rs.loadCount, 1);
-    expect(rs.currentRoster!.length, 3);
-    expect(rs.currentRoster!.indexWhere((item) => item.jid == 'testuser@server.example') != -1, true);
-    expect(rs.currentRoster!.indexWhere((item) => item.jid == 'testuser2@server2.example') != -1, true);
-    expect(rs.currentRoster!.indexWhere((item) => item.jid == 'testuser3@server3.example') != -1, true);
+    expect(rs.getRosterItems().length, 3);
+    expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser@server.example') != -1, true);
+    expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser2@server2.example') != -1, true);
+    expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser3@server3.example') != -1, true);
   });
 }
