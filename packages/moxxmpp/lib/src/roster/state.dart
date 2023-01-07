@@ -114,7 +114,7 @@ abstract class BaseRosterStateManager {
         null,
         item,
       );
-    } else {
+    } else if (_currentRoster![index] != item) {
       // The item is updated
       _currentRoster![index] = item;
       return _RosterProcessTriple(
@@ -123,6 +123,13 @@ abstract class BaseRosterStateManager {
         null,
       );
     }
+
+    // Item has not been modified or added
+    return const _RosterProcessTriple(
+      null,
+      null,
+      null,
+    );
   }
 
   /// Handles a roster push from the RosterManager.

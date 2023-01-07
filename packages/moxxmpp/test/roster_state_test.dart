@@ -95,4 +95,59 @@ void main() {
     expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser2@server2.example') != -1, true);
     expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser3@server3.example') != -1, true);
   });
+
+  test('Test a roster fetch if we already have a roster', () async {
+    XmppEvent? event;
+    final rs = TestingRosterStateManager('aaaaa', [
+      XmppRosterItem(
+        jid: 'testuser@server.example',
+        subscription: 'both',
+      ),
+      XmppRosterItem(
+        jid: 'testuser2@server2.example',
+        subscription: 'to',
+      ),
+      XmppRosterItem(
+        jid: 'testuser3@server3.example',
+        subscription: 'from',
+      ),
+    ]);
+    rs.register((_event) {
+      event = _event;
+    });
+
+    // Fetch the roster
+    await rs.handleRosterFetch(
+      RosterRequestResult(
+        [
+          XmppRosterItem(
+            jid: 'testuser@server.example',
+            subscription: 'both',
+          ),
+          XmppRosterItem(
+            jid: 'testuser2@server2.example',
+            subscription: 'to',
+          ),
+          XmppRosterItem(
+            jid: 'testuser3@server3.example',
+            subscription: 'both',
+          ),
+          XmppRosterItem(
+            jid: 'testuser4@server4.example',
+            subscription: 'both',
+          ),
+        ],
+        'bbbbb',
+      ),
+    );
+
+    expect(event is RosterUpdatedEvent, true);
+    final updateEvent = event as RosterUpdatedEvent;
+
+    expect(updateEvent.added.length, 1);
+    expect(updateEvent.added.first.jid, 'testuser4@server4.example');
+    expect(updateEvent.modified.length, 1);
+    expect(updateEvent.modified.first.jid, 'testuser3@server3.example');
+    expect(updateEvent.removed.isEmpty, true);
+  });
 }

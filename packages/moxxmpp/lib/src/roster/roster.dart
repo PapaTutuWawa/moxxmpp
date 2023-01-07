@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -14,13 +15,38 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
+@immutable
 class XmppRosterItem {
-  XmppRosterItem({ required this.jid, required this.subscription, this.ask, this.name, this.groups = const [] });
+  const XmppRosterItem({ required this.jid, required this.subscription, this.ask, this.name, this.groups = const [] });
   final String jid;
   final String? name;
   final String subscription;
   final String? ask;
   final List<String> groups;
+
+  @override
+  bool operator==(Object other) {
+    // TODO(PapaTutuWawa): Implement the groups
+    return other is XmppRosterItem &&
+           other.jid == jid &&
+           other.name == name &&
+           other.subscription == subscription &&
+           other.ask == ask; /*&&
+           other.groups == groups;*/
+  }
+
+  @override
+  int get hashCode => jid.hashCode ^ name.hashCode ^ subscription.hashCode ^ ask.hashCode ^ groups.hashCode;
+  
+  @override
+  String toString() {
+    return 'XmppRosterItem('
+           'jid: $jid, '
+           'name: $name, '
+           'subscription: $subscription, '
+           'ask: $ask, '
+           'groups: $groups)';
+  }
 }
 
 enum RosterRemovalResult {
