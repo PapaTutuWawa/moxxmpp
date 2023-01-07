@@ -61,7 +61,7 @@ void main() {
     ])
     ..registerManagers([
       PresenceManager('http://moxxmpp.example'),
-      RosterManager(),
+      RosterManager(TestingRosterStateManager('', [])),
       DiscoManager(),
       PingManager(),
     ])

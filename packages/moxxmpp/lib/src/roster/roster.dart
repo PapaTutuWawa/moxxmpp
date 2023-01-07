@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:moxxmpp/src/jid.dart';
+import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
@@ -66,10 +67,16 @@ class RosterFeatureNegotiator extends XmppFeatureNegotiatorBase {
 
 /// This manager requires a RosterFeatureNegotiator to be registered.
 class RosterManager extends XmppManagerBase {
-  RosterManager(this._stateManager) : super() {
-    _stateManager.register(getAttributes().sendEvent);
-  }
+  RosterManager(this._stateManager) : super();
+
+  /// The class managing the entire roster state.
   final BaseRosterStateManager _stateManager;
+
+  @override
+  void register(XmppManagerAttributes attributes) {
+    super.register(attributes);
+    _stateManager.register(attributes.sendEvent); 
+  }
   
   @override
   String getId() => rosterManager;

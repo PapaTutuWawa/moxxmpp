@@ -7,7 +7,7 @@ import 'helpers/xmpp.dart';
 /// Returns true if the roster manager triggeres an event for a given stanza
 Future<bool> testRosterManager(String bareJid, String resource, String stanzaString) async {
   var eventTriggered = false;
-  final roster = RosterManager();
+  final roster = RosterManager(TestingRosterStateManager('', []));
   roster.register(XmppManagerAttributes(
       sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false }) async => XMLNode(tag: 'hallo'),
       sendEvent: (event) {
@@ -127,7 +127,7 @@ void main() {
       ),);
       conn.registerManagers([
         PresenceManager('http://moxxmpp.example'),
-        RosterManager(),
+        RosterManager(TestingRosterStateManager('', [])),
         DiscoManager(),
         PingManager(),
         StreamManagementManager(),
@@ -181,7 +181,7 @@ void main() {
       ),);
       conn.registerManagers([
         PresenceManager('http://moxxmpp.example'),
-        RosterManager(),
+        RosterManager(TestingRosterStateManager('', [])),
         DiscoManager(),
         PingManager(),
       ]);
@@ -235,7 +235,7 @@ void main() {
       ),);
       conn.registerManagers([
         PresenceManager('http://moxxmpp.example'),
-        RosterManager(),
+        RosterManager(TestingRosterStateManager('', [])),
         DiscoManager(),
         PingManager(),
       ]);
@@ -290,7 +290,7 @@ void main() {
       ),);
       conn.registerManagers([
         PresenceManager('http://moxxmpp.example'),
-        RosterManager(),
+        RosterManager(TestingRosterStateManager('', [])),
         DiscoManager(),
         PingManager(),
       ]);
@@ -308,7 +308,7 @@ void main() {
   group('Test roster pushes', () {
       test('Test for a CVE-2015-8688 style vulnerability', () async {
           var eventTriggered = false;
-          final roster = RosterManager();
+          final roster = RosterManager(TestingRosterStateManager('', []));
           roster.register(XmppManagerAttributes(
               sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false }) async => XMLNode(tag: 'hallo'),
               sendEvent: (event) {
