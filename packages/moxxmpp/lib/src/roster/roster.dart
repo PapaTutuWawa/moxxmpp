@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
@@ -26,13 +27,12 @@ class XmppRosterItem {
 
   @override
   bool operator==(Object other) {
-    // TODO(PapaTutuWawa): Implement the groups
     return other is XmppRosterItem &&
            other.jid == jid &&
            other.name == name &&
            other.subscription == subscription &&
-           other.ask == ask; /*&&
-           other.groups == groups;*/
+           other.ask == ask &&
+           const ListEquality<String>().equals(other.groups, groups);
   }
 
   @override
