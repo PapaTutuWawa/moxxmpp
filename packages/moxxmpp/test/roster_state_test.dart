@@ -4,13 +4,15 @@ import 'package:test/test.dart';
 void main() {
   test('Test receiving a roster push', () async {
     final rs = TestingRosterStateManager(null, []);
+    rs.register((_) {});
 
     await rs.handleRosterPush(
-      RosterPushEvent(
-        item: XmppRosterItem(
+      RosterPushResult(
+        XmppRosterItem(
           jid: 'testuser@server.example',
           subscription: 'both',
         ),
+        null,
       ),
     );
 
@@ -23,11 +25,12 @@ void main() {
 
     // Receive another roster push
     await rs.handleRosterPush(
-      RosterPushEvent(
-        item: XmppRosterItem(
+      RosterPushResult(
+        XmppRosterItem(
           jid: 'testuser2@server2.example',
           subscription: 'to',
         ),
+        null,
       ),
     );
 
@@ -40,11 +43,12 @@ void main() {
 
     // Remove one of the items
      await rs.handleRosterPush(
-      RosterPushEvent(
-        item: XmppRosterItem(
+      RosterPushResult(
+        XmppRosterItem(
           jid: 'testuser2@server2.example',
           subscription: 'remove',
         ),
+        null,
       ),
     );
 
@@ -62,11 +66,12 @@ void main() {
 
   test('Test a roster fetch', () async {
     final rs = TestingRosterStateManager(null, []);
+    rs.register((_) {});
 
     // Fetch the roster
     await rs.handleRosterFetch(
       RosterRequestResult(
-        items: [
+        [
           XmppRosterItem(
             jid: 'testuser@server.example',
             subscription: 'both',
@@ -80,7 +85,7 @@ void main() {
             subscription: 'from',
           ),
         ],
-        ver: 'aaaaaaaa',
+        'aaaaaaaa',
       ),
     );
 

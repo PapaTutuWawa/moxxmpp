@@ -54,13 +54,6 @@ class StreamResumedEvent extends XmppEvent {
 /// Triggered when stream resumption failed
 class StreamResumeFailedEvent extends XmppEvent {}
 
-/// Triggered when a roster push is received
-class RosterPushEvent extends XmppEvent {
-  RosterPushEvent({ required this.item, this.ver });
-  final XmppRosterItem item;
-  final String? ver;
-}
-
 /// Triggered when the roster has been modified
 class RosterUpdatedEvent extends XmppEvent {
   RosterUpdatedEvent(this.removed, this.modified, this.added);

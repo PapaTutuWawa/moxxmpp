@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
@@ -30,9 +29,15 @@ enum RosterRemovalResult {
 }
 
 class RosterRequestResult {
-  RosterRequestResult({ required this.items, this.ver });
+  RosterRequestResult(this.items, this.ver);
   List<XmppRosterItem> items;
   String? ver;
+}
+
+class RosterPushResult {
+  RosterPushResult(this.item, this.ver);
+  final XmppRosterItem item;
+  final String? ver;
 }
 
 /// A Stub feature negotiator for finding out whether roster versioning is supported.
@@ -110,14 +115,14 @@ class RosterManager extends XmppManagerBase {
 
     unawaited(
       _stateManager.handleRosterPush(
-        RosterPushEvent(
-          item: XmppRosterItem(
+        RosterPushResult(
+          XmppRosterItem(
             jid: item.attributes['jid']! as String,
             subscription: item.attributes['subscription']! as String,
             ask: item.attributes['ask'] as String?,
             name: item.attributes['name'] as String?, 
           ),
-          ver: query.attributes['ver'] as String?,
+          query.attributes['ver'] as String?,
         ),
       ),
     );
@@ -150,8 +155,8 @@ class RosterManager extends XmppManagerBase {
     }
 
     final result = RosterRequestResult(
-      items: items,
-      ver: rosterVersion,
+      items,
+      rosterVersion,
     );
 
     unawaited(

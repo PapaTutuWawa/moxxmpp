@@ -126,7 +126,7 @@ abstract class BaseRosterStateManager {
   }
 
   /// Handles a roster push from the RosterManager.
-  Future<void> handleRosterPush(RosterPushEvent event) async {
+  Future<void> handleRosterPush(RosterPushResult event) async {
     await _lock.synchronized(() async {
       await _loadRosterCache();
 
