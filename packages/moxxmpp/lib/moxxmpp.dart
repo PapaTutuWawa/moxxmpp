@@ -29,6 +29,7 @@ export 'package:moxxmpp/src/rfcs/rfc_2782.dart';
 export 'package:moxxmpp/src/rfcs/rfc_4790.dart';
 export 'package:moxxmpp/src/roster/errors.dart';
 export 'package:moxxmpp/src/roster/roster.dart';
+export 'package:moxxmpp/src/roster/state.dart';
 export 'package:moxxmpp/src/settings.dart';
 export 'package:moxxmpp/src/socket.dart';
 export 'package:moxxmpp/src/stanza.dart';

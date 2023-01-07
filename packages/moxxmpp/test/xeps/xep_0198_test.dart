@@ -243,7 +243,7 @@ void main() {
       final sm = StreamManagementManager();
       conn.registerManagers([
           PresenceManager('http://moxxmpp.example'),
-          RosterManager(),
+          RosterManager(TestingRosterStateManager('', [])),
           DiscoManager(),
           PingManager(),
           sm,
@@ -365,7 +365,7 @@ void main() {
       final sm = StreamManagementManager();
       conn.registerManagers([
           PresenceManager('http://moxxmpp.example'),
-          RosterManager(),
+          RosterManager(TestingRosterStateManager('', [])),
           DiscoManager(),
           PingManager(),
           sm,
@@ -519,7 +519,7 @@ void main() {
       ),);
       conn.registerManagers([
           PresenceManager('http://moxxmpp.example'),
-          RosterManager(),
+          RosterManager(TestingRosterStateManager('', [])),
           DiscoManager(),
           PingManager(),
           StreamManagementManager(),
@@ -611,7 +611,7 @@ void main() {
       ),);
       conn.registerManagers([
           PresenceManager('http://moxxmpp.example'),
-          RosterManager(),
+          RosterManager(TestingRosterStateManager('', [])),
           DiscoManager(),
           PingManager(),
           StreamManagementManager(),
@@ -703,7 +703,7 @@ void main() {
       ),);
       conn.registerManagers([
           PresenceManager('http://moxxmpp.example'),
-          RosterManager(),
+          RosterManager(TestingRosterStateManager('', [])),
           DiscoManager(),
           PingManager(),
           StreamManagementManager(),

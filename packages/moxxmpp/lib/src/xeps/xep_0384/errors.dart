@@ -7,3 +7,5 @@ class InvalidAffixElementsException with Exception {}
 class OmemoNotSupportedForContactException extends OmemoError {}
 
 class EncryptionFailedException with Exception {}
+
+class InvalidEnvelopePayloadException with Exception {}

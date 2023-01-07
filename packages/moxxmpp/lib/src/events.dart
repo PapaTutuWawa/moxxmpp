@@ -1,6 +1,7 @@
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/data.dart';
+import 'package:moxxmpp/src/roster/roster.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
@@ -53,6 +54,22 @@ class StreamResumedEvent extends XmppEvent {
 /// Triggered when stream resumption failed
 class StreamResumeFailedEvent extends XmppEvent {}
 
+/// Triggered when the roster has been modified
+class RosterUpdatedEvent extends XmppEvent {
+  RosterUpdatedEvent(this.removed, this.modified, this.added);
+
+  /// A list of bare JIDs that are removed from the roster
+  final List<String> removed;
+
+  /// A list of XmppRosterItems that are modified. Can be correlated with one's cache
+  /// using the jid attribute.
+  final List<XmppRosterItem> modified;
+
+  /// A list of XmppRosterItems that are added to the roster.
+  final List<XmppRosterItem> added;
+}
+
+/// Triggered when a message is received
 class MessageEvent extends XmppEvent {
   MessageEvent({
     required this.body,

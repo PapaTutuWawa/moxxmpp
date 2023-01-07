@@ -25,13 +25,12 @@ class CarbonsManager extends XmppManagerBase {
   String getName() => 'CarbonsManager';
 
   @override
-  List<StanzaHandler> getIncomingStanzaHandlers() => [
+  List<StanzaHandler> getIncomingPreStanzaHandlers() => [
     StanzaHandler(
       stanzaTag: 'message',
       tagName: 'received',
       tagXmlns: carbonsXmlns,
       callback: _onMessageReceived,
-      // Before all managers the message manager depends on
       priority: -98,
     ),
     StanzaHandler(
@@ -39,7 +38,6 @@ class CarbonsManager extends XmppManagerBase {
       tagName: 'sent',
       tagXmlns: carbonsXmlns,
       callback: _onMessageSent,
-      // Before all managers the message manager depends on
       priority: -98,
     )
   ];

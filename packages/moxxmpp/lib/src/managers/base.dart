@@ -31,6 +31,11 @@ abstract class XmppManagerBase {
   /// Return the StanzaHandlers associated with this manager that deal with stanzas we
   /// receive.
   List<StanzaHandler> getIncomingStanzaHandlers() => [];
+
+  /// Return the StanzaHandlers associated with this manager that deal with stanza handlers
+  /// that have to run before the main ones run. This is useful, for example, for OMEMO
+  /// as we have to decrypt the stanza before we do anything else.
+  List<StanzaHandler> getIncomingPreStanzaHandlers() => [];
   
   /// Return the NonzaHandlers associated with this manager.
   List<NonzaHandler> getNonzaHandlers() => [];
