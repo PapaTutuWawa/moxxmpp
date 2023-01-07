@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/roster/roster.dart';
 
 class _RosterProcessTriple {
@@ -21,6 +22,12 @@ abstract class BaseRosterStateManager {
   Future<RosterCacheLoadResult> loadRosterCache();
 
   Future<void> commitRoster(String? version, List<String> removed, List<XmppRosterItem> modified, List<XmppRosterItem> added);
+
+  Future<String?> getRosterVersion() async {
+    await _loadRosterCache();
+
+    return currentVersion;
+  }
   
   Future<void> _loadRosterCache() async {
     if (currentRoster == null) {

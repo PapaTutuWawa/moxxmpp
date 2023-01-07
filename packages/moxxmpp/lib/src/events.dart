@@ -1,6 +1,7 @@
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/data.dart';
+import 'package:moxxmpp/src/roster/roster.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
@@ -53,6 +54,14 @@ class StreamResumedEvent extends XmppEvent {
 /// Triggered when stream resumption failed
 class StreamResumeFailedEvent extends XmppEvent {}
 
+/// Triggered when a roster push is received
+class RosterPushEvent extends XmppEvent {
+  RosterPushEvent({ required this.item, this.ver });
+  final XmppRosterItem item;
+  final String? ver;
+}
+
+/// Triggered when a message is received
 class MessageEvent extends XmppEvent {
   MessageEvent({
     required this.body,

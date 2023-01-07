@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -8,6 +9,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/roster/errors.dart';
+import 'package:moxxmpp/src/roster/state.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
@@ -31,12 +33,6 @@ class RosterRequestResult {
   RosterRequestResult({ required this.items, this.ver });
   List<XmppRosterItem> items;
   String? ver;
-}
-
-class RosterPushEvent extends XmppEvent {
-  RosterPushEvent({ required this.item, this.ver });
-  final XmppRosterItem item;
-  final String? ver;
 }
 
 /// A Stub feature negotiator for finding out whether roster versioning is supported.
@@ -65,8 +61,8 @@ class RosterFeatureNegotiator extends XmppFeatureNegotiatorBase {
 
 /// This manager requires a RosterFeatureNegotiator to be registered.
 class RosterManager extends XmppManagerBase {
-  RosterManager() : _rosterVersion = null, super();
-  String? _rosterVersion;
+  RosterManager(this._stateManager) : super();
+  final BaseRosterStateManager _stateManager;
   
   @override
   String getId() => rosterManager;
@@ -86,19 +82,7 @@ class RosterManager extends XmppManagerBase {
 
   @override
   Future<bool> isSupported() async => true; 
-  
-  /// Commit the current roster to storage.
-  Future<void> commitLastRosterVersion(String version) async {}
 
-  /// Load the last roster data
-  Future<void> loadLastRosterVersion() async {}
-
-  void setRosterVersion(String ver) {
-    assert(_rosterVersion == null, 'A roster version must not be empty');
-
-    _rosterVersion = ver;
-  }
- 
   Future<StanzaHandlerData> _onRosterPush(Stanza stanza, StanzaHandlerData state) async {
     final attrs = getAttributes();
     final from = stanza.attributes['from'] as String?;
@@ -122,21 +106,20 @@ class RosterManager extends XmppManagerBase {
       return state.copyWith(done: true);
     }
 
-    if (query.attributes['ver'] != null) {
-      final ver = query.attributes['ver']! as String;
-      await commitLastRosterVersion(ver);
-      _rosterVersion = ver;
-    }
-    
-    attrs.sendEvent(RosterPushEvent(
-      item: XmppRosterItem(
-        jid: item.attributes['jid']! as String,
-        subscription: item.attributes['subscription']! as String,
-        ask: item.attributes['ask'] as String?,
-        name: item.attributes['name'] as String?, 
+    unawaited(
+      _stateManager.handleRosterPush(
+        RosterPushEvent(
+          item: XmppRosterItem(
+            jid: item.attributes['jid']! as String,
+            subscription: item.attributes['subscription']! as String,
+            ask: item.attributes['ask'] as String?,
+            name: item.attributes['name'] as String?, 
+          ),
+          ver: query.attributes['ver'] as String?,
+        ),
       ),
-      ver: query.attributes['ver'] as String?,
-    ),);
+    );
+    
     await attrs.sendStanza(stanza.reply());
 
     return state.copyWith(done: true);
@@ -146,38 +129,34 @@ class RosterManager extends XmppManagerBase {
   /// the server deems a regular roster response more efficient than n roster pushes.
   Future<Result<RosterRequestResult, RosterError>> _handleRosterResponse(XMLNode? query) async {
     final List<XmppRosterItem> items;
+    String? rosterVersion;
     if (query != null) {
-      items = query.children.map((item) => XmppRosterItem(
-        name: item.attributes['name'] as String?,
-        jid: item.attributes['jid']! as String,
-        subscription: item.attributes['subscription']! as String,
-        ask: item.attributes['ask'] as String?,
-        groups: item.findTags('group').map((groupNode) => groupNode.innerText()).toList(),
-      ),).toList();
+      items = query.children.map(
+        (item) => XmppRosterItem(
+          name: item.attributes['name'] as String?,
+          jid: item.attributes['jid']! as String,
+          subscription: item.attributes['subscription']! as String,
+          ask: item.attributes['ask'] as String?,
+          groups: item.findTags('group').map((groupNode) => groupNode.innerText()).toList(),
+        ),
+      ).toList();
 
-      if (query.attributes['ver'] != null) {
-        final ver_ = query.attributes['ver']! as String;
-        await commitLastRosterVersion(ver_);
-        _rosterVersion = ver_;
-      }
+      rosterVersion = query.attributes['ver'] as String?;
     } else {
       logger.warning('Server response to roster request without roster versioning does not contain a <query /> element, while the type is not error. This violates RFC6121');
       return Result(NoQueryError());
     }
 
-    final ver = query.attributes['ver'] as String?;
-    if (ver != null) {
-      _rosterVersion = ver;
-      await commitLastRosterVersion(ver);
-    }
-    
-    return Result(
-      RosterRequestResult(
-        items: items,
-        ver: ver,
-      ),
+    final result = RosterRequestResult(
+      items: items,
+      ver: rosterVersion,
     );
 
+    unawaited(
+      _stateManager.handleRosterFetch(result),
+    );
+
+    return Result(result);
   }
   
   /// Requests the roster following RFC 6121 without using roster versioning.
@@ -207,10 +186,6 @@ class RosterManager extends XmppManagerBase {
   /// Requests a series of roster pushes according to RFC6121. Requires that the server
   /// advertises urn:xmpp:features:rosterver in the stream features.
   Future<Result<RosterRequestResult?, RosterError>> requestRosterPushes() async {
-    if (_rosterVersion == null) {
-      await loadLastRosterVersion();
-    }
-
     final attrs = getAttributes();
     final result = await attrs.sendStanza(
       Stanza.iq(
@@ -220,7 +195,7 @@ class RosterManager extends XmppManagerBase {
             tag: 'query',
             xmlns: rosterXmlns,
             attributes: {
-              'ver': _rosterVersion ?? ''
+              'ver': await _stateManager.getRosterVersion() ?? '',
             },
           )
         ],
