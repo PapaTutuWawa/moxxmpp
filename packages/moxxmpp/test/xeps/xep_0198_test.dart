@@ -4,7 +4,7 @@ import '../helpers/logging.dart';
 import '../helpers/xmpp.dart';
 
 Future<void> runIncomingStanzaHandlers(StreamManagementManager man, Stanza stanza) async {
-  for (final handler in man.getIncomingStanzaHandlers()) {
+  for (final handler in man.getIncomingPreStanzaHandlers()) {
     if (handler.matches(stanza)) await handler.callback(stanza, StanzaHandlerData(false, false, null, stanza));
   }
 }
