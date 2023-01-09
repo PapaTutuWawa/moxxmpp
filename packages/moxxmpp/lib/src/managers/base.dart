@@ -21,23 +21,28 @@ abstract class XmppManagerBase {
   }
 
   /// Return the StanzaHandlers associated with this manager that deal with stanzas we
-  /// send. These are run before the stanza is sent.
+  /// send. These are run before the stanza is sent. The higher the value of the
+  /// handler's priority, the earlier it is run.
   List<StanzaHandler> getOutgoingPreStanzaHandlers() => [];
 
   /// Return the StanzaHandlers associated with this manager that deal with stanzas we
-  /// send. These are run after the stanza is sent.
+  /// send. These are run after the stanza is sent. The higher the value of the
+  /// handler's priority, the earlier it is run.
   List<StanzaHandler> getOutgoingPostStanzaHandlers() => [];
   
   /// Return the StanzaHandlers associated with this manager that deal with stanzas we
-  /// receive.
+  /// receive. The higher the value of the
+  /// handler's priority, the earlier it is run.
   List<StanzaHandler> getIncomingStanzaHandlers() => [];
 
   /// Return the StanzaHandlers associated with this manager that deal with stanza handlers
   /// that have to run before the main ones run. This is useful, for example, for OMEMO
-  /// as we have to decrypt the stanza before we do anything else.
+  /// as we have to decrypt the stanza before we do anything else. The higher the value
+  /// of the handler's priority, the earlier it is run.
   List<StanzaHandler> getIncomingPreStanzaHandlers() => [];
   
-  /// Return the NonzaHandlers associated with this manager.
+  /// Return the NonzaHandlers associated with this manager. The higher the value of the
+  /// handler's priority, the earlier it is run.
   List<NonzaHandler> getNonzaHandlers() => [];
 
   /// Return a list of features that should be included in a disco response.

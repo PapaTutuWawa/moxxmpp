@@ -142,7 +142,7 @@ class StreamManagementManager extends XmppManagerBase {
   ];
 
   @override
-  List<StanzaHandler> getIncomingStanzaHandlers() => [
+  List<StanzaHandler> getIncomingPreStanzaHandlers() => [
     StanzaHandler(
       callback: _onServerStanzaReceived,
       priority: 9999,

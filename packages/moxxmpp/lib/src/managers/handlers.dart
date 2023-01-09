@@ -5,7 +5,6 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 abstract class Handler {
-
   const Handler(this.matchStanzas, { this.nonzaTag, this.nonzaXmlns });
   final String? nonzaTag;
   final String? nonzaXmlns;
@@ -32,7 +31,6 @@ abstract class Handler {
 }
 
 class NonzaHandler extends Handler {
-
   NonzaHandler({
       required this.callback,
       String? nonzaTag,
@@ -46,7 +44,6 @@ class NonzaHandler extends Handler {
 }
 
 class StanzaHandler extends Handler {
-
   StanzaHandler({
       required this.callback,
       this.tagXmlns,
