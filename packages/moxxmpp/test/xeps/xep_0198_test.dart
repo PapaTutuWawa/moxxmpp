@@ -348,7 +348,7 @@ void main() {
           ),
           StanzaExpectation(
             "<iq to='user@example.com' type='get' id='a' xmlns='jabber:client' />",
-            "<iq to='user@example.com' type='result' id='a' />",
+            "<iq from='user@example.com' type='result' id='a' />",
             ignoreId: true,
             adjustId: true,
           ),
