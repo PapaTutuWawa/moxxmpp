@@ -11,6 +11,16 @@ to return the list of SRV records, encoded by `MoxSrvRecord` objects. To perform
 resolution, one can use any DNS library. A Flutter plugin implementing SRV resolution
 is, for example, [moxdns](https://codeberg.org/moxxy/moxdns).
 
+## Usage
+
+Include the following as a dependency in your pubspec file:
+
+```
+ moxxmpp_socket_tcp:
+    hosted: https://git.polynom.me/api/packages/Moxxy/pub
+    version: 0.1.2+9
+```
+
 ## License
 
 See `./LICENSE`.

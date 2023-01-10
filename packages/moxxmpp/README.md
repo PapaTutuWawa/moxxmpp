@@ -2,6 +2,16 @@
 
 A pure-Dart XMPP library written for Moxxy.
 
+## Usage
+
+Include the following as a dependency in your pubspec file:
+
+```
+ moxxmpp:
+    hosted: https://git.polynom.me/api/packages/Moxxy/pub
+    version: 0.1.6+1
+```
+
 ## License
 
 See `./LICENSE`.

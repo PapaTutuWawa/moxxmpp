@@ -3,13 +3,13 @@
 moxxmpp is a XMPP library written purely in Dart for usage in Moxxy.
 
 ## Packages
-### moxxmpp
+### [moxxmpp](./packages/moxxmpp)
 
 This package contains the actual XMPP code that is platform-independent.
 
-### moxxmpp_socket
+### [moxxmpp_socket_tcp](./packages/moxxmpp_socket_tcp)
 
-`moxxmpp_socket` contains the implementation of the `BaseSocketWrapper` class that
+`moxxmpp_socket_tcp` contains the implementation of the `BaseSocketWrapper` class that
 implements the RFC6120 connection algorithm and XEP-0368 direct TLS connections,
 if a DNS implementation is given, and supports StartTLS.
 
