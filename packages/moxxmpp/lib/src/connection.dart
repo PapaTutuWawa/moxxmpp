@@ -29,22 +29,33 @@ import 'package:moxxmpp/src/xeps/xep_0352.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:uuid/uuid.dart';
 
+/// The states the XmppConnection can be in
 enum XmppConnectionState {
+  /// The XmppConnection instance is not connected to the server. This is either the
+  /// case before connecting or after disconnecting.
   notConnected,
+
+  /// We are currently trying to connect to the server.
   connecting,
+
+  /// We are currently connected to the server.
   connected,
+
+  /// We have received an unrecoverable error and the server killed the connection
   error
 }
 
+/// Metadata for [XmppConnection.sendStanza].
 enum StanzaFromType {
-  // Add the full JID to the stanza as the from attribute
+  /// Add the full JID to the stanza as the from attribute
   full,
-  // Add the bare JID to the stanza as the from attribute
+  /// Add the bare JID to the stanza as the from attribute
   bare,
-  // Add no JID as the from attribute
+  /// Add no JID as the from attribute
   none
 }
 
+/// Nonza describing the XMPP stream header.
 class StreamHeaderNonza extends XMLNode {
   StreamHeaderNonza(String serverDomain) : super(
       tag: 'stream:stream',
@@ -59,6 +70,7 @@ class StreamHeaderNonza extends XMLNode {
     );
 }
 
+/// The result of an awaited connection.
 class XmppConnectionResult {
   const XmppConnectionResult(
     this.success,
@@ -67,16 +79,24 @@ class XmppConnectionResult {
     }
   );
 
+  /// True if the connection was successful. False if it failed for any reason.
   final bool success;
+
   // If a connection attempt fails, i.e. success is false, then this indicates the
   // reason the connection failed.
   final XmppError? error;
 }
 
+/// A surrogate key for awaiting stanzas.
 @immutable
 class _StanzaAwaitableData {
   const _StanzaAwaitableData(this.sentTo, this.id);
+
+  /// The JID the original stanza was sent to. We expect the result to come from the
+  /// same JID.
   final String sentTo;
+
+  /// The ID of the original stanza. We expect the result to have the same ID.
   final String id;
 
   @override
@@ -90,10 +110,8 @@ class _StanzaAwaitableData {
   }
 }
 
+/// This class is a connection to the server.
 class XmppConnection {
-  /// [_socket] is for debugging purposes.
-  /// [connectionPingDuration] is the duration after which a ping will be sent to keep
-  /// the connection open. Defaults to 15 minutes.
   XmppConnection(
     ReconnectionPolicy reconnectionPolicy,
     this._socket,
@@ -101,26 +119,7 @@ class XmppConnection {
       this.connectionPingDuration = const Duration(minutes: 3),
       this.connectingTimeout = const Duration(minutes: 2),
     }
-  ) :
-    _connectionState = XmppConnectionState.notConnected,
-    _routingState = RoutingState.preConnection,
-    _eventStreamController = StreamController.broadcast(),
-    _resource = '',
-    _streamBuffer = XmlStreamBuffer(),
-    _uuid = const Uuid(),
-    _awaitingResponse = {},
-    _awaitingResponseLock = Lock(),
-    _xmppManagers = {},
-    _incomingStanzaHandlers = List.empty(growable: true),
-    _incomingPreStanzaHandlers = List.empty(growable: true),
-    _outgoingPreStanzaHandlers = List.empty(growable: true),
-    _outgoingPostStanzaHandlers = List.empty(growable: true),
-    _reconnectionPolicy = reconnectionPolicy,
-    _featureNegotiators = {},
-    _streamFeatures = List.empty(growable: true),
-    _negotiationLock = Lock(),
-    _isAuthenticated = false,
-    _log = Logger('XmppConnection') {
+  ) : _reconnectionPolicy = reconnectionPolicy {
       // Allow the reconnection policy to perform reconnections by itself
       _reconnectionPolicy.register(
         _attemptReconnection,
@@ -134,69 +133,82 @@ class XmppConnection {
   }
 
 
-  /// Connection properties
-  ///
-  /// The state that the connection currently is in
-  XmppConnectionState _connectionState;
+  /// The state that the connection is currently in
+  XmppConnectionState _connectionState = XmppConnectionState.notConnected;
+
   /// The socket that we are using for the connection and its data stream
   final BaseSocketWrapper _socket;
+
+  /// The data stream of the socket
   late final Stream<String> _socketStream;
-  /// Account settings
+
+
+  /// Connection settings
   late ConnectionSettings _connectionSettings;
+
   /// A policy on how to reconnect 
   final ReconnectionPolicy _reconnectionPolicy;
-  /// A list of stanzas we are tracking with its corresponding critical section
-  final Map<_StanzaAwaitableData, Completer<XMLNode>> _awaitingResponse;
-  final Lock _awaitingResponseLock;
+
+  /// A list of stanzas we are tracking with its corresponding critical section lock
+  final Map<_StanzaAwaitableData, Completer<XMLNode>> _awaitingResponse = {};
+  final Lock _awaitingResponseLock = Lock();
   
-  /// Helpers
-  ///
-  final List<StanzaHandler> _incomingStanzaHandlers;
-  final List<StanzaHandler> _incomingPreStanzaHandlers;
-  final List<StanzaHandler> _outgoingPreStanzaHandlers;
-  final List<StanzaHandler> _outgoingPostStanzaHandlers;
-  final StreamController<XmppEvent> _eventStreamController;
-  final Map<String, XmppManagerBase> _xmppManagers;
+  /// Sorted list of handlers that we call or incoming and outgoing stanzas
+  final List<StanzaHandler> _incomingStanzaHandlers = List.empty(growable: true);
+  final List<StanzaHandler> _incomingPreStanzaHandlers = List.empty(growable: true);
+  final List<StanzaHandler> _outgoingPreStanzaHandlers = List.empty(growable: true);
+  final List<StanzaHandler> _outgoingPostStanzaHandlers = List.empty(growable: true);
+  final StreamController<XmppEvent> _eventStreamController = StreamController.broadcast();
+  final Map<String, XmppManagerBase> _xmppManagers = {};
   
-  /// Stream properties
-  ///
   /// Disco info we got after binding a resource (xmlns)
   final List<String> _serverFeatures = List.empty(growable: true);
+
   /// The buffer object to keep split up stanzas together
-  final XmlStreamBuffer _streamBuffer;
+  final XmlStreamBuffer _streamBuffer = XmlStreamBuffer();
+
   /// UUID object to generate stanza and origin IDs
-  final Uuid _uuid;
+  final Uuid _uuid = const Uuid();
+
   /// The time between sending a ping to keep the connection open
   // TODO(Unknown): Only start the timer if we did not send a stanza after n seconds
   final Duration connectionPingDuration;
+
   /// The time that we may spent in the "connecting" state
   final Duration connectingTimeout;
+
   /// The current state of the connection handling state machine.
-  RoutingState _routingState;
+  RoutingState _routingState = RoutingState.preConnection;
+
   /// The currently bound resource or '' if none has been bound yet.
-  String _resource;
+  String _resource = '';
+
   /// True if we are authenticated. False if not.
-  bool _isAuthenticated;
+  bool _isAuthenticated = false;
+
   /// Timer for the keep-alive ping.
   Timer? _connectionPingTimer;
+
   /// Timer for the connecting timeout
   Timer? _connectingTimeoutTimer;
+
   /// Completers for certain actions
   // ignore: use_late_for_private_fields_and_variables
   Completer<XmppConnectionResult>? _connectionCompleter;
+
   /// Controls whether an XmppSocketClosureEvent triggers a reconnection.
   bool _socketClosureTriggersReconnect = true;
 
   /// Negotiators
-  final Map<String, XmppFeatureNegotiatorBase> _featureNegotiators;
+  final Map<String, XmppFeatureNegotiatorBase> _featureNegotiators = {};
   XmppFeatureNegotiatorBase? _currentNegotiator;
-  final List<XMLNode> _streamFeatures;
+  final List<XMLNode> _streamFeatures = List.empty(growable: true);
   /// Prevent data from being passed to _currentNegotiator.negotiator while the negotiator
   /// is still running.
-  final Lock _negotiationLock;
+  final Lock _negotiationLock = Lock();
   
   /// Misc
-  final Logger _log;
+  final Logger _log = Logger('XmppConnection');
 
   ReconnectionPolicy get reconnectionPolicy => _reconnectionPolicy;
   
