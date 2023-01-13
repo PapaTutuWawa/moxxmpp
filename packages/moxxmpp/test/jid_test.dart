@@ -1,6 +1,5 @@
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
-
 void main() {
   test('Parse a full JID', () {
     final jid = JID.fromString('test@server/abc');
@@ -41,5 +40,16 @@ void main() {
 
   test('Parse resource with a slash', () {
     expect(JID.fromString('hallo@welt.example./test/welt') == JID('hallo', 'welt.example', 'test/welt'), true);
+  });
+
+  test('bareCompare', () {
+    final jid1 = JID('hallo', 'welt', 'lol');
+    final jid2 = JID('hallo', 'welt', '');
+    final jid3 = JID('hallo', 'earth', 'true');
+
+    expect(jid1.bareCompare(jid2), true);
+    expect(jid2.bareCompare(jid1), true);
+    expect(jid2.bareCompare(jid1, ensureBare: true), false);
+    expect(jid2.bareCompare(jid3), false);
   });
 }

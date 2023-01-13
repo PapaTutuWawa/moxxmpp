@@ -12,10 +12,17 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0297.dart';
 
+/// This manager class implements support for XEP-0280.
 class CarbonsManager extends XmppManagerBase {
   CarbonsManager() : super();
+
+  /// Indicates that message carbons are enabled.
   bool _isEnabled = false;
+
+  /// Indicates that the server supports message carbons.
   bool _supported = false;
+
+  /// Indicates that we know that [CarbonsManager._supported] is accurate.
   bool _gotSupported = false;
   
   @override
@@ -101,10 +108,15 @@ class CarbonsManager extends XmppManagerBase {
       stanza: carbon,
     );
   }
-  
+
+  /// Send a request to the server, asking it to enable Message Carbons.
+  ///
+  /// Returns true if carbons were enabled. False, if not.
   Future<bool> enableCarbons() async {
-    final result = await getAttributes().sendStanza(
+    final attrs = getAttributes();
+    final result = await attrs.sendStanza(
       Stanza.iq(
+        to: attrs.getFullJID().toBare().toString(),
         type: 'set',
         children: [
           XMLNode.xmlns(
@@ -129,6 +141,9 @@ class CarbonsManager extends XmppManagerBase {
     return true;
   }
 
+  /// Send a request to the server, asking it to disable Message Carbons.
+  ///
+  /// Returns true if carbons were disabled. False, if not.
   Future<bool> disableCarbons() async {
     final result = await getAttributes().sendStanza(
       Stanza.iq(
@@ -163,8 +178,15 @@ class CarbonsManager extends XmppManagerBase {
   void forceEnable() {
     _isEnabled = true;
   }
-  
+
+  /// Checks if a carbon sent by [senderJid] is valid to prevent vulnerabilities like
+  /// the ones listed at https://xmpp.org/extensions/xep-0280.html#security.
+  ///
+  /// Returns true if the carbon is valid. Returns false if not.
   bool isCarbonValid(JID senderJid) {
-    return _isEnabled && senderJid == getAttributes().getConnectionSettings().jid.toBare();
+    return _isEnabled && getAttributes().getFullJID().bareCompare(
+      senderJid,
+      ensureBare: true,
+    );
   }
 }
