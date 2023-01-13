@@ -4,27 +4,33 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
 
-abstract class ReconnectionPolicy {
+/// A callback function to be called when the connection to the server has been lost.
+typedef ConnectionLostCallback = Future<void> Function();
 
-  ReconnectionPolicy()
-    : _shouldAttemptReconnection = false,
-      _isReconnecting = false,
-      _isReconnectingLock = Lock();
+/// A function that, when called, causes the XmppConnection to connect to the server, if
+/// another reconnection is not already running.
+typedef PerformReconnectFunction = Future<void> Function();
+
+abstract class ReconnectionPolicy {
   /// Function provided by XmppConnection that allows the policy
   /// to perform a reconnection.
-  Future<void> Function()? performReconnect;
+  PerformReconnectFunction? performReconnect;
+
   /// Function provided by XmppConnection that allows the policy
   /// to say that we lost the connection.
-  void Function()? triggerConnectionLost;
+  ConnectionLostCallback? triggerConnectionLost;
+
   /// Indicate if should try to reconnect.
-  bool _shouldAttemptReconnection;
+  bool _shouldAttemptReconnection = false;
+
   /// Indicate if a reconnection attempt is currently running.
-  bool _isReconnecting;
+  bool _isReconnecting = false;
+
   /// And the corresponding lock
-  final Lock _isReconnectingLock;
+  final Lock _isReconnectingLock = Lock();
   
   /// Called by XmppConnection to register the policy.
-  void register(Future<void> Function() performReconnect, void Function() triggerConnectionLost) {
+  void register(PerformReconnectFunction performReconnect, ConnectionLostCallback triggerConnectionLost) {
     this.performReconnect = performReconnect;
     this.triggerConnectionLost = triggerConnectionLost;
 

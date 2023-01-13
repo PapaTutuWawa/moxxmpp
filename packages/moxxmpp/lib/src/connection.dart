@@ -49,10 +49,12 @@ enum XmppConnectionState {
 enum StanzaFromType {
   /// Add the full JID to the stanza as the from attribute
   full,
+
   /// Add the bare JID to the stanza as the from attribute
   bare,
+
   /// Add no JID as the from attribute
-  none
+  none,
 }
 
 /// Nonza describing the XMPP stream header.
@@ -207,9 +209,30 @@ class XmppConnection {
   /// is still running.
   final Lock _negotiationLock = Lock();
   
-  /// Misc
+  /// The logger for the class
   final Logger _log = Logger('XmppConnection');
 
+  /// A value indicating whether a connection attempt is currently running or not
+  bool _isConnectionRunning = false;
+  final Lock _connectionRunningLock = Lock();
+
+  /// Enters the critical section for accessing [XmppConnection._isConnectionRunning]
+  /// and does the following:
+  /// - if _isConnectionRunning is false, set it to true and return false.
+  /// - if _isConnectionRunning is true, return true.
+  Future<bool> _testAndSetIsConnectionRunning() async => _connectionRunningLock.synchronized(() {
+    if (!_isConnectionRunning) {
+      _isConnectionRunning = true;
+      return false;
+    }
+
+    return true;
+  });
+
+  /// Enters the critical section for accessing [XmppConnection._isConnectionRunning]
+  /// and sets it to false.
+  Future<void> _resetIsConnectionRunning() async => _connectionRunningLock.synchronized(() => _isConnectionRunning = false);
+  
   ReconnectionPolicy get reconnectionPolicy => _reconnectionPolicy;
   
   List<String> get serverFeatures => _serverFeatures;
@@ -365,6 +388,11 @@ class XmppConnection {
 
   /// Attempts to reconnect to the server by following an exponential backoff.
   Future<void> _attemptReconnection() async {
+    if (await _testAndSetIsConnectionRunning()) {
+      _log.warning('_attemptReconnection is called but connection attempt is already running. Ignoring...');
+      return;
+    }
+
     _log.finest('_attemptReconnection: Setting state to notConnected');
     await _setConnectionState(XmppConnectionState.notConnected);
     _log.finest('_attemptReconnection: Done');
@@ -400,6 +428,7 @@ class XmppConnection {
     }
 
     await _setConnectionState(XmppConnectionState.error);
+    await _resetIsConnectionRunning();
     await _reconnectionPolicy.onFailure();
   }
 
@@ -797,6 +826,7 @@ class XmppConnection {
   /// a disco sweep among other things.
   Future<void> _onNegotiationsDone() async {
     // Set the connection state
+    await _resetIsConnectionRunning();
     await _setConnectionState(XmppConnectionState.connected);
 
     // Resolve the connection completion future
@@ -980,9 +1010,10 @@ class XmppConnection {
   }
 
   /// To be called when we lost the network connection.
-  void _onNetworkConnectionLost() {
+  Future<void> _onNetworkConnectionLost() async {
     _socket.close();
-    _setConnectionState(XmppConnectionState.notConnected);
+    await _resetIsConnectionRunning();
+    await _setConnectionState(XmppConnectionState.notConnected);
   }
 
   /// Attempt to gracefully close the session
@@ -1023,11 +1054,12 @@ class XmppConnection {
   
   /// Like [connect] but the Future resolves when the resource binding is either done or
   /// SASL has failed.
-  Future<XmppConnectionResult> connectAwaitable({ String? lastResource }) {
+  Future<XmppConnectionResult> connectAwaitable({ String? lastResource }) async {
     _runPreConnectionAssertions();
+    await _resetIsConnectionRunning();
     _connectionCompleter = Completer();
     _log.finest('Calling connect() from connectAwaitable');
-    connect(lastResource: lastResource);
+    await connect(lastResource: lastResource);
     return _connectionCompleter!.future;
   }
  
@@ -1039,6 +1071,7 @@ class XmppConnection {
     }
     
     _runPreConnectionAssertions();
+    await _resetIsConnectionRunning();
     _reconnectionPolicy.setShouldReconnect(true);
     
     if (lastResource != null) {
