@@ -1,3 +1,4 @@
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -20,6 +21,7 @@ import 'package:moxxmpp/src/xeps/xep_0444.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
+import 'package:moxxmpp/src/xeps/xep_0461.dart';
 
 /// Data used to build a message stanza.
 ///
@@ -140,6 +142,11 @@ class MessageManager extends XmppManagerBase {
   /// element to this id. If originId is non-null, then it will create an "origin-id"
   /// child in the message stanza and set its id to originId.
   void sendMessage(MessageDetails details) {
+    assert(
+      implies(details.quoteBody != null, details.quoteFrom != null && details.quoteId != null),
+      'When quoting a message, then quoteFrom and quoteId must also be non-null',
+    );
+
     final stanza = Stanza.message(
       to: details.to,
       type: 'chat',
@@ -148,11 +155,11 @@ class MessageManager extends XmppManagerBase {
     );
 
     if (details.quoteBody != null) {
-      final fallback = '&gt; ${details.quoteBody!}';
-
+      final quote = QuoteData.fromBodies(details.quoteBody!, details.body!);
+        
       stanza
         ..addChild(
-          XMLNode(tag: 'body', text: '$fallback\n${details.body}'),
+          XMLNode(tag: 'body', text: quote.body),
         )
         ..addChild(
           XMLNode.xmlns(
@@ -176,7 +183,7 @@ class MessageManager extends XmppManagerBase {
                 tag: 'body',
                 attributes: <String, String>{
                   'start': '0',
-                  'end': '${fallback.length}'
+                  'end': '${quote.fallbackLength}',
                 },
               )
             ],
