@@ -523,7 +523,10 @@ class XmppConnection {
     var future = Future.value(XMLNode(tag: 'not-used'));
     if (awaitable) {
       future = await _stanzaAwaiter.addPending(
-        data.stanza.to!,
+        // A stanza with no to attribute is for direct processing by the server. As such,
+        // we can correlate it by just *assuming* we have that attribute
+        // (RFC 6120 Section 8.1.1.1)
+        data.stanza.to ?? _connectionSettings.jid.toBare().toString(),
         data.stanza.id!,
         data.stanza.tag,
       );
