@@ -10,22 +10,31 @@ import 'package:moxxmpp_socket_tcp/src/rfc_2782.dart';
 
 /// TCP socket implementation for XmppConnection
 class TCPSocketWrapper extends BaseSocketWrapper {
-  TCPSocketWrapper(this._logData)
-  : _log = Logger('TCPSocketWrapper'),
-    _dataStream = StreamController.broadcast(),
-    _eventStream = StreamController.broadcast(),
-    _secure = false,
-    _ignoreSocketClosure = false;
+  TCPSocketWrapper(this._logData);
+
+  /// The underlying Socket/SecureSocket instance.
   Socket? _socket;
-  bool _ignoreSocketClosure;
-  final StreamController<String> _dataStream;
-  final StreamController<XmppSocketEvent> _eventStream;
+
+  /// Indicates that we expect a socket closure.
+  bool _expectSocketClosure = false;
+
+  /// The stream of incoming data from the socket.
+  final StreamController<String> _dataStream = StreamController.broadcast();
+
+  /// The stream of outgoing (TCPSocketWrapper -> XmppConnection) events.
+  final StreamController<XmppSocketEvent> _eventStream = StreamController.broadcast();
+
+  /// A subscription on the socket's data stream.
   StreamSubscription<dynamic>? _socketSubscription;
 
-  final Logger _log;
+  /// Logger
+  final Logger _log = Logger('TCPSocketWrapper');
+
+  /// Flag to indicate if incoming and outgoing data should get logged.
   final bool _logData;
 
-  bool _secure;
+  /// Indiacted whether the connection is secure.
+  bool _secure = false;
 
   @override
   bool isSecure() => _secure;
@@ -72,7 +81,6 @@ class TCPSocketWrapper extends BaseSocketWrapper {
     for (final srv in results) {
       try {
         _log.finest('Attempting secure connection to ${srv.target}:${srv.port}...');
-        _ignoreSocketClosure = true;
 
         // Workaround: We cannot set the SNI directly when using SecureSocket.connect.
         // instead, we connect using a regular socket and then secure it. This allows
@@ -89,13 +97,11 @@ class TCPSocketWrapper extends BaseSocketWrapper {
           onBadCertificate: (cert) => onBadCertificate(cert, domain),
         );
 
-        _ignoreSocketClosure = false;
         _secure = true;
         _log.finest('Success!');
         return true;
       } on Exception catch(e) {
         _log.finest('Failure! $e');
-        _ignoreSocketClosure = false;
 
         if (e is HandshakeException) {
           failedDueToTLS = true;
@@ -118,19 +124,16 @@ class TCPSocketWrapper extends BaseSocketWrapper {
     for (final srv in results) {
       try {
         _log.finest('Attempting connection to ${srv.target}:${srv.port}...');
-        _ignoreSocketClosure = true;
         _socket = await Socket.connect(
           srv.target,
           srv.port,
           timeout: const Duration(seconds: 5),
         );
 
-        _ignoreSocketClosure = false;
         _log.finest('Success!');
         return true;
       } on Exception catch(e) {
         _log.finest('Failure! $e');
-        _ignoreSocketClosure = false;
         continue;
       }
     }
@@ -144,7 +147,6 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   Future<bool> _hostPortConnect(String host, int port) async {
     try {
       _log.finest('Attempting fallback connection to $host:$port...');
-      _ignoreSocketClosure = true;
       _socket = await Socket.connect(
         host,
         port,
@@ -154,7 +156,6 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       return true;
     } on Exception catch(e) {
       _log.finest('Failure! $e');
-      _ignoreSocketClosure = false;
       return false;
     }
   }
@@ -179,10 +180,11 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       _log.severe('Failed to secure socket since _socket is null');
       return false;
     }
-
-    _ignoreSocketClosure = true;
     
     try {
+      // The socket is closed during the entire process
+      _expectSocketClosure = true;
+
       _socket = await SecureSocket.secure(
         _socket!,
         supportedProtocols: const [ xmppClientALPNId ],
@@ -190,12 +192,10 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       );
 
       _secure = true;
-      _ignoreSocketClosure = false;
       _setupStreams();
       return true;
     } on Exception catch (e) {
       _log.severe('Failed to secure socket: $e');
-      _ignoreSocketClosure = false;
 
       if (e is HandshakeException) {
         _eventStream.add(XmppSocketTLSFailedEvent());
@@ -226,15 +226,14 @@ class TCPSocketWrapper extends BaseSocketWrapper {
     );
     // ignore: implicit_dynamic_parameter
     _socket!.done.then((_) {
-      if (!_ignoreSocketClosure) {
-        _eventStream.add(XmppSocketClosureEvent());
-      }
+      _eventStream.add(XmppSocketClosureEvent(_expectSocketClosure));
+      _expectSocketClosure = false;
     });
   }
   
   @override
   Future<bool> connect(String domain, { String? host, int? port }) async {
-    _ignoreSocketClosure = false;
+    _expectSocketClosure = false;
     _secure = false;
 
     // Connection order:
@@ -267,6 +266,8 @@ class TCPSocketWrapper extends BaseSocketWrapper {
 
   @override
   void close() {
+    _expectSocketClosure = true;
+
     if (_socketSubscription != null) {
       _log.finest('Closing socket subscription');
       _socketSubscription!.cancel();
@@ -277,13 +278,11 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       return;
     }
 
-    _ignoreSocketClosure = true;
     try {
       _socket!.close();
     } catch(e) {
       _log.warning('Closing socket threw exception: $e');
     }
-    _ignoreSocketClosure = false;
   }
 
   @override
@@ -316,7 +315,5 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   }
 
   @override
-  void prepareDisconnect() {
-    _ignoreSocketClosure = true;
-  }
+  void prepareDisconnect() {}
 }
