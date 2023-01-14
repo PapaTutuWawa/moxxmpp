@@ -185,9 +185,18 @@ class StreamManagementManager extends XmppManagerBase {
       _disableStreamManagement();
       _streamResumed = false;
     } else if (event is ConnectionStateChangedEvent) {
-      if (event.state == XmppConnectionState.connected) {
+      switch (event.state) {
+      case XmppConnectionState.connected:
         // Push out all pending stanzas
         await onStreamResumed(0);
+        break;
+      case XmppConnectionState.error:
+      case XmppConnectionState.notConnected:
+        _stopAckTimer();
+        break;
+      case XmppConnectionState.connecting:
+        // NOOP
+        break;
       }
     }
   }
