@@ -5,13 +5,17 @@ abstract class XmppSocketEvent {}
 
 /// Triggered by the socket when an error occurs.
 class XmppSocketErrorEvent extends XmppSocketEvent {
-
   XmppSocketErrorEvent(this.error);
   final Object error;
 }
 
 /// Triggered when the socket is closed
-class XmppSocketClosureEvent extends XmppSocketEvent {}
+class XmppSocketClosureEvent extends XmppSocketEvent {
+  XmppSocketClosureEvent(this.expected);
+
+  /// Indicate that the socket did not close unexpectedly.
+  final bool expected;
+}
 
 /// This class is the base for a socket that XmppConnection can use.
 abstract class BaseSocketWrapper {

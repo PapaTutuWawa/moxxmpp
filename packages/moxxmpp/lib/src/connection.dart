@@ -198,9 +198,6 @@ class XmppConnection {
   // ignore: use_late_for_private_fields_and_variables
   Completer<XmppConnectionResult>? _connectionCompleter;
 
-  /// Controls whether an XmppSocketClosureEvent triggers a reconnection.
-  bool _socketClosureTriggersReconnect = true;
-
   /// Negotiators
   final Map<String, XmppFeatureNegotiatorBase> _featureNegotiators = {};
   XmppFeatureNegotiatorBase? _currentNegotiator;
@@ -428,7 +425,6 @@ class XmppConnection {
     }
 
     await _setConnectionState(XmppConnectionState.error);
-    await _resetIsConnectionRunning();
     await _reconnectionPolicy.onFailure();
   }
 
@@ -437,9 +433,9 @@ class XmppConnection {
     if (event is XmppSocketErrorEvent) {
       await handleError(SocketError(event));
     } else if (event is XmppSocketClosureEvent) {
-      if (_socketClosureTriggersReconnect) {
-        _log.fine('Received XmppSocketClosureEvent. Reconnecting...');
-        await _reconnectionPolicy.onFailure();
+      if (!event.expected) {
+        _log.fine('Received unexpected XmppSocketClosureEvent. Reconnecting...');
+        await handleError(SocketError(XmppSocketErrorEvent(event)));
       } else {
         _log.fine('Received XmppSocketClosureEvent. No reconnection attempt since _socketClosureTriggersReconnect is false...');
       }
@@ -850,6 +846,7 @@ class XmppConnection {
     final result = await _currentNegotiator!.negotiate(nonza);
     if (result.isType<NegotiatorError>()) {
       _log.severe('Negotiator returned an error');
+      await _resetIsConnectionRunning();
       await handleError(result.get<NegotiatorError>());
       return;
     }
@@ -873,6 +870,8 @@ class XmppConnection {
         if (_isMandatoryNegotiationDone(_streamFeatures) && !_isNegotiationPossible(_streamFeatures)) {
           _log.finest('Negotiations done!');
           _updateRoutingState(RoutingState.handleStanzas);
+          await _reconnectionPolicy.onSuccess();
+          await _resetIsConnectionRunning();
           await _onNegotiationsDone();
         } else {
           _currentNegotiator = getNextNegotiator(_streamFeatures);
@@ -896,6 +895,8 @@ class XmppConnection {
         _log.finest('Negotiations done!');
 
         _updateRoutingState(RoutingState.handleStanzas);
+        await _reconnectionPolicy.onSuccess();
+        await _resetIsConnectionRunning();
         await _onNegotiationsDone();
       } else {
         _log.finest('Picking new negotiator...');
@@ -912,6 +913,8 @@ class XmppConnection {
       _log.finest('Negotiator wants to skip the remaining negotiation... Negotiations (assumed) done!');
 
       _updateRoutingState(RoutingState.handleStanzas);
+      await _reconnectionPolicy.onSuccess();
+      await _resetIsConnectionRunning();
       await _onNegotiationsDone();
       break;
     }
@@ -1023,7 +1026,6 @@ class XmppConnection {
 
   Future<void> _disconnect({required XmppConnectionState state, bool triggeredByUser = true}) async {
     _reconnectionPolicy.setShouldReconnect(false);
-    _socketClosureTriggersReconnect = false;
 
     if (triggeredByUser) {
       getPresenceManager().sendUnavailablePresence();
@@ -1079,7 +1081,6 @@ class XmppConnection {
     }
 
     await _reconnectionPolicy.reset();
-    _socketClosureTriggersReconnect = true;
     await _sendEvent(ConnectingEvent());
 
     final smManager = getStreamManagementManager();
