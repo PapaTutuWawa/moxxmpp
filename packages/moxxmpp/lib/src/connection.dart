@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
+import 'package:moxxmpp/src/awaiter.dart';
 import 'package:moxxmpp/src/buffer.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
@@ -89,29 +90,6 @@ class XmppConnectionResult {
   final XmppError? error;
 }
 
-/// A surrogate key for awaiting stanzas.
-@immutable
-class _StanzaAwaitableData {
-  const _StanzaAwaitableData(this.sentTo, this.id);
-
-  /// The JID the original stanza was sent to. We expect the result to come from the
-  /// same JID.
-  final String sentTo;
-
-  /// The ID of the original stanza. We expect the result to have the same ID.
-  final String id;
-
-  @override
-  int get hashCode => sentTo.hashCode ^ id.hashCode;
-
-  @override
-  bool operator==(Object other) {
-    return other is _StanzaAwaitableData &&
-           other.sentTo == sentTo &&
-           other.id == id;
-  }
-}
-
 /// This class is a connection to the server.
 class XmppConnection {
   XmppConnection(
@@ -151,9 +129,8 @@ class XmppConnection {
   /// A policy on how to reconnect 
   final ReconnectionPolicy _reconnectionPolicy;
 
-  /// A list of stanzas we are tracking with its corresponding critical section lock
-  final Map<_StanzaAwaitableData, Completer<XMLNode>> _awaitingResponse = {};
-  final Lock _awaitingResponseLock = Lock();
+  /// A helper for handling await semantics with stanzas
+  final StanzaAwaiter _stanzaAwaiter = StanzaAwaiter();
   
   /// Sorted list of handlers that we call or incoming and outgoing stanzas
   final List<StanzaHandler> _incomingStanzaHandlers = List.empty(growable: true);
@@ -544,43 +521,35 @@ class XmppConnection {
     _log.fine('Attempting to acquire lock for ${data.stanza.id}...');
     // TODO(PapaTutuWawa): Handle this much more graceful
     var future = Future.value(XMLNode(tag: 'not-used'));
-    await _awaitingResponseLock.synchronized(() async {
-      _log.fine('Lock acquired for ${data.stanza.id}');
-
-      _StanzaAwaitableData? key;
-      if (awaitable) {
-        key = _StanzaAwaitableData(data.stanza.to!, data.stanza.id!);
-        _awaitingResponse[key] = Completer();
-      }
-
-      // This uses the StreamManager to behave like a send queue
-      if (await _canSendData()) {
-        _socket.write(stanzaString);
-
-        // Try to ack every stanza
-        // NOTE: Here we have send an Ack request nonza. This is now done by StreamManagementManager when receiving the StanzaSentEvent
-      } else {
-        _log.fine('_canSendData() returned false.');
-      }
-
-      _log.fine('Running post stanza handlers..');
-      await _runOutgoingPostStanzaHandlers(
-        stanza_,
-        initial: StanzaHandlerData(
-          false,
-          false,
-          null,
-          stanza_,
-        ),
+    if (awaitable) {
+      future = await _stanzaAwaiter.addPending(
+        data.stanza.to!,
+        data.stanza.id!,
+        data.stanza.tag,
       );
-      _log.fine('Done');
+    }
 
-      if (awaitable) {
-        future = _awaitingResponse[key]!.future;
-      }
+    // This uses the StreamManager to behave like a send queue
+    if (await _canSendData()) {
+      _socket.write(stanzaString);
 
-      _log.fine('Releasing lock for ${data.stanza.id}');
-    });
+      // Try to ack every stanza
+      // NOTE: Here we have send an Ack request nonza. This is now done by StreamManagementManager when receiving the StanzaSentEvent
+    } else {
+      _log.fine('_canSendData() returned false.');
+    }
+
+    _log.fine('Running post stanza handlers..');
+    await _runOutgoingPostStanzaHandlers(
+      stanza_,
+      initial: StanzaHandlerData(
+        false,
+        false,
+        null,
+        stanza_,
+      ),
+    );
+    _log.fine('Done');
 
     return future;
   }
@@ -744,21 +713,10 @@ class XmppConnection {
       '';
     _log.finest('<== $prefix${incomingPreHandlers.stanza.toXml()}');
 
-    // See if we are waiting for this stanza
-    final id = incomingPreHandlers.stanza.attributes['id'] as String?;
-    var awaited = false;
-    await _awaitingResponseLock.synchronized(() async {
-      if (id != null && incomingPreHandlers.stanza.from != null) {
-        final key = _StanzaAwaitableData(incomingPreHandlers.stanza.from!, id);
-        final comp = _awaitingResponse[key];
-        if (comp != null) {
-          comp.complete(incomingPreHandlers.stanza);
-          _awaitingResponse.remove(key);
-          awaited = true;
-        }
-      }
-    });
-
+    final awaited = await _stanzaAwaiter.onData(
+      incomingPreHandlers.stanza,
+      _connectionSettings.jid.toBare(),
+    );
     if (awaited) {
       return;
     }

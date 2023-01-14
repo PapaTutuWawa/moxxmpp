@@ -1,7 +1,6 @@
 import 'package:xml/xml.dart';
 
 class XMLNode {
-
   XMLNode({
     required this.tag,
     this.attributes = const <String, dynamic>{},

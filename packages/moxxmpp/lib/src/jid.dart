@@ -51,7 +51,11 @@ class JID {
   bool isFull() => resource.isNotEmpty;
 
   /// Converts the JID into a bare JID.
-  JID toBare() => JID(local, domain, '');
+  JID toBare() {
+    if (isBare()) return this;
+    
+    return JID(local, domain, '');
+  }
 
   /// Converts the JID into one with a resource part of [resource].
   JID withResource(String resource) => JID(local, domain, resource);
