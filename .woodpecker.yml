@@ -1,0 +1,28 @@
+pipeline:
+  # Check moxxmpp
+  moxxmpp-lint:
+    image: dart:2.18.1
+    commands:
+      - cd packages/moxxmpp
+      - dart pub get
+      - dart analyze --fatal-infos --fatal-warnings
+  moxxmpp-test:
+    image: dart:2.18.1
+    commands:
+      - cd packages/moxxmpp
+      - dart pub get
+      - dart test
+
+  # Check moxxmpp_socket_tcp
+  moxxmpp_socket_tcp-lint:
+    image: dart:2.18.1
+    commands:
+      - cd packages/moxxmpp_socket_tcp
+      - dart pub get
+      - dart analyze --fatal-infos --fatal-warnings
+  # moxxmpp-test:
+  #   image: dart:2.18.1
+  #   commands:
+  #     - cd packages/moxxmpp
+  #     - dart pub get
+  #     - dart test
