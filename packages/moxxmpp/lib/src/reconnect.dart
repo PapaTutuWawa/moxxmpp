@@ -84,16 +84,21 @@ abstract class ReconnectionPolicy {
 
 /// A simple reconnection strategy: Make the reconnection delays exponentially longer
 /// for every failed attempt.
+/// NOTE: This ReconnectionPolicy may be broken
 class ExponentialBackoffReconnectionPolicy extends ReconnectionPolicy {
+  ExponentialBackoffReconnectionPolicy(this._maxBackoffTime) : super();
 
-  ExponentialBackoffReconnectionPolicy(this._maxBackoffTime)
-  : _counter = 0,
-    _log = Logger('ExponentialBackoffReconnectionPolicy'),
-    super();
+  /// The maximum time in seconds that a backoff step should be.
   final int _maxBackoffTime;
-  int _counter;
+
+  /// Amount of consecutive failed reconnections.
+  int _counter = 0;
+
+  /// Backoff timer.
   Timer? _timer;
-  final Logger _log;
+
+  /// Logger.
+  final Logger _log = Logger('ExponentialBackoffReconnectionPolicy');
 
   /// Called when the backoff expired
   Future<void> _onTimerElapsed() async {
@@ -141,7 +146,7 @@ class ExponentialBackoffReconnectionPolicy extends ReconnectionPolicy {
   }
 }
 
-/// A stub reconnection policy for tests
+/// A stub reconnection policy for tests.
 @visibleForTesting
 class TestingReconnectionPolicy extends ReconnectionPolicy {
   TestingReconnectionPolicy() : super();
