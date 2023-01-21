@@ -361,7 +361,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
         // support OMEMO:2
         cancelReason: result.jidEncryptionErrors[toJid.toString()] is NoKeyMaterialAvailableException ?
           OmemoNotSupportedForContactException() :
-          null,
+          UnknownOmemoError(),
         cancel: true,
       );
     }
