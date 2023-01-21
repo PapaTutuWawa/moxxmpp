@@ -357,6 +357,11 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       other['encryption_error_devices'] = result.deviceEncryptionErrors;
       return state.copyWith(
         other: other,
+        // If we have no device list for toJid, then the contact most likely does not
+        // support OMEMO:2
+        cancelReason: result.jidEncryptionErrors[toJid.toString()] is NoKeyMaterialAvailableException ?
+          OmemoNotSupportedForContactException() :
+          null,
         cancel: true,
       );
     }
