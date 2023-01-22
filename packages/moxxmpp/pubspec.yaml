@@ -21,7 +21,7 @@ dependencies:
    version: ^0.1.5
   omemo_dart:
     hosted: https://git.polynom.me/api/packages/PapaTutuWawa/pub
-    version: ^0.4.2
+    version: ^0.4.3
   random_string: ^2.3.1
   saslprep: ^1.0.2
   synchronized: ^3.0.0+2
