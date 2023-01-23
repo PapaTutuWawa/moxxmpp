@@ -459,9 +459,25 @@ abstract class BaseOmemoManager extends XmppManagerBase {
         );
       }
 
-      children.addAll(
-        envelope.firstTag('content')!.children,
-      );
+      final envelopeChildren = envelope.firstTag('content')?.children;
+      if (envelopeChildren != null) {
+        children.addAll(
+          envelopeChildren
+            // Do not add forbidden elements from the envelope
+            .where((XMLNode child) {
+              for (final ignore in _doNotEncryptList) {
+                final xmlns = child.attributes['xmlns'] ?? '';
+                if (child.tag == ignore.tag && xmlns == ignore.xmlns) {
+                  return false;
+                }
+              }
+
+              return true;
+            }),
+        );
+      } else {
+        logger.warning('Invalid envelope element: No <content /> element');
+      }
 
       if (!checkAffixElements(envelope, stanza.from!, ourJid)) {
         other['encryption_error'] = InvalidAffixElementsException();
