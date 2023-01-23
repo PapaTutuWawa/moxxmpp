@@ -48,6 +48,11 @@ mixin _$StanzaHandlerData {
   String? get funCancellation =>
       throw _privateConstructorUsedError; // Whether the stanza was received encrypted
   bool get encrypted =>
+      throw _privateConstructorUsedError; // If true, forces the encryption manager to encrypt to the JID, even if it
+// would not normally. In the case of OMEMO: If shouldEncrypt returns false
+// but forceEncryption is true, then the OMEMO manager will try to encrypt
+// to the JID anyway.
+  bool get forceEncryption =>
       throw _privateConstructorUsedError; // The stated type of encryption used, if any was used
   ExplicitEncryptionType? get encryptionType =>
       throw _privateConstructorUsedError; // Delayed Delivery
@@ -94,6 +99,7 @@ abstract class $StanzaHandlerDataCopyWith<$Res> {
       String? funReplacement,
       String? funCancellation,
       bool encrypted,
+      bool forceEncryption,
       ExplicitEncryptionType? encryptionType,
       DelayedDelivery? delayedDelivery,
       Map<String, dynamic> other,
@@ -132,6 +138,7 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
     Object? funReplacement = freezed,
     Object? funCancellation = freezed,
     Object? encrypted = freezed,
+    Object? forceEncryption = freezed,
     Object? encryptionType = freezed,
     Object? delayedDelivery = freezed,
     Object? other = freezed,
@@ -213,6 +220,10 @@ class _$StanzaHandlerDataCopyWithImpl<$Res>
           ? _value.encrypted
           : encrypted // ignore: cast_nullable_to_non_nullable
               as bool,
+      forceEncryption: forceEncryption == freezed
+          ? _value.forceEncryption
+          : forceEncryption // ignore: cast_nullable_to_non_nullable
+              as bool,
       encryptionType: encryptionType == freezed
           ? _value.encryptionType
           : encryptionType // ignore: cast_nullable_to_non_nullable
@@ -271,6 +282,7 @@ abstract class _$$_StanzaHandlerDataCopyWith<$Res>
       String? funReplacement,
       String? funCancellation,
       bool encrypted,
+      bool forceEncryption,
       ExplicitEncryptionType? encryptionType,
       DelayedDelivery? delayedDelivery,
       Map<String, dynamic> other,
@@ -311,6 +323,7 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
     Object? funReplacement = freezed,
     Object? funCancellation = freezed,
     Object? encrypted = freezed,
+    Object? forceEncryption = freezed,
     Object? encryptionType = freezed,
     Object? delayedDelivery = freezed,
     Object? other = freezed,
@@ -392,6 +405,10 @@ class __$$_StanzaHandlerDataCopyWithImpl<$Res>
           ? _value.encrypted
           : encrypted // ignore: cast_nullable_to_non_nullable
               as bool,
+      forceEncryption: forceEncryption == freezed
+          ? _value.forceEncryption
+          : forceEncryption // ignore: cast_nullable_to_non_nullable
+              as bool,
       encryptionType: encryptionType == freezed
           ? _value.encryptionType
           : encryptionType // ignore: cast_nullable_to_non_nullable
@@ -442,6 +459,7 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
       this.funReplacement,
       this.funCancellation,
       this.encrypted = false,
+      this.forceEncryption = false,
       this.encryptionType,
       this.delayedDelivery,
       final Map<String, dynamic> other = const <String, dynamic>{},
@@ -506,6 +524,13 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
   @override
   @JsonKey()
   final bool encrypted;
+// If true, forces the encryption manager to encrypt to the JID, even if it
+// would not normally. In the case of OMEMO: If shouldEncrypt returns false
+// but forceEncryption is true, then the OMEMO manager will try to encrypt
+// to the JID anyway.
+  @override
+  @JsonKey()
+  final bool forceEncryption;
 // The stated type of encryption used, if any was used
   @override
   final ExplicitEncryptionType? encryptionType;
@@ -540,7 +565,7 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
 
   @override
   String toString() {
-    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction, lastMessageCorrectionSid: $lastMessageCorrectionSid, messageReactions: $messageReactions, stickerPackId: $stickerPackId)';
+    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, forceEncryption: $forceEncryption, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction, lastMessageCorrectionSid: $lastMessageCorrectionSid, messageReactions: $messageReactions, stickerPackId: $stickerPackId)';
   }
 
   @override
@@ -572,6 +597,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
             const DeepCollectionEquality()
                 .equals(other.funCancellation, funCancellation) &&
             const DeepCollectionEquality().equals(other.encrypted, encrypted) &&
+            const DeepCollectionEquality()
+                .equals(other.forceEncryption, forceEncryption) &&
             const DeepCollectionEquality()
                 .equals(other.encryptionType, encryptionType) &&
             const DeepCollectionEquality()
@@ -608,6 +635,7 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
         const DeepCollectionEquality().hash(funReplacement),
         const DeepCollectionEquality().hash(funCancellation),
         const DeepCollectionEquality().hash(encrypted),
+        const DeepCollectionEquality().hash(forceEncryption),
         const DeepCollectionEquality().hash(encryptionType),
         const DeepCollectionEquality().hash(delayedDelivery),
         const DeepCollectionEquality().hash(_other),
@@ -641,6 +669,7 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
       final String? funReplacement,
       final String? funCancellation,
       final bool encrypted,
+      final bool forceEncryption,
       final ExplicitEncryptionType? encryptionType,
       final DelayedDelivery? delayedDelivery,
       final Map<String, dynamic> other,
@@ -690,6 +719,11 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
   String? get funCancellation;
   @override // Whether the stanza was received encrypted
   bool get encrypted;
+  @override // If true, forces the encryption manager to encrypt to the JID, even if it
+// would not normally. In the case of OMEMO: If shouldEncrypt returns false
+// but forceEncryption is true, then the OMEMO manager will try to encrypt
+// to the JID anyway.
+  bool get forceEncryption;
   @override // The stated type of encryption used, if any was used
   ExplicitEncryptionType? get encryptionType;
   @override // Delayed Delivery

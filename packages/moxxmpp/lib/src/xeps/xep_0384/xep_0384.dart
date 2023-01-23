@@ -318,11 +318,12 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     }
 
     final toJid = JID.fromString(stanza.to!).toBare();
-    if (!(await shouldEncryptStanza(toJid, stanza))) {
-      logger.finest('shouldEncryptStanza returned false for message to $toJid. Not encrypting.');
+    final shouldEncryptResult = await shouldEncryptStanza(toJid, stanza);
+    if (!shouldEncryptResult && !state.forceEncryption) {
+      logger.finest('Not encrypting stanza for $toJid: Both shouldEncryptStanza and forceEncryption are false.');
       return state;
     } else {
-      logger.finest('shouldEncryptStanza returned true for message to $toJid.');
+      logger.finest('Encrypting stanza for $toJid: shouldEncryptResult=$shouldEncryptResult, forceEncryption=${state.forceEncryption}');
     }
 
     final toEncrypt = List<XMLNode>.empty(growable: true);

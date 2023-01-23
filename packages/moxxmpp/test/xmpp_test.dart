@@ -9,7 +9,7 @@ Future<bool> testRosterManager(String bareJid, String resource, String stanzaStr
   var eventTriggered = false;
   final roster = RosterManager(TestingRosterStateManager('', []));
   roster.register(XmppManagerAttributes(
-      sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false }) async => XMLNode(tag: 'hallo'),
+      sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false, bool forceEncryption = false, }) async => XMLNode(tag: 'hallo'),
       sendEvent: (event) {
         eventTriggered = true;
       },
@@ -310,7 +310,7 @@ void main() {
           var eventTriggered = false;
           final roster = RosterManager(TestingRosterStateManager('', []));
           roster.register(XmppManagerAttributes(
-              sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false }) async => XMLNode(tag: 'hallo'),
+              sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false, bool forceEncryption = false, }) async => XMLNode(tag: 'hallo'),
               sendEvent: (event) {
                 eventTriggered = true;
               },

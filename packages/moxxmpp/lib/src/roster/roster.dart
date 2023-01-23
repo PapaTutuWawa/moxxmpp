@@ -161,7 +161,11 @@ class RosterManager extends XmppManagerBase {
       ),
     );
     
-    await attrs.sendStanza(stanza.reply());
+    await reply(
+      state,
+      'result',
+      [],
+    );
 
     return state.copyWith(done: true);
   }

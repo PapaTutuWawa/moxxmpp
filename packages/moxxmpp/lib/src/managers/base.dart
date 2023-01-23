@@ -1,6 +1,7 @@
 import 'package:logging/logging.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
+import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
@@ -78,5 +79,26 @@ abstract class XmppManagerBase {
     );
 
     return handled;
+  }
+
+  /// Sends a reply of the stanza in [data] with [type]. Replaces the original stanza's
+  /// children with [children].
+  ///
+  /// Note that this function currently only accepts IQ stanzas.
+  Future<void> reply(StanzaHandlerData data, String type, List<XMLNode> children) async {
+    assert(data.stanza.tag == 'iq', 'Reply makes little sense for non-IQ stanzas');
+
+    final stanza = data.stanza.copyWith(
+      to: data.stanza.from,
+      from: data.stanza.to,
+      type: type,
+      children: children,
+    );
+
+    await getAttributes().sendStanza(
+      stanza,
+      awaitable: false,
+      forceEncryption: data.encrypted,
+    );
   }
 }

@@ -50,6 +50,11 @@ class StanzaHandlerData with _$StanzaHandlerData {
       String? funCancellation,
       // Whether the stanza was received encrypted
       @Default(false) bool encrypted,
+      // If true, forces the encryption manager to encrypt to the JID, even if it
+      // would not normally. In the case of OMEMO: If shouldEncrypt returns false
+      // but forceEncryption is true, then the OMEMO manager will try to encrypt
+      // to the JID anyway.
+      @Default(false) bool forceEncryption,
       // The stated type of encryption used, if any was used
       ExplicitEncryptionType? encryptionType,
       // Delayed Delivery

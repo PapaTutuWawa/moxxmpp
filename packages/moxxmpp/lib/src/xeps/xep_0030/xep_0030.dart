@@ -20,7 +20,6 @@ import 'package:synchronized/synchronized.dart';
 
 @immutable
 class DiscoCacheKey {
-
   const DiscoCacheKey(this.jid, this.node);
   final String jid;
   final String? node;
@@ -35,7 +34,6 @@ class DiscoCacheKey {
 }
 
 class DiscoManager extends XmppManagerBase {
- 
   DiscoManager()
     : _features = List.empty(growable: true),
       _capHashCache = {},
@@ -47,15 +45,19 @@ class DiscoManager extends XmppManagerBase {
   /// Our features
   final List<String> _features;
 
-  // Map full JID to Capability hashes
+  /// Map full JID to Capability hashes
   final Map<String, CapabilityHashInfo> _capHashCache;
-  // Map capability hash to the disco info
+
+  /// Map capability hash to the disco info
   final Map<String, DiscoInfo> _capHashInfoCache;
-  // Map full JID to Disco Info
+
+  /// Map full JID to Disco Info
   final Map<DiscoCacheKey, DiscoInfo> _discoInfoCache;
-  // Mapping the full JID to a list of running requests
+
+  /// Mapping the full JID to a list of running requests
   final Map<DiscoCacheKey, List<Completer<Result<DiscoError, DiscoInfo>>>> _runningInfoQueries;
-  // Cache lock
+
+  /// Cache lock
   final Lock _cacheLock;
 
   @visibleForTesting
@@ -154,67 +156,65 @@ class DiscoManager extends XmppManagerBase {
     if (stanza.type != 'get') return state;
 
     final presence = getAttributes().getManagerById(presenceManager)! as PresenceManager;
-    final query = stanza.firstTag('query')!;
+    final query = stanza.firstTag('query', xmlns: discoInfoXmlns)!;
     final node = query.attributes['node'] as String?;
     final capHash = await presence.getCapabilityHash();
     final isCapabilityNode = node == '${presence.capabilityHashNode}#$capHash';
 
     if (!isCapabilityNode && node != null) {
-      await getAttributes().sendStanza(Stanza.iq(
-            to: stanza.from,
-            from: stanza.to,
-            id: stanza.id,
-            type: 'error',
+      await reply(
+        state,
+        'error',
+        [
+          XMLNode.xmlns(
+            tag: 'query',
+            xmlns: discoInfoXmlns,
+            attributes: <String, String>{
+              'node': node
+            },
+          ),
+          XMLNode(
+            tag: 'error',
+            attributes: <String, String>{
+              'type': 'cancel'
+            },
             children: [
               XMLNode.xmlns(
-                tag: 'query',
-                // TODO(PapaTutuWawa): Why are we copying the xmlns?
-                xmlns: query.attributes['xmlns']! as String,
-                attributes: <String, String>{
-                  'node': node
-                },
-              ),
-              XMLNode(
-                tag: 'error',
-                attributes: <String, String>{
-                  'type': 'cancel'
-                },
-                children: [
-                  XMLNode.xmlns(
-                    tag: 'not-allowed',
-                    xmlns: fullStanzaXmlns,
-                  )
-                ],
+                tag: 'not-allowed',
+                xmlns: fullStanzaXmlns,
               )
             ],
-          )
-      ,);
+          ),
+        ],
+      );
 
       return state.copyWith(done: true);
     }
 
-    await getAttributes().sendStanza(stanza.reply(
-        children: [
-          XMLNode.xmlns(
-            tag: 'query',
-            xmlns: discoInfoXmlns,
-            attributes: {
-              ...!isCapabilityNode ? {} : {
-                'node': '${presence.capabilityHashNode}#$capHash'
-              }
-            },
-            children: [
-              ...getIdentities().map((identity) => identity.toXMLNode()),
-              ..._features.map((feat) {
-                return XMLNode(
-                  tag: 'feature',
-                  attributes: <String, dynamic>{ 'var': feat },
-                );
-              }),
-            ],
-          ),
-        ],
-    ),);
+    await reply(
+      state,
+      'result',
+      [
+        XMLNode.xmlns(
+          tag: 'query',
+          xmlns: discoInfoXmlns,
+          attributes: {
+            ...!isCapabilityNode ? {} : {
+              'node': '${presence.capabilityHashNode}#$capHash'
+            }
+          },
+          children: [
+            ...getIdentities().map((identity) => identity.toXMLNode()),
+            ..._features.map((feat) {
+              return XMLNode(
+                tag: 'feature',
+                attributes: <String, dynamic>{ 'var': feat },
+              );
+            }),
+          ],
+        ),
+      ],
+    );
 
     return state.copyWith(done: true);
   }
@@ -222,52 +222,49 @@ class DiscoManager extends XmppManagerBase {
   Future<StanzaHandlerData> _onDiscoItemsRequest(Stanza stanza, StanzaHandlerData state) async {
     if (stanza.type != 'get') return state;
 
-    final query = stanza.firstTag('query')!;
+    final query = stanza.firstTag('query', xmlns: discoItemsXmlns)!;
     if (query.attributes['node'] != null) {
       // TODO(Unknown): Handle the node we specified for XEP-0115
-      await getAttributes().sendStanza(
-        Stanza.iq(
-          to: stanza.from,
-          from: stanza.to,
-          id: stanza.id,
-          type: 'error',
-          children: [
-            XMLNode.xmlns(
-              tag: 'query',
-              // TODO(PapaTutuWawa): Why copy the xmlns?
-              xmlns: query.attributes['xmlns']! as String,
-              attributes: <String, String>{
-                'node': query.attributes['node']! as String,
-              },
-            ),
-            XMLNode(
-              tag: 'error',
-              attributes: <String, dynamic>{
-                'type': 'cancel'
-              },
-              children: [
-                XMLNode.xmlns(
-                  tag: 'not-allowed',
-                  xmlns: fullStanzaXmlns,
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-      return state.copyWith(done: true);
-    }
-
-    await getAttributes().sendStanza(
-      stanza.reply(
-        children: [
+      await reply(
+        state,
+        'error',
+        [
           XMLNode.xmlns(
             tag: 'query',
             xmlns: discoItemsXmlns,
+            attributes: <String, String>{
+              'node': query.attributes['node']! as String,
+            },
+          ),
+          XMLNode(
+            tag: 'error',
+            attributes: <String, dynamic>{
+              'type': 'cancel'
+            },
+            children: [
+              XMLNode.xmlns(
+                tag: 'not-allowed',
+                xmlns: fullStanzaXmlns,
+              ),
+            ],
           ),
         ],
-      ),
+      );
+
+      return state.copyWith(done: true);
+    }
+
+    await reply(
+      state,
+      'result',
+      [
+        XMLNode.xmlns(
+          tag: 'query',
+          xmlns: discoItemsXmlns,
+        ),
+      ],
     );
+
     return state.copyWith(done: true);
   }
 

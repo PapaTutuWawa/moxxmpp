@@ -114,40 +114,27 @@ class Stanza extends XMLNode {
       children: children ?? this.children,
     );
   }
-  
-  Stanza reply({ List<XMLNode> children = const [] }) {
-    return copyWith(
-      from: attributes['to'] as String?,
-      to: attributes['from'] as String?,
-      type: tag == 'iq' ? 'result' : attributes['type'] as String?,
-      children: children,
-    );
-  }
+}
 
-  Stanza errorReply(String type, String condition, { String? text }) {
-   return copyWith(
-      from: attributes['to'] as String?,
-      to: attributes['from'] as String?,
-      type: 'error',
-      children: [
-        XMLNode(
-          tag: 'error',
-          attributes: <String, dynamic>{ 'type': type },
-          children: [
-            XMLNode.xmlns(
-              tag: condition,
-              xmlns: fullStanzaXmlns,
-              children: text != null ?[
-                XMLNode.xmlns(
-                  tag: 'text',
-                  xmlns: fullStanzaXmlns,
-                  text: text,
-                )
-              ] : [],
-            )
-          ],
-        )
-      ],
-    );
-  }
+/// Build an <error /> element with a child <[condition] type="[type]" />. If [text]
+/// is not null, then the condition element will contain a <text /> element with [text]
+/// as the body.
+XMLNode buildErrorElement(String type, String condition, { String? text }) {
+  return XMLNode(
+    tag: 'error',
+    attributes: <String, dynamic>{ 'type': type },
+    children: [
+      XMLNode.xmlns(
+        tag: condition,
+        xmlns: fullStanzaXmlns,
+        children: text != null ? [
+          XMLNode.xmlns(
+            tag: 'text',
+            xmlns: fullStanzaXmlns,
+            text: text,
+          )
+        ] : [],
+      ),
+    ],
+  );
 }

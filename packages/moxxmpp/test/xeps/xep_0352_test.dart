@@ -29,59 +29,62 @@ T? getUnsupportedCSINegotiator<T extends XmppFeatureNegotiatorBase>(String id) {
 
 void main() {
   group('Test the XEP-0352 implementation', () {
-      test('Test setting the CSI state when CSI is unsupported', () {
-          var nonzaSent = false;
-          final csi = CSIManager();
-          csi.register(XmppManagerAttributes(
-              sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false }) async => XMLNode(tag: 'hallo'),
-              sendEvent: (event) {},
-              sendNonza: (nonza) {
-                nonzaSent = true;
-              },
-              getConnectionSettings: () => ConnectionSettings(
-                jid: JID.fromString('some.user@example.server'),
-                password: 'password',
-                useDirectTLS: true,
-                allowPlainAuth: false,
-              ),
-              getManagerById: getManagerNullStub,
-              getNegotiatorById: getUnsupportedCSINegotiator,
-              isFeatureSupported: (_) => false,
-              getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
-              getSocket: () => StubTCPSocket(play: []),
-              getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
-            ),
-          );
+    test('Test setting the CSI state when CSI is unsupported', () {
+      var nonzaSent = false;
+      final csi = CSIManager();
+      csi.register(
+        XmppManagerAttributes(
+          sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false, bool forceEncryption = false, }) async => XMLNode(tag: 'hallo'),
+          sendEvent: (event) {},
+          sendNonza: (nonza) {
+            nonzaSent = true;
+          },
+          getConnectionSettings: () => ConnectionSettings(
+            jid: JID.fromString('some.user@example.server'),
+            password: 'password',
+            useDirectTLS: true,
+            allowPlainAuth: false,
+          ),
+          getManagerById: getManagerNullStub,
+          getNegotiatorById: getUnsupportedCSINegotiator,
+          isFeatureSupported: (_) => false,
+          getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
+          getSocket: () => StubTCPSocket(play: []),
+          getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+        ),
+      );
 
-          csi.setActive();
-          csi.setInactive();
+      csi.setActive();
+      csi.setInactive();
 
-          expect(nonzaSent, false, reason: 'Expected that no nonza is sent');
-      });
-      test('Test setting the CSI state when CSI is supported', () {
-          final csi = CSIManager();
-          csi.register(XmppManagerAttributes(
-              sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false }) async => XMLNode(tag: 'hallo'),
-              sendEvent: (event) {},
-              sendNonza: (nonza) {
-                expect(nonza.attributes['xmlns'] == csiXmlns, true, reason: "Expected only nonzas with XMLNS '$csiXmlns'");
-              },
-              getConnectionSettings: () => ConnectionSettings(
-                jid: JID.fromString('some.user@example.server'),
-                password: 'password',
-                useDirectTLS: true,
-                allowPlainAuth: false,
-              ),
-              getManagerById: getManagerNullStub,
-              getNegotiatorById: getSupportedCSINegotiator,
-              isFeatureSupported: (_) => false,
-              getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
-              getSocket: () => StubTCPSocket(play: []),
-              getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
-          ),);
+      expect(nonzaSent, false, reason: 'Expected that no nonza is sent');
+    });
+    test('Test setting the CSI state when CSI is supported', () {
+      final csi = CSIManager();
+      csi.register(
+        XmppManagerAttributes(
+          sendStanza: (_, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool retransmitted = false, bool awaitable = true, bool encrypted = false, bool forceEncryption = false, }) async => XMLNode(tag: 'hallo'),
+          sendEvent: (event) {},
+          sendNonza: (nonza) {
+            expect(nonza.attributes['xmlns'] == csiXmlns, true, reason: "Expected only nonzas with XMLNS '$csiXmlns'");
+          },
+          getConnectionSettings: () => ConnectionSettings(
+            jid: JID.fromString('some.user@example.server'),
+            password: 'password',
+            useDirectTLS: true,
+            allowPlainAuth: false,
+          ),
+          getManagerById: getManagerNullStub,
+          getNegotiatorById: getSupportedCSINegotiator,
+          isFeatureSupported: (_) => false,
+          getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
+          getSocket: () => StubTCPSocket(play: []),
+          getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+        ),
+      );
 
-          csi.setActive();
-          csi.setInactive();
-      });
+      csi.setActive();
+      csi.setInactive();
+    });
   });
 }

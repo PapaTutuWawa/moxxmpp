@@ -17,7 +17,7 @@ Future<void> runOutgoingStanzaHandlers(StreamManagementManager man, Stanza stanz
 
 XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
   return XmppManagerAttributes(
-    sendStanza: (stanza, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool awaitable = true, bool encrypted = false }) async {
+    sendStanza: (stanza, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool awaitable = true, bool encrypted = false, bool forceEncryption = false, }) async {
       callback(stanza);
 
       return Stanza.message();

@@ -459,7 +459,7 @@ class XmppConnection {
   /// If addId is true, then an 'id' attribute will be added to the stanza if [stanza] has
   /// none.
   // TODO(Unknown): if addId = false, the function crashes.
-  Future<XMLNode> sendStanza(Stanza stanza, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool awaitable = true, bool encrypted = false }) async {
+  Future<XMLNode> sendStanza(Stanza stanza, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool awaitable = true, bool encrypted = false, bool forceEncryption = false, }) async {
     assert(implies(addId == false && stanza.id == null, !awaitable), 'Cannot await a stanza with no id');
 
     // Add extra data in case it was not set
@@ -490,6 +490,7 @@ class XmppConnection {
         null,
         stanza_,
         encrypted: encrypted,
+        forceEncryption: forceEncryption,
       ),
     );
     _log.fine('Done');
@@ -737,7 +738,7 @@ class XmppConnection {
       ),
     );
     if (!incomingHandlers.done) {
-      handleUnhandledStanza(this, incomingPreHandlers.stanza);
+      await handleUnhandledStanza(this, incomingPreHandlers);
     }
   }
 
