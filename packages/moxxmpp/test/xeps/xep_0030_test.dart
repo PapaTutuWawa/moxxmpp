@@ -65,7 +65,11 @@ void main() {
 
       ],
     );
-    final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), socket: fakeSocket);
+    final XmppConnection conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      AlwaysConnectedConnectivityManager(),
+      fakeSocket,
+    );
     conn.setConnectionSettings(ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
@@ -74,7 +78,7 @@ void main() {
     ),);
     conn.registerManagers([
       PresenceManager('http://moxxmpp.example'),
-      RosterManager(),
+      RosterManager(TestingRosterStateManager(null, [])),
       DiscoManager(),
       PingManager(),
     ]);

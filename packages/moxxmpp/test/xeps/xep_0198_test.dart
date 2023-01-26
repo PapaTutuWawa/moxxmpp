@@ -34,7 +34,7 @@ XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
     isFeatureSupported: (_) => false,
     getFullJID: () => JID.fromString('hallo@example.server/uwu'),
     getSocket: () => StubTCPSocket(play: []),
-    getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+    getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
     getNegotiatorById: getNegotiatorNullStub,
   );
 }
@@ -233,7 +233,11 @@ void main() {
         ]
       );
 
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
@@ -355,7 +359,11 @@ void main() {
         ]
       );
 
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
@@ -510,7 +518,11 @@ void main() {
         ]
       );
 
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
@@ -602,7 +614,11 @@ void main() {
         ]
       );
 
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
@@ -694,7 +710,11 @@ void main() {
         ]
       );
 
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',

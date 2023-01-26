@@ -54,8 +54,11 @@ void main() {
     ],
   );
   
-  final connection = XmppConnection(TestingReconnectionPolicy(), stubSocket)
-    ..registerFeatureNegotiators([
+  final connection = XmppConnection(
+    TestingReconnectionPolicy(),
+    AlwaysConnectedConnectivityManager(),
+    stubSocket,
+  )..registerFeatureNegotiators([
       StubNegotiator1(),
       StubNegotiator2(),
     ])

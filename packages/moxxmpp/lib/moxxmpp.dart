@@ -1,6 +1,7 @@
 library moxxmpp;
 
 export 'package:moxxmpp/src/connection.dart';
+export 'package:moxxmpp/src/connectivity.dart';
 export 'package:moxxmpp/src/errors.dart';
 export 'package:moxxmpp/src/events.dart';
 export 'package:moxxmpp/src/iq.dart';

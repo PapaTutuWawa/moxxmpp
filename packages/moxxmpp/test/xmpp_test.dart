@@ -25,7 +25,7 @@ Future<bool> testRosterManager(String bareJid, String resource, String stanzaStr
       isFeatureSupported: (_) => false,
       getFullJID: () => JID.fromString('$bareJid/$resource'),
       getSocket: () => StubTCPSocket(play: []),
-      getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+      getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
   ),);
 
   final stanza = Stanza.fromXMLNode(XMLNode.fromString(stanzaString));
@@ -118,7 +118,10 @@ void main() {
         ],
       );
       // TODO: This test is broken since we query the server and enable carbons
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket);
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
@@ -172,7 +175,11 @@ void main() {
         ],
       );
       var receivedEvent = false;
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
@@ -226,7 +233,11 @@ void main() {
         ],
       );
       var receivedEvent = false;
-      final XmppConnection conn = XmppConnection(TestingReconnectionPolicy(), fakeSocket);
+      final XmppConnection conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
@@ -326,7 +337,7 @@ void main() {
               isFeatureSupported: (_) => false,
               getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
               getSocket: () => StubTCPSocket(play: []),
-              getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+              getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
           ),);
 
           // NOTE: Based on https://gultsch.de/gajim_roster_push_and_message_interception.html

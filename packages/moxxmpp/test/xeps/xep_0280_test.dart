@@ -22,7 +22,7 @@ void main() {
       isFeatureSupported: (_) => false,
       getFullJID: () => JID.fromString('bob@xmpp.example/uwu'),
       getSocket: () => StubTCPSocket(play: []),
-      getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+      getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
       getNegotiatorById: getNegotiatorNullStub,
     );
     final manager = CarbonsManager();

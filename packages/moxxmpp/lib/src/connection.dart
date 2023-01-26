@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/awaiter.dart';
 import 'package:moxxmpp/src/buffer.dart';
+import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/iq.dart';
@@ -94,22 +95,24 @@ class XmppConnectionResult {
 class XmppConnection {
   XmppConnection(
     ReconnectionPolicy reconnectionPolicy,
+    ConnectivityManager connectivityManager,
     this._socket,
     {
       this.connectionPingDuration = const Duration(minutes: 3),
       this.connectingTimeout = const Duration(minutes: 2),
     }
-  ) : _reconnectionPolicy = reconnectionPolicy {
-      // Allow the reconnection policy to perform reconnections by itself
-      _reconnectionPolicy.register(
-        _attemptReconnection,
-        _onNetworkConnectionLost,
-      );
+  ) : _reconnectionPolicy = reconnectionPolicy,
+      _connectivityManager = connectivityManager {
+    // Allow the reconnection policy to perform reconnections by itself
+    _reconnectionPolicy.register(
+      _attemptReconnection,
+      _onNetworkConnectionLost,
+    );
 
-      _socketStream = _socket.getDataStream();
-      // TODO(Unknown): Handle on done
-      _socketStream.transform(_streamBuffer).forEach(handleXmlStream);
-      _socket.getEventStream().listen(_handleSocketEvent);
+    _socketStream = _socket.getDataStream();
+    // TODO(Unknown): Handle on done
+    _socketStream.transform(_streamBuffer).forEach(handleXmlStream);
+    _socket.getEventStream().listen(_handleSocketEvent);
   }
 
 
@@ -122,12 +125,15 @@ class XmppConnection {
   /// The data stream of the socket
   late final Stream<String> _socketStream;
 
-
   /// Connection settings
   late ConnectionSettings _connectionSettings;
 
   /// A policy on how to reconnect 
   final ReconnectionPolicy _reconnectionPolicy;
+
+  /// The class responsible for preventing errors on initial connection due
+  /// to no network.
+  final ConnectivityManager _connectivityManager;
 
   /// A helper for handling await semantics with stanzas
   final StanzaAwaiter _stanzaAwaiter = StanzaAwaiter();
@@ -378,7 +384,7 @@ class XmppConnection {
     // Connect again
     // ignore: cascade_invocations
     _log.finest('Calling connect() from _attemptReconnection');
-    await connect();
+    await connect(waitForConnection: true);
   }
   
   /// Called when a stream ending error has occurred
@@ -401,7 +407,11 @@ class XmppConnection {
       return;
     }
 
-    await _setConnectionState(XmppConnectionState.error);
+    if (await _connectivityManager.hasConnection()) {
+      await _setConnectionState(XmppConnectionState.error);
+    } else {
+      await _setConnectionState(XmppConnectionState.notConnected);
+    }
     await _reconnectionPolicy.onFailure();
   }
 
@@ -832,7 +842,6 @@ class XmppConnection {
         if (_isMandatoryNegotiationDone(_streamFeatures) && !_isNegotiationPossible(_streamFeatures)) {
           _log.finest('Negotiations done!');
           _updateRoutingState(RoutingState.handleStanzas);
-          await _reconnectionPolicy.onSuccess();
           await _resetIsConnectionRunning();
           await _onNegotiationsDone();
         } else {
@@ -857,7 +866,6 @@ class XmppConnection {
         _log.finest('Negotiations done!');
 
         _updateRoutingState(RoutingState.handleStanzas);
-        await _reconnectionPolicy.onSuccess();
         await _resetIsConnectionRunning();
         await _onNegotiationsDone();
       } else {
@@ -875,7 +883,6 @@ class XmppConnection {
       _log.finest('Negotiator wants to skip the remaining negotiation... Negotiations (assumed) done!');
 
       _updateRoutingState(RoutingState.handleStanzas);
-      await _reconnectionPolicy.onSuccess();
       await _resetIsConnectionRunning();
       await _onNegotiationsDone();
       break;
@@ -987,7 +994,7 @@ class XmppConnection {
   }
 
   Future<void> _disconnect({required XmppConnectionState state, bool triggeredByUser = true}) async {
-    _reconnectionPolicy.setShouldReconnect(false);
+    await _reconnectionPolicy.setShouldReconnect(false);
 
     if (triggeredByUser) {
       getPresenceManager().sendUnavailablePresence();
@@ -1018,17 +1025,21 @@ class XmppConnection {
   
   /// Like [connect] but the Future resolves when the resource binding is either done or
   /// SASL has failed.
-  Future<XmppConnectionResult> connectAwaitable({ String? lastResource }) async {
+  Future<XmppConnectionResult> connectAwaitable({ String? lastResource, bool waitForConnection = false }) async {
     _runPreConnectionAssertions();
     await _resetIsConnectionRunning();
     _connectionCompleter = Completer();
     _log.finest('Calling connect() from connectAwaitable');
-    await connect(lastResource: lastResource);
+    await connect(
+      lastResource: lastResource,
+      waitForConnection: waitForConnection,
+      shouldReconnect: false,
+    );
     return _connectionCompleter!.future;
   }
  
   /// Start the connection process using the provided connection settings.
-  Future<void> connect({ String? lastResource }) async {
+  Future<void> connect({ String? lastResource, bool waitForConnection = false, bool shouldReconnect = true }) async {
     if (_connectionState != XmppConnectionState.notConnected && _connectionState != XmppConnectionState.error) {
       _log.fine('Cancelling this connection attempt as one appears to be already running.');
       return;
@@ -1036,15 +1047,25 @@ class XmppConnection {
     
     _runPreConnectionAssertions();
     await _resetIsConnectionRunning();
-    _reconnectionPolicy.setShouldReconnect(true);
     
     if (lastResource != null) {
       setResource(lastResource);
     }
 
+    if (shouldReconnect) {
+      await _reconnectionPolicy.setShouldReconnect(true);
+    }
+
     await _reconnectionPolicy.reset();
     await _sendEvent(ConnectingEvent());
 
+    // If requested, wait until we have a network connection
+    if (waitForConnection) {
+      _log.info('Waiting for okay from connectivityManager');
+      await _connectivityManager.waitForConnection();
+      _log.info('Got okay from connectivityManager');
+    }
+    
     final smManager = getStreamManagementManager();
     String? host;
     int? port;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:synchronized/synchronized.dart';
 
 /// A callback function to be called when the connection to the server has been lost.
@@ -24,10 +25,16 @@ abstract class ReconnectionPolicy {
   bool _shouldAttemptReconnection = false;
 
   /// Indicate if a reconnection attempt is currently running.
-  bool _isReconnecting = false;
+  @protected
+  bool isReconnecting = false;
 
   /// And the corresponding lock
-  final Lock _isReconnectingLock = Lock();
+  @protected
+  final Lock lock = Lock();
+
+  /// The lock for accessing [_shouldAttemptReconnection]
+  @protected
+  final Lock shouldReconnectLock = Lock();
   
   /// Called by XmppConnection to register the policy.
   void register(PerformReconnectFunction performReconnect, ConnectionLostCallback triggerConnectionLost) {
@@ -48,96 +55,121 @@ abstract class ReconnectionPolicy {
   /// Caled by the XmppConnection when the reconnection was successful.
   Future<void> onSuccess();
 
-  bool get shouldReconnect => _shouldAttemptReconnection;
+  Future<bool> getShouldReconnect() async {
+    return shouldReconnectLock.synchronized(() => _shouldAttemptReconnection);
+  }
 
   /// Set whether a reconnection attempt should be made.
-  void setShouldReconnect(bool value) {
-    _shouldAttemptReconnection = value;
+  Future<void> setShouldReconnect(bool value) async {
+    return shouldReconnectLock.synchronized(() => _shouldAttemptReconnection = value);
   }
 
   /// Returns true if the manager is currently triggering a reconnection. If not, returns
   /// false.
   Future<bool> isReconnectionRunning() async {
-    return _isReconnectingLock.synchronized(() => _isReconnecting);
+    return lock.synchronized(() => isReconnecting);
   }
 
-  /// Set the _isReconnecting state to [value].
+  /// Set the isReconnecting state to [value].
   @protected
   Future<void> setIsReconnecting(bool value) async {
-    await _isReconnectingLock.synchronized(() async {
-      _isReconnecting = value;
+    await lock.synchronized(() async {
+      isReconnecting = value;
     });
   }
 
-  @protected
-  Future<bool> testAndSetIsReconnecting() async {
-    return _isReconnectingLock.synchronized(() {
-      if (_isReconnecting) {
-        return false;
-      } else {
-        _isReconnecting = true;
-        return true;
-      }
-    });
-  }
 }
 
 /// A simple reconnection strategy: Make the reconnection delays exponentially longer
 /// for every failed attempt.
 /// NOTE: This ReconnectionPolicy may be broken
-class ExponentialBackoffReconnectionPolicy extends ReconnectionPolicy {
-  ExponentialBackoffReconnectionPolicy(this._maxBackoffTime) : super();
+class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
+  RandomBackoffReconnectionPolicy(
+    this._minBackoffTime,
+    this._maxBackoffTime,
+  ) : assert(_minBackoffTime < _maxBackoffTime, '_minBackoffTime must be smaller than _maxBackoffTime'),
+      super();
 
-  /// The maximum time in seconds that a backoff step should be.
+  /// The maximum time in seconds that a backoff should be.
   final int _maxBackoffTime;
 
-  /// Amount of consecutive failed reconnections.
-  int _counter = 0;
+  /// The minimum time in seconds that a backoff should be.
+  final int _minBackoffTime;
 
   /// Backoff timer.
   Timer? _timer;
 
+  final Lock _timerLock = Lock();
+
   /// Logger.
-  final Logger _log = Logger('ExponentialBackoffReconnectionPolicy');
+  final Logger _log = Logger('RandomBackoffReconnectionPolicy');
+
+  /// Event queue
+  final AsyncQueue _eventQueue = AsyncQueue();
 
   /// Called when the backoff expired
   Future<void> _onTimerElapsed() async {
-    final isReconnecting = await isReconnectionRunning();
-    if (shouldReconnect) {
-      if (!isReconnecting) {
-        await setIsReconnecting(true);
-        await performReconnect!();
-      } else {
-        // Should never happen.
-        _log.fine('Backoff timer expired but reconnection is running, so doing nothing.');
+    _log.fine('Timer elapsed. Waiting for lock');
+    await lock.synchronized(() async {
+      _log.fine('Lock aquired');
+      if (!(await getShouldReconnect())) {
+        _log.fine('Backoff timer expired but getShouldReconnect() returned false');
+        return;
       }
-    }
+
+      if (isReconnecting) {
+        _log.fine('Backoff timer expired but a reconnection is running, so doing nothing.');
+        return;
+      }
+
+      _log.fine('Triggering reconnect');
+      isReconnecting = true;
+      await performReconnect!();
+    });
+
+    await _timerLock.synchronized(() {
+      _timer?.cancel();
+      _timer = null;
+    });
+  }
+
+  Future<void> _reset() async {
+    _log.finest('Resetting internal state');
+
+    await _timerLock.synchronized(() {
+      _timer?.cancel();
+      _timer = null;
+    });
+
+    await setIsReconnecting(false);
   }
   
   @override
   Future<void> reset() async {
-    _log.finest('Resetting internal state');
-    _counter = 0;
-    await setIsReconnecting(false);
-
-    if (_timer != null) {
-      _timer!.cancel();
-      _timer = null;
-    }
+    // ignore: unnecessary_lambdas
+    await _eventQueue.addJob(() => _reset());
   }
 
-  @override
-  Future<void> onFailure() async {
-    _log.finest('Failure occured. Starting exponential backoff');
-    _counter++;
-
-    if (_timer != null) {
-      _timer!.cancel();
+  Future<void> _onFailure() async {
+    final shouldContinue = await _timerLock.synchronized(() {
+      return _timer == null;
+    });
+    if (!shouldContinue) {
+      _log.finest('_onFailure: Not backing off since _timer is already running');
+      return;
     }
 
-    // Wait at max 80 seconds.
-    final seconds = min(min(pow(2, _counter).toInt(), 80), _maxBackoffTime);
+    final seconds = Random().nextInt(_maxBackoffTime - _minBackoffTime) + _minBackoffTime;
+    _log.finest('Failure occured. Starting random backoff with ${seconds}s');
+    _timer?.cancel();
+
     _timer = Timer(Duration(seconds: seconds), _onTimerElapsed);
+  }
+  
+  @override
+  Future<void> onFailure() async {
+    // ignore: unnecessary_lambdas
+    await _eventQueue.addJob(() => _onFailure());
   }
 
   @override

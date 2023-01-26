@@ -50,7 +50,7 @@ void main() {
           isFeatureSupported: (_) => false,
           getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
           getSocket: () => StubTCPSocket(play: []),
-          getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+          getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
         ),
       );
 
@@ -79,7 +79,7 @@ void main() {
           isFeatureSupported: (_) => false,
           getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
           getSocket: () => StubTCPSocket(play: []),
-          getConnection: () => XmppConnection(TestingReconnectionPolicy(), StubTCPSocket(play: [])),
+          getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
         ),
       );
 
