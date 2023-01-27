@@ -13,7 +13,6 @@ import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 /// NOTE: [StableStanzaId.stanzaId] must not be confused with the actual id attribute of
 ///       the message stanza.
 class StableStanzaId {
-
   const StableStanzaId({ this.originId, this.stanzaId, this.stanzaIdBy });
   final String? originId;
   final String? stanzaId;
@@ -29,11 +28,7 @@ XMLNode makeOriginIdElement(String id) {
 }
 
 class StableIdManager extends XmppManagerBase {
-  @override
-  String getName() => 'StableIdManager';
-
-  @override
-  String getId() => stableIdManager;
+  StableIdManager() : super(stableIdManager);
 
   @override
   List<String> getDiscoFeatures() => [ stableIdXmlns ];

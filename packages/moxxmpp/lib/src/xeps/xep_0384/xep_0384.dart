@@ -42,12 +42,9 @@ const _doNotEncryptList = [
   DoNotEncrypt('stanza-id', stableIdXmlns),
 ];
 
+@mustCallSuper
 abstract class BaseOmemoManager extends XmppManagerBase {
-  @override
-  String getId() => omemoManager;
-
-  @override
-  String getName() => 'OmemoManager';
+  BaseOmemoManager() : super(omemoManager);
 
   // TODO(Unknown): Technically, this is not always true
   @override

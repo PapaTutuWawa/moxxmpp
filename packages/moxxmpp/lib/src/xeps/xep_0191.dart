@@ -9,16 +9,10 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 
 class BlockingManager extends XmppManagerBase {
-  BlockingManager() : _supported = false, _gotSupported = false, super();
+  BlockingManager() : super(blockingManager);
 
-  bool _supported;
-  bool _gotSupported;
-
-  @override
-  String getId() => blockingManager;
-
-  @override
-  String getName() => 'BlockingManager';
+  bool _supported = false;
+  bool _gotSupported = false;
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

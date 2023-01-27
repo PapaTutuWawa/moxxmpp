@@ -225,11 +225,7 @@ class StickerPack {
 }
 
 class StickersManager extends XmppManagerBase {
-  @override
-  String getId() => stickersManager;
-
-  @override
-  String getName() => 'StickersManager';
+  StickersManager() : super(stickersManager);
 
   @override
   Future<bool> isSupported() async => true;

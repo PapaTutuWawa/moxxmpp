@@ -12,11 +12,7 @@ class MessageRetractionData {
 }
 
 class MessageRetractionManager extends XmppManagerBase {
-  @override
-  String getName() => 'MessageRetractionManager';
-
-  @override
-  String getId() => messageRetractionManager;
+  MessageRetractionManager() : super(messageRetractionManager);
 
   @override
   List<String> getDiscoFeatures() => [ messageRetractionXmlns ];

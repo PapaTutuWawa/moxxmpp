@@ -53,20 +53,12 @@ XMLNode buildEmeElement(ExplicitEncryptionType type) {
 }
 
 class EmeManager extends XmppManagerBase {
-
-  EmeManager() : super();
-
-  @override
-  String getId() => emeManager;
-
-  @override
-  String getName() => 'EmeManager';
-
+  EmeManager() : super(emeManager);
   @override
   Future<bool> isSupported() async => true;
 
   @override
-  List<String> getDiscoFeatures() => [emeXmlns];
+  List<String> getDiscoFeatures() => [ emeXmlns ];
   
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

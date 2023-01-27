@@ -41,17 +41,19 @@ Map<String, String> prepareHeaders(Map<String, String> headers) {
 }
 
 class HttpFileUploadManager extends XmppManagerBase {
-  HttpFileUploadManager() : _gotSupported = false, _supported = false, super();
+  HttpFileUploadManager() : super(httpFileUploadManager);
+
+  /// The entity that we will request file uploads from, if discovered.
   JID? _entityJid;
+
+  /// The maximum file upload file size, if advertised and discovered.
   int? _maxUploadSize;
-  bool _gotSupported;
-  bool _supported;
 
-  @override
-  String getId() => httpFileUploadManager;
+  /// Flag, if we every tried to discover the upload entity.
+  bool _gotSupported = false;
 
-  @override
-  String getName() => 'HttpFileUploadManager';
+  /// Flag, if we can use HTTP File Upload
+  bool _supported = false;
 
   /// Returns whether the entity provided an identity that tells us that we can ask it
   /// for an HTTP upload slot.

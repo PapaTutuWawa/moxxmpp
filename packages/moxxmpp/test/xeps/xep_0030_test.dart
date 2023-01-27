@@ -1,4 +1,5 @@
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
 import 'package:test/test.dart';
 
 import '../helpers/logging.dart';

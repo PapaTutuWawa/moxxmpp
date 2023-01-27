@@ -17,16 +17,10 @@ typedef PresencePreSendCallback = Future<List<XMLNode>> Function();
 /// A mandatory manager that handles initial presence sending, sending of subscription
 /// request management requests and triggers events for incoming presence stanzas.
 class PresenceManager extends XmppManagerBase {
-  PresenceManager() : super();
+  PresenceManager() : super(presenceManager);
 
   /// The list of pre-send callbacks.
   final List<PresencePreSendCallback> _presenceCallbacks = List.empty(growable: true);
-  
-  @override
-  String getId() => presenceManager;
-
-  @override
-  String getName() => 'PresenceManager';
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

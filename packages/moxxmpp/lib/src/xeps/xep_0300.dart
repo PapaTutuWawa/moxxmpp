@@ -61,11 +61,7 @@ HashFunction hashFunctionFromName(String name) {
 }
 
 class CryptographicHashManager extends XmppManagerBase {
-  @override
-  String getId() => cryptographicHashManager;
-
-  @override
-  String getName() => 'CryptographicHashManager';
+  CryptographicHashManager() : super(cryptographicHashManager);
 
   @override
   Future<bool> isSupported() async => true;
@@ -81,7 +77,7 @@ class CryptographicHashManager extends XmppManagerBase {
   ];
 
   static Future<List<int>> hashFromData(List<int> data, HashFunction function) async {
-    // TODO(PapaTutuWawa): Implemen the others as well
+    // TODO(PapaTutuWawa): Implement the others as well
     HashAlgorithm algo;
     switch (function) {
       case HashFunction.sha256:

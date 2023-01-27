@@ -29,14 +29,10 @@ class MessageReactions {
 }
 
 class MessageReactionsManager extends XmppManagerBase {
+  MessageReactionsManager() : super(messageReactionsManager);
+
   @override
   List<String> getDiscoFeatures() => [ messageReactionsXmlns ];
-
-  @override
-  String getName() => 'MessageReactionsManager';
-
-  @override
-  String getId() => messageReactionsManager;
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

@@ -10,6 +10,8 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 
 abstract class XmppManagerBase {
+  XmppManagerBase(this.id);
+
   late final XmppManagerAttributes _managerAttributes;
   late final Logger _log;
 
@@ -19,7 +21,7 @@ abstract class XmppManagerBase {
   /// Registers the callbacks from XmppConnection with the manager
   void register(XmppManagerAttributes attributes) {
     _managerAttributes = attributes;
-    _log = Logger(getName());
+    _log = Logger(name);
   }
   
   /// Returns the attributes that are registered with the manager.
@@ -60,11 +62,11 @@ abstract class XmppManagerBase {
   List<Identity> getDiscoIdentities() => [];
   
   /// Return the Id (akin to xmlns) of this manager.
-  String getId();
+  final String id;
 
-  /// Return a name that will be used for logging.
-  String getName();
-
+  /// The name of the manager.
+  String get name => toString();
+  
   /// Return the logger for this manager.
   Logger get logger => _log;
   

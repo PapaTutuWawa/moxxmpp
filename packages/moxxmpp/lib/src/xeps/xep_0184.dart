@@ -24,14 +24,10 @@ XMLNode makeMessageDeliveryResponse(String id) {
 }
 
 class MessageDeliveryReceiptManager extends XmppManagerBase {
+  MessageDeliveryReceiptManager() : super(messageDeliveryReceiptManager);
+
   @override
   List<String> getDiscoFeatures() => [ deliveryXmlns ];
-
-  @override
-  String getName() => 'MessageDeliveryReceiptManager';
-
-  @override
-  String getId() => messageDeliveryReceiptManager;
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

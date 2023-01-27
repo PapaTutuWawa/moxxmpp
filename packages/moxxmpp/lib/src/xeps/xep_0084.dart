@@ -28,24 +28,24 @@ class UserAvatarMetadata {
     this.height,
     this.mime,
   );
+
   /// The amount of bytes in the file
   final int length;
+
   /// The identifier of the avatar
   final String id;
+
   /// Image proportions
   final int width;
   final int height;
+
   /// The MIME type of the avatar
   final String mime;
 }
 
 /// NOTE: This class requires a PubSubManager
 class UserAvatarManager extends XmppManagerBase {
-  @override
-  String getId() => userAvatarManager;
-
-  @override
-  String getName() => 'UserAvatarManager';
+  UserAvatarManager() : super(userAvatarManager);
 
   PubSubManager _getPubSubManager() => getAttributes().getManagerById(pubsubManager)! as PubSubManager;
   

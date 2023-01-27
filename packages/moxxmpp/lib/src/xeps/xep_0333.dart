@@ -25,11 +25,7 @@ XMLNode makeChatMarker(String tag, String id) {
 }
 
 class ChatMarkerManager extends XmppManagerBase {
-  @override
-  String getName() => 'ChatMarkerManager';
-
-  @override
-  String getId() => chatMarkerManager;
+  ChatMarkerManager() : super(chatMarkerManager);
 
   @override
   List<String> getDiscoFeatures() => [ chatMarkersXmlns ];

@@ -21,40 +21,41 @@ const xmlUintMax = 4294967296; // 2**32
 typedef StanzaAckedCallback = bool Function(Stanza stanza);
 
 class StreamManagementManager extends XmppManagerBase {
-
   StreamManagementManager({
     this.ackTimeout = const Duration(seconds: 30),
-  })
-  : _state = StreamManagementState(0, 0),
-    _unackedStanzas = {},
-    _stateLock = Lock(),
-    _streamManagementEnabled = false,
-    _lastAckTimestamp = -1,
-    _pendingAcks = 0,
-    _streamResumed = false,
-    _ackLock = Lock();
+  }) : super(smManager);
+
   /// The queue of stanzas that are not (yet) acked
-  final Map<int, Stanza> _unackedStanzas;
+  final Map<int, Stanza> _unackedStanzas = {};
+
   /// Commitable state of the StreamManagementManager
-  StreamManagementState _state;
+  StreamManagementState _state = StreamManagementState(0, 0);
+
   /// Mutex lock for _state
-  final Lock _stateLock;
+  final Lock _stateLock = Lock();
+
   /// If the have enabled SM on the stream yet
-  bool _streamManagementEnabled;
+  bool _streamManagementEnabled = false;
+
   /// If the current stream has been resumed;
-  bool _streamResumed;
+  bool _streamResumed = false;
+
   /// The time in which the response to an ack is still valid. Counts as a timeout
   /// otherwise
   @internal
   final Duration ackTimeout;
+
   /// The time at which the last ack has been sent
-  int _lastAckTimestamp;
+  int _lastAckTimestamp = -1;
+
   /// The timer to see if we timed the connection out
   Timer? _ackTimer;
+
   /// Counts how many acks we're waiting for
-  int _pendingAcks;
+  int _pendingAcks = 0;
+
   /// Lock for both [_lastAckTimestamp] and [_pendingAcks].
-  final Lock _ackLock;
+  final Lock _ackLock = Lock();
 
   /// Functions for testing
   @visibleForTesting
@@ -120,12 +121,6 @@ class StreamManagementManager extends XmppManagerBase {
   StreamManagementState get state => _state;
 
   bool get streamResumed => _streamResumed;
-  
-  @override
-  String getId() => smManager;
-
-  @override
-  String getName() => 'StreamManagementManager';
 
   @override
   List<NonzaHandler> getNonzaHandlers() => [

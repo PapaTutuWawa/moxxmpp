@@ -76,11 +76,7 @@ class MessageDetails {
 }
 
 class MessageManager extends XmppManagerBase {
-  @override
-  String getId() => messageManager;
-
-  @override
-  String getName() => 'MessageManager';
+  MessageManager() : super(messageManager);
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

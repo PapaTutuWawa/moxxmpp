@@ -71,7 +71,7 @@ Future<String> calculateCapabilityHash(DiscoInfo info, HashAlgorithm algorithm) 
 /// the DiscoManager.
 /// NOTE: This manager requires that the DiscoManager is also registered.
 class EntityCapabilitiesManager extends XmppManagerBase {
-  EntityCapabilitiesManager(this._capabilityHashBase) : super();
+  EntityCapabilitiesManager(this._capabilityHashBase) : super(entityCapabilitiesManager);
 
   /// The string that is both the node under which we advertise the disco info
   /// and the base for the actual node on which we respond to disco#info requests.
@@ -81,18 +81,10 @@ class EntityCapabilitiesManager extends XmppManagerBase {
   String? _capabilityHash;
 
   @override
-  String getName() => 'EntityCapabilitiesManager';
-  
-  @override
-  String getId() => entityCapabilitiesManager;
-
-  @override
   Future<bool> isSupported() async => true;
 
   @override
-  List<String> getDiscoFeatures() => [
-    capsXmlns,
-  ];
+  List<String> getDiscoFeatures() => [ capsXmlns ];
 
   /// Computes, if required, the capability hash of the data provided by
   /// the DiscoManager.

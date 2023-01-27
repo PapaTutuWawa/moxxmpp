@@ -14,7 +14,7 @@ import 'package:moxxmpp/src/xeps/xep_0297.dart';
 
 /// This manager class implements support for XEP-0280.
 class CarbonsManager extends XmppManagerBase {
-  CarbonsManager() : super();
+  CarbonsManager() : super(carbonsManager);
 
   /// Indicates that message carbons are enabled.
   bool _isEnabled = false;
@@ -25,12 +25,6 @@ class CarbonsManager extends XmppManagerBase {
   /// Indicates that we know that [CarbonsManager._supported] is accurate.
   bool _gotSupported = false;
   
-  @override
-  String getId() => carbonsManager;
-
-  @override
-  String getName() => 'CarbonsManager';
-
   @override
   List<StanzaHandler> getIncomingPreStanzaHandlers() => [
     StanzaHandler(

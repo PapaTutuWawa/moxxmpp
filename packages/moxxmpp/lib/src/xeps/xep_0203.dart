@@ -14,11 +14,7 @@ class DelayedDelivery {
 }
 
 class DelayedDeliveryManager extends XmppManagerBase {
-  @override
-  String getId() => delayedDeliveryManager;
-
-  @override
-  String getName() => 'DelayedDeliveryManager';
+  DelayedDeliveryManager() : super(delayedDeliveryManager);
 
   @override
   Future<bool> isSupported() async => true;

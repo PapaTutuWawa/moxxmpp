@@ -33,7 +33,7 @@ class DiscoManager extends XmppManagerBase {
   /// to a disco#info response.
   DiscoManager(List<Identity> identities)
     : _identities = List<Identity>.from(identities),
-      super();
+      super(discoManager);
 
   /// Our features
   final List<String> _features = List.empty(growable: true);
@@ -89,12 +89,6 @@ class DiscoManager extends XmppManagerBase {
       callback: _onDiscoItemsRequest,
     ),
   ];
-
-  @override
-  String getId() => discoManager;
-
-  @override
-  String getName() => 'DiscoManager';
 
   @override
   List<String> getDiscoFeatures() => [ discoInfoXmlns, discoItemsXmlns ];

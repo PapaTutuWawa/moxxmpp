@@ -105,11 +105,7 @@ class StatelessFileSharingData {
 }
 
 class SFSManager extends XmppManagerBase {
-  @override
-  String getName() => 'SFSManager';
-
-  @override
-  String getId() => sfsManager;
+  SFSManager() : super(sfsManager);
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

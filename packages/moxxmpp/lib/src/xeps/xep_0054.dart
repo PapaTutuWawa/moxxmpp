@@ -28,15 +28,9 @@ class VCard {
 }
 
 class VCardManager extends XmppManagerBase {
-  VCardManager() : _lastHash = {}, super();
-  final Map<String, String> _lastHash;
+  VCardManager() : super(vcardManager);
+  final Map<String, String> _lastHash = {};
   
-  @override
-  String getId() => vcardManager;
-
-  @override
-  String getName() => 'vCardManager';
-
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
     StanzaHandler(

@@ -66,11 +66,7 @@ class QuoteData {
 /// A manager implementing support for parsing XEP-0461 metadata. The
 /// MessageRepliesManager itself does not modify the body of the message.
 class MessageRepliesManager extends XmppManagerBase {
-  @override
-  String getName() => 'MessageRepliesManager';
-
-  @override
-  String getId() => messageRepliesManager;
+  MessageRepliesManager() : super(messageRepliesManager);
 
   @override
   List<String> getDiscoFeatures() => [

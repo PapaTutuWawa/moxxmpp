@@ -8,7 +8,6 @@ import 'package:moxxmpp/src/stringxml.dart';
 
 /// A data class representing the jabber:x:oob tag.
 class OOBData {
-
   const OOBData({ this.url, this.desc });
   final String? url;
   final String? desc;
@@ -32,11 +31,7 @@ XMLNode constructOOBNode(OOBData data) {
 }
 
 class OOBManager extends XmppManagerBase {
-  @override
-  String getName() => 'OOBName';
-
-  @override
-  String getId() => oobManager;
+  OOBManager() : super(oobManager);
 
   @override
   List<String> getDiscoFeatures() => [ oobDataXmlns ];

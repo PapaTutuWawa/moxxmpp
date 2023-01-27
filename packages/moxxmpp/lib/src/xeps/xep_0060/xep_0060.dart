@@ -69,11 +69,7 @@ class PubSubItem {
 }
 
 class PubSubManager extends XmppManagerBase {
-  @override
-  String getId() => pubsubManager;
-
-  @override
-  String getName() => 'PubsubManager';
+  PubSubManager() : super(pubsubManager);
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

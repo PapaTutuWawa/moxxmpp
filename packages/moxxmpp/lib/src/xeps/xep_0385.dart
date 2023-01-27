@@ -8,7 +8,6 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
 
 class StatelessMediaSharingData {
-
   const StatelessMediaSharingData({ required this.mediaType, required this.size, required this.description, required this.hashes, required this.url, required this.thumbnails });
   final String mediaType;
   final int size;
@@ -63,11 +62,7 @@ StatelessMediaSharingData parseSIMSElement(XMLNode node) {
 }
 
 class SIMSManager extends XmppManagerBase {
-  @override
-  String getName() => 'SIMSManager';
-
-  @override
-  String getId() => simsManager;
+  SIMSManager() : super(simsManager);
 
   @override
   List<String> getDiscoFeatures() => [ simsXmlns ];

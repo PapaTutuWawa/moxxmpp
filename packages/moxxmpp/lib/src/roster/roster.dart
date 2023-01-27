@@ -93,7 +93,7 @@ class RosterFeatureNegotiator extends XmppFeatureNegotiatorBase {
 
 /// This manager requires a RosterFeatureNegotiator to be registered.
 class RosterManager extends XmppManagerBase {
-  RosterManager(this._stateManager) : super();
+  RosterManager(this._stateManager) : super(rosterManager);
 
   /// The class managing the entire roster state.
   final BaseRosterStateManager _stateManager;
@@ -104,12 +104,6 @@ class RosterManager extends XmppManagerBase {
     _stateManager.register(attributes.sendEvent); 
   }
   
-  @override
-  String getId() => rosterManager;
-
-  @override
-  String getName() => 'RosterManager';
-
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
     StanzaHandler(

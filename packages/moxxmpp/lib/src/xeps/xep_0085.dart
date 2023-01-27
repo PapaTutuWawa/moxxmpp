@@ -39,14 +39,10 @@ ChatState chatStateFromString(String raw) {
 String chatStateToString(ChatState state) => state.toString().split('.').last;
 
 class ChatStateManager extends XmppManagerBase {
+  ChatStateManager() : super(chatStateManager);
+
   @override
   List<String> getDiscoFeatures() => [ chatStateXmlns ];
-
-  @override
-  String getName() => 'ChatStateManager';
-
-  @override
-  String getId() => chatStateManager;
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

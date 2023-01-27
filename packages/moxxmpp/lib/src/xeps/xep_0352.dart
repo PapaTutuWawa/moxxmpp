@@ -26,10 +26,10 @@ class CSIInactiveNonza extends XMLNode {
 
 /// A Stub negotiator that is just for "intercepting" the stream feature.
 class CSINegotiator extends XmppFeatureNegotiatorBase {
-  CSINegotiator() : _supported = false, super(11, false, csiXmlns, csiNegotiator);
+  CSINegotiator() : super(11, false, csiXmlns, csiNegotiator);
 
   /// True if CSI is supported. False otherwise.
-  bool _supported;
+  bool _supported = false;
   bool get isSupported => _supported;
   
   @override
@@ -50,15 +50,9 @@ class CSINegotiator extends XmppFeatureNegotiatorBase {
 
 /// The manager requires a CSINegotiator to be registered as a feature negotiator.
 class CSIManager extends XmppManagerBase {
+  CSIManager() : super(csiManager);
 
-  CSIManager() : _isActive = true, super();
-  bool _isActive; 
-
-  @override
-  String getId() => csiManager;
-
-  @override
-  String getName() => 'CSIManager';
+  bool _isActive = true;
 
   @override
   Future<bool> isSupported() async {

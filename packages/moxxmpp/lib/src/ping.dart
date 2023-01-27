@@ -4,11 +4,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 
 class PingManager extends XmppManagerBase {
-  @override
-  String getId() => pingManager;
-
-  @override
-  String getName() => 'PingManager';
+  PingManager() : super(pingManager);
 
   @override
   Future<bool> isSupported() async => true;

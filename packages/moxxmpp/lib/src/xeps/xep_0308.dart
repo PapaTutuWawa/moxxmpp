@@ -17,11 +17,7 @@ XMLNode makeLastMessageCorrectionEdit(String id) {
 }
 
 class LastMessageCorrectionManager extends XmppManagerBase {
-  @override
-  String getName() => 'LastMessageCorrectionManager';
-
-  @override
-  String getId() => lastMessageCorrectionManager;
+  LastMessageCorrectionManager() : super(lastMessageCorrectionManager);
 
   @override
   List<String> getDiscoFeatures() => [ lmcXmlns ];

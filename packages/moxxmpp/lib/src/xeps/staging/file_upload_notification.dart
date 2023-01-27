@@ -11,13 +11,7 @@ import 'package:moxxmpp/src/xeps/xep_0446.dart';
 const fileUploadNotificationXmlns = 'proto:urn:xmpp:fun:0';
 
 class FileUploadNotificationManager extends XmppManagerBase {
-  FileUploadNotificationManager() : super();
-
-  @override
-  String getId() => fileUploadNotificationManager;
-
-  @override
-  String getName() => 'FileUploadNotificationManager';
+  FileUploadNotificationManager() : super(fileUploadNotificationManager);
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [

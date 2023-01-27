@@ -226,7 +226,7 @@ class XmppConnection {
   /// Registers a list of [XmppManagerBase] sub-classes as managers on this connection.
   Future<void> registerManagers(List<XmppManagerBase> managers) async {
     for (final manager in managers) {
-      _log.finest('Registering ${manager.getId()}');
+      _log.finest('Registering ${manager.id}');
       manager.register(
         XmppManagerAttributes(
           sendStanza: sendStanza,
@@ -242,8 +242,7 @@ class XmppConnection {
         ),
       );
 
-      final id = manager.getId();
-      _xmppManagers[id] = manager;
+      _xmppManagers[manager.id] = manager;
 
       _incomingStanzaHandlers.addAll(manager.getIncomingStanzaHandlers());
       _incomingPreStanzaHandlers.addAll(manager.getIncomingPreStanzaHandlers());
@@ -260,7 +259,7 @@ class XmppConnection {
     // Run the post register callbacks
     for (final manager in _xmppManagers.values) {
       if (!manager.initialized) {
-        _log.finest('Running post-registration callback for ${manager.getName()}');
+        _log.finest('Running post-registration callback for ${manager.name}');
         await manager.postRegisterCallback();
       }
     }
