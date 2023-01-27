@@ -9,14 +9,14 @@ import 'package:moxxmpp/src/stanza.dart';
 /// Data summarizing the XEP-0461 data.
 class ReplyData {
   const ReplyData({
-    required this.to,
     required this.id,
+    this.to,
     this.start,
     this.end,
   });
 
   /// The bare JID to whom the reply applies to
-  final String to;
+  final String? to;
 
   /// The stanza ID of the message that is replied to
   final String id;
@@ -73,6 +73,11 @@ class MessageRepliesManager extends XmppManagerBase {
   String getId() => messageRepliesManager;
 
   @override
+  List<String> getDiscoFeatures() => [
+    replyXmlns,
+  ];
+  
+  @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
     StanzaHandler(
       stanzaTag: 'message',
@@ -90,7 +95,7 @@ class MessageRepliesManager extends XmppManagerBase {
   Future<StanzaHandlerData> _onMessage(Stanza stanza, StanzaHandlerData state) async {
     final reply = stanza.firstTag('reply', xmlns: replyXmlns)!;
     final id = reply.attributes['id']! as String;
-    final to = reply.attributes['to']! as String;
+    final to = reply.attributes['to'] as String?;
     int? start;
     int? end;
 
@@ -102,11 +107,13 @@ class MessageRepliesManager extends XmppManagerBase {
       end = int.parse(body.attributes['end']! as String);
     }
 
-    return state.copyWith(reply: ReplyData(
+    return state.copyWith(
+      reply: ReplyData(
         id: id,
         to: to,
         start: start,
         end: end,
-    ),);
+      ),
+    );
   }
 }
