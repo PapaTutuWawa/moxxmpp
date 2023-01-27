@@ -1,9 +1,12 @@
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
 
+import '../helpers/logging.dart';
 import '../helpers/xmpp.dart';
 
 void main() {
+  initLogger();
+
   test('Test having multiple disco requests for the same JID', () async {
     final fakeSocket = StubTCPSocket(
       play: [
@@ -102,7 +105,7 @@ void main() {
 
     await Future.delayed(const Duration(seconds: 1));
     expect(
-      disco.getRunningInfoQueries(DiscoCacheKey(jid.toString(), null)).length,
+      disco.infoTracker.getRunningTasks(DiscoCacheKey(jid.toString(), null)).length,
       1,
     );
     fakeSocket.injectRawXml("<iq type='result' id='${fakeSocket.lastId!}' from='romeo@montague.lit/orchard' to='polynomdivision@test.server/MU29eEZn' xmlns='jabber:client'><query xmlns='http://jabber.org/protocol/disco#info' /></iq>");
@@ -111,6 +114,6 @@ void main() {
     
     expect(fakeSocket.getState(), 6);
     expect(await result1, await result2);
-    expect(disco.hasInfoQueriesRunning(), false);
+    expect(disco.infoTracker.hasTasksRunning(), false);
   });
 }
