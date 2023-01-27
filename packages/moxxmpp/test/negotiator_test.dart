@@ -63,10 +63,11 @@ void main() {
       StubNegotiator2(),
     ])
     ..registerManagers([
-      PresenceManager('http://moxxmpp.example'),
+      PresenceManager(),
       RosterManager(TestingRosterStateManager('', [])),
-      DiscoManager(),
+      DiscoManager([]),
       PingManager(),
+      EntityCapabilitiesManager('http://moxxmpp.example'),
     ])
     ..setConnectionSettings(
       ConnectionSettings(

@@ -7,16 +7,20 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
-import 'package:moxxmpp/src/presence.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
-import 'package:moxxmpp/src/xeps/xep_0004.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/helpers.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0115.dart';
 import 'package:synchronized/synchronized.dart';
+
+/// Callback that is called when a disco#info requests is received on a given node.
+typedef DiscoInfoRequestCallback = Future<DiscoInfo> Function();
+
+/// Callback that is called when a disco#items requests is received on a given node.
+typedef DiscoItemsRequestCallback = Future<List<DiscoItem>> Function();
 
 @immutable
 class DiscoCacheKey {
@@ -33,33 +37,49 @@ class DiscoCacheKey {
   int get hashCode => jid.hashCode ^ node.hashCode;
 }
 
+/// This manager implements XEP-0030 by providing a way of performing disco#info and
+/// disco#items requests and answering those requests.
+/// A caching mechanism is also provided.
 class DiscoManager extends XmppManagerBase {
-  DiscoManager()
-    : _features = List.empty(growable: true),
-      _capHashCache = {},
-      _capHashInfoCache = {},
-      _discoInfoCache = {},
-      _runningInfoQueries = {},
-      _cacheLock = Lock(),
+  /// [identities] is a list of disco identities that should be added by default
+  /// to a disco#info response.
+  DiscoManager(List<Identity> identities)
+    : _identities = List<Identity>.from(identities),
       super();
-  /// Our features
-  final List<String> _features;
 
+  /// Our features
+  final List<String> _features = List.empty(growable: true);
+
+  /// Disco identities that we advertise
+  final List<Identity> _identities;
+  
   /// Map full JID to Capability hashes
-  final Map<String, CapabilityHashInfo> _capHashCache;
+  final Map<String, CapabilityHashInfo> _capHashCache = {};
 
   /// Map capability hash to the disco info
-  final Map<String, DiscoInfo> _capHashInfoCache;
+  final Map<String, DiscoInfo> _capHashInfoCache = {};
 
   /// Map full JID to Disco Info
-  final Map<DiscoCacheKey, DiscoInfo> _discoInfoCache;
+  final Map<DiscoCacheKey, DiscoInfo> _discoInfoCache = {};
 
   /// Mapping the full JID to a list of running requests
-  final Map<DiscoCacheKey, List<Completer<Result<DiscoError, DiscoInfo>>>> _runningInfoQueries;
+  final Map<DiscoCacheKey, List<Completer<Result<DiscoError, DiscoInfo>>>> _runningInfoQueries = {};
 
   /// Cache lock
-  final Lock _cacheLock;
+  final Lock _cacheLock = Lock();
 
+  /// disco#info callbacks: node -> Callback
+  final Map<String, DiscoInfoRequestCallback> _discoInfoCallbacks = {};
+
+  /// disco#items callbacks: node -> Callback
+  final Map<String, DiscoItemsRequestCallback> _discoItemsCallbacks = {};
+
+  /// The list of identities that are registered.
+  List<Identity> get identities => _identities;
+
+  /// The list of disco features that are registered.
+  List<String> get features => _features;
+  
   @visibleForTesting
   bool hasInfoQueriesRunning() => _runningInfoQueries.isNotEmpty;
 
@@ -105,10 +125,20 @@ class DiscoManager extends XmppManagerBase {
       });
     }
   }
+
+  /// Register a callback [callback] for a disco#info query on [node].
+  void registerInfoCallback(String node, DiscoInfoRequestCallback callback) {
+    _discoInfoCallbacks[node] = callback;
+  }
+
+  /// Register a callback [callback] for a disco#items query on [node].
+  void registerItemsCallback(String node, DiscoItemsRequestCallback callback) {
+    _discoItemsCallbacks[node] = callback;
+  }
   
   /// Adds a list of features to the possible disco info response.
   /// This function only adds features that are not already present in the disco features.
-  void addDiscoFeatures(List<String> features) {
+  void addFeatures(List<String> features) {
     for (final feat in features) {
       if (!_features.contains(feat)) {
         _features.add(feat);
@@ -116,6 +146,16 @@ class DiscoManager extends XmppManagerBase {
     }
   }
 
+  /// Adds a list of identities to the possible disco info response.
+  /// This function only adds features that are not already present in the disco features.
+  void addIdentities(List<Identity> identities) {
+    for (final identity in identities) {
+      if (!_identities.contains(identity)) {
+        _identities.add(identity);
+      }
+    }
+  }
+  
   Future<void> _onPresence(JID from, Stanza presence) async {
     final c = presence.firstTag('c', xmlns: capsXmlns);
     if (c == null) return;
@@ -146,45 +186,33 @@ class DiscoManager extends XmppManagerBase {
     });
   }
   
-  /// Returns the list of disco features registered.
-  List<String> getRegisteredDiscoFeatures() => _features;
-  
-  /// May be overriden. Specifies the identities which will be returned in a disco info response.
-  List<Identity> getIdentities() => const [ Identity(category: 'client', type: 'pc', name: 'moxxmpp', lang: 'en') ];
+  /// Returns the [DiscoInfo] object that would be used as the response to a disco#info
+  /// query against our bare JID with no node. The results node attribute is set
+  /// to [node].
+  DiscoInfo getDiscoInfo(String? node) {
+    return DiscoInfo(
+      _features,
+      _identities,
+      const [],
+      node,
+      null,
+    );
+  }
   
   Future<StanzaHandlerData> _onDiscoInfoRequest(Stanza stanza, StanzaHandlerData state) async {
     if (stanza.type != 'get') return state;
 
-    final presence = getAttributes().getManagerById(presenceManager)! as PresenceManager;
     final query = stanza.firstTag('query', xmlns: discoInfoXmlns)!;
     final node = query.attributes['node'] as String?;
-    final capHash = await presence.getCapabilityHash();
-    final isCapabilityNode = node == '${presence.capabilityHashNode}#$capHash';
 
-    if (!isCapabilityNode && node != null) {
+    if (_discoInfoCallbacks.containsKey(node)) {
+      // We can now assume that node != null
+      final result = await _discoInfoCallbacks[node]!();
       await reply(
         state,
-        'error',
+        'result',
         [
-          XMLNode.xmlns(
-            tag: 'query',
-            xmlns: discoInfoXmlns,
-            attributes: <String, String>{
-              'node': node
-            },
-          ),
-          XMLNode(
-            tag: 'error',
-            attributes: <String, String>{
-              'type': 'cancel'
-            },
-            children: [
-              XMLNode.xmlns(
-                tag: 'not-allowed',
-                xmlns: fullStanzaXmlns,
-              )
-            ],
-          ),
+          result.toXml(),
         ],
       );
 
@@ -195,24 +223,7 @@ class DiscoManager extends XmppManagerBase {
       state,
       'result',
       [
-        XMLNode.xmlns(
-          tag: 'query',
-          xmlns: discoInfoXmlns,
-          attributes: {
-            ...!isCapabilityNode ? {} : {
-              'node': '${presence.capabilityHashNode}#$capHash'
-            }
-          },
-          children: [
-            ...getIdentities().map((identity) => identity.toXMLNode()),
-            ..._features.map((feat) {
-              return XMLNode(
-                tag: 'feature',
-                attributes: <String, dynamic>{ 'var': feat },
-              );
-            }),
-          ],
-        ),
+        getDiscoInfo(node).toXml(),
       ],
     );
 
@@ -223,30 +234,20 @@ class DiscoManager extends XmppManagerBase {
     if (stanza.type != 'get') return state;
 
     final query = stanza.firstTag('query', xmlns: discoItemsXmlns)!;
-    if (query.attributes['node'] != null) {
-      // TODO(Unknown): Handle the node we specified for XEP-0115
+    final node = query.attributes['node'] as String?;
+    if (_discoItemsCallbacks.containsKey(node)) {
+      final result = await _discoItemsCallbacks[node]!();
       await reply(
         state,
-        'error',
+        'result',
         [
           XMLNode.xmlns(
             tag: 'query',
             xmlns: discoItemsXmlns,
             attributes: <String, String>{
-              'node': query.attributes['node']! as String,
+              'node': node!,
             },
-          ),
-          XMLNode(
-            tag: 'error',
-            attributes: <String, dynamic>{
-              'type': 'cancel'
-            },
-            children: [
-              XMLNode.xmlns(
-                tag: 'not-allowed',
-                xmlns: fullStanzaXmlns,
-              ),
-            ],
+            children: result.map((item) => item.toXml()).toList(),
           ),
         ],
       );
@@ -254,18 +255,7 @@ class DiscoManager extends XmppManagerBase {
       return state.copyWith(done: true);
     }
 
-    await reply(
-      state,
-      'result',
-      [
-        XMLNode.xmlns(
-          tag: 'query',
-          xmlns: discoItemsXmlns,
-        ),
-      ],
-    );
-
-    return state.copyWith(done: true);
+    return state;
   }
 
   Future<void> _exitDiscoInfoCriticalSection(DiscoCacheKey key, Result<DiscoError, DiscoInfo> result) async {
@@ -322,34 +312,17 @@ class DiscoManager extends XmppManagerBase {
       return result;
     }
 
-    final error = stanza.firstTag('error');
-    if (error != null && stanza.attributes['type'] == 'error') {
+    if (stanza.attributes['type'] == 'error') {
+      //final error = stanza.firstTag('error');
       final result = Result<DiscoError, DiscoInfo>(ErrorResponseDiscoError());
       await _exitDiscoInfoCriticalSection(cacheKey, result);
       return result;
     }
     
-    final features = List<String>.empty(growable: true);
-    final identities = List<Identity>.empty(growable: true);
-
-    for (final element in query.children) {
-      if (element.tag == 'feature') {
-        features.add(element.attributes['var']! as String);
-      } else if (element.tag == 'identity') {
-        identities.add(Identity(
-          category: element.attributes['category']! as String,
-          type: element.attributes['type']! as String,
-          name: element.attributes['name'] as String?,
-        ),);
-      }
-    }
-
     final result = Result<DiscoError, DiscoInfo>(
-      DiscoInfo(
-        features,
-        identities,
-        query.findTags('x', xmlns: dataFormsXmlns).map(parseDataForm).toList(),
-        JID.fromString(stanza.attributes['from']! as String),
+      DiscoInfo.fromQuery(
+        query,
+        JID.fromString(entity),
       ),
     );
     await _exitDiscoInfoCriticalSection(cacheKey, result);
@@ -367,8 +340,8 @@ class DiscoManager extends XmppManagerBase {
     final query = stanza.firstTag('query');
     if (query == null) return Result(InvalidResponseDiscoError());
 
-    final error = stanza.firstTag('error');
-    if (error != null && stanza.type == 'error') {
+    if (stanza.type == 'error') {
+      //final error = stanza.firstTag('error');
       //print("Disco Items error: " + error.toXml());
       return Result(ErrorResponseDiscoError());
     }

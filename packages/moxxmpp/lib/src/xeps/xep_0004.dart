@@ -3,7 +3,6 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 class DataFormOption {
-
   const DataFormOption({ required this.value, this.label });
   final String? label;
   final String value;
@@ -23,7 +22,6 @@ class DataFormOption {
 }
 
 class DataFormField {
-
   const DataFormField({
       required this.options,
       required this.values,
@@ -60,7 +58,6 @@ class DataFormField {
 }
 
 class DataForm {
-
   const DataForm({
       required this.type,
       required this.instructions,

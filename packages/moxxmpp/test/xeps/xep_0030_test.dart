@@ -53,7 +53,7 @@ void main() {
           ignoreId: true,
         ),
         StringExpectation(
-          "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='QRTBC5cg/oYd+UOTYazSQR4zb/I=' /></presence>",
+          "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='3QvQ2RAy45XBDhArjxy/vEWMl+E=' /></presence>",
           '',
         ),
         StanzaExpectation(
@@ -77,10 +77,11 @@ void main() {
         allowPlainAuth: true,
     ),);
     conn.registerManagers([
-      PresenceManager('http://moxxmpp.example'),
+      PresenceManager(),
       RosterManager(TestingRosterStateManager(null, [])),
-      DiscoManager(),
+      DiscoManager([]),
       PingManager(),
+      EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
     conn.registerFeatureNegotiators(
       [

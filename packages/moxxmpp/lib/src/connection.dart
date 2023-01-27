@@ -223,63 +223,47 @@ class XmppConnection {
   /// none can be found.
   T? getNegotiatorById<T extends XmppFeatureNegotiatorBase>(String id) => _featureNegotiators[id] as T?;
   
-  /// Registers an [XmppManagerBase] sub-class as a manager on this connection.
-  /// [sortHandlers] should NOT be touched. It specified if the handler priorities
-  /// should be set up. The only time this should be false is when called via
-  /// [registerManagers].
-  void registerManager(XmppManagerBase manager, { bool sortHandlers = true }) {
-    _log.finest('Registering ${manager.getId()}');
-    manager.register(
-      XmppManagerAttributes(
-        sendStanza: sendStanza,
-        sendNonza: sendRawXML,
-        sendEvent: _sendEvent,
-        getConnectionSettings: () => _connectionSettings,
-        getManagerById: getManagerById,
-        isFeatureSupported: _serverFeatures.contains,
-        getFullJID: () => _connectionSettings.jid.withResource(_resource),
-        getSocket: () => _socket,
-        getConnection: () => this,
-        getNegotiatorById: getNegotiatorById,
-      ),
-    );
-
-    final id = manager.getId();
-    _xmppManagers[id] = manager;
-
-    if (id == discoManager) {
-      // NOTE: It is intentional that we do not exclude the [DiscoManager] from this
-      //       loop. It may also register features.
-      for (final registeredManager in _xmppManagers.values) {
-        (manager as DiscoManager).addDiscoFeatures(registeredManager.getDiscoFeatures());
-      }
-    } else if (_xmppManagers.containsKey(discoManager)) {
-      (_xmppManagers[discoManager]! as DiscoManager).addDiscoFeatures(manager.getDiscoFeatures());
-    }
-
-    _incomingStanzaHandlers.addAll(manager.getIncomingStanzaHandlers());
-    _incomingPreStanzaHandlers.addAll(manager.getIncomingPreStanzaHandlers());
-    _outgoingPreStanzaHandlers.addAll(manager.getOutgoingPreStanzaHandlers());
-    _outgoingPostStanzaHandlers.addAll(manager.getOutgoingPostStanzaHandlers());
-    
-    if (sortHandlers) {
-      _incomingStanzaHandlers.sort(stanzaHandlerSortComparator);
-      _incomingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
-      _outgoingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
-      _outgoingPostStanzaHandlers.sort(stanzaHandlerSortComparator);
-    }
-  }
-
-  /// Like [registerManager], but for a list of managers.
-  void registerManagers(List<XmppManagerBase> managers) {
+  /// Registers a list of [XmppManagerBase] sub-classes as managers on this connection.
+  Future<void> registerManagers(List<XmppManagerBase> managers) async {
     for (final manager in managers) {
-      registerManager(manager, sortHandlers: false);
+      _log.finest('Registering ${manager.getId()}');
+      manager.register(
+        XmppManagerAttributes(
+          sendStanza: sendStanza,
+          sendNonza: sendRawXML,
+          sendEvent: _sendEvent,
+          getConnectionSettings: () => _connectionSettings,
+          getManagerById: getManagerById,
+          isFeatureSupported: _serverFeatures.contains,
+          getFullJID: () => _connectionSettings.jid.withResource(_resource),
+          getSocket: () => _socket,
+          getConnection: () => this,
+          getNegotiatorById: getNegotiatorById,
+        ),
+      );
+
+      final id = manager.getId();
+      _xmppManagers[id] = manager;
+
+      _incomingStanzaHandlers.addAll(manager.getIncomingStanzaHandlers());
+      _incomingPreStanzaHandlers.addAll(manager.getIncomingPreStanzaHandlers());
+      _outgoingPreStanzaHandlers.addAll(manager.getOutgoingPreStanzaHandlers());
+      _outgoingPostStanzaHandlers.addAll(manager.getOutgoingPostStanzaHandlers());
     }
 
     // Sort them
     _incomingStanzaHandlers.sort(stanzaHandlerSortComparator);
+    _incomingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
     _outgoingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
     _outgoingPostStanzaHandlers.sort(stanzaHandlerSortComparator);
+
+    // Run the post register callbacks
+    for (final manager in _xmppManagers.values) {
+      if (!manager.initialized) {
+        _log.finest('Running post-registration callback for ${manager.getName()}');
+        await manager.postRegisterCallback();
+      }
+    }
   }
   
   /// Register a list of negotiator with the connection.

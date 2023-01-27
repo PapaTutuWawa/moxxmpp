@@ -6,20 +6,20 @@ import 'package:moxxmpp/src/stringxml.dart';
 
 Stanza buildDiscoInfoQueryStanza(String entity, String? node) {
   return Stanza.iq(to: entity, type: 'get', children: [
-      XMLNode.xmlns(
-        tag: 'query',
-        xmlns: discoInfoXmlns,
-        attributes: node != null ? { 'node': node } : {},
-      )
+    XMLNode.xmlns(
+      tag: 'query',
+      xmlns: discoInfoXmlns,
+      attributes: node != null ? { 'node': node } : {},
+    )
   ],);
 }
 
 Stanza buildDiscoItemsQueryStanza(String entity, { String? node }) {
   return Stanza.iq(to: entity, type: 'get', children: [
-      XMLNode.xmlns(
-        tag: 'query',
-        xmlns: discoItemsXmlns,
-        attributes: node != null ? { 'node': node } : {},
-      )
+    XMLNode.xmlns(
+      tag: 'query',
+      xmlns: discoItemsXmlns,
+      attributes: node != null ? { 'node': node } : {},
+    )
   ],);
 }

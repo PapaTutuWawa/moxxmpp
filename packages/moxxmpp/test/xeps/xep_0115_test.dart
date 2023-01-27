@@ -19,6 +19,7 @@ void main() {
         )
       ],
       [],
+      null,
       JID.fromString('some@user.local/test'),
     );
 
@@ -50,6 +51,7 @@ void main() {
         ),
       ],
       [ parseDataForm(XMLNode.fromString(extDiscoDataString)) ],
+      null,
       JID.fromString('some@user.local/test'),
     );
 
@@ -158,6 +160,7 @@ void main() {
         )
       ],
       [],
+      null,
       JID.fromString('user@server.local/test'),
     );
 

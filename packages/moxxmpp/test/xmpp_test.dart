@@ -129,11 +129,12 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-        PresenceManager('http://moxxmpp.example'),
+        PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
-        DiscoManager(),
+        DiscoManager([]),
         PingManager(),
         StreamManagementManager(),
+        EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
       conn.registerFeatureNegotiators(
         [
@@ -187,10 +188,11 @@ void main() {
         allowPlainAuth: true,
       ),);
       conn.registerManagers([
-        PresenceManager('http://moxxmpp.example'),
+        PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
-        DiscoManager(),
+        DiscoManager([]),
         PingManager(),
+        EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
       conn.registerFeatureNegotiators([
         SaslPlainNegotiator()
@@ -245,10 +247,11 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-        PresenceManager('http://moxxmpp.example'),
+        PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
-        DiscoManager(),
+        DiscoManager([]),
         PingManager(),
+        EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
       conn.registerFeatureNegotiators([
         SaslPlainNegotiator()

@@ -8,17 +8,19 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
-import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
-import 'package:moxxmpp/src/xeps/xep_0115.dart';
-import 'package:moxxmpp/src/xeps/xep_0414.dart';
 
+/// A function that will be called when presence, outside of subscription request
+/// management, will be sent. Useful for managers that want to add [XMLNode]s to said
+/// presence.
+typedef PresencePreSendCallback = Future<List<XMLNode>> Function();
+
+/// A mandatory manager that handles initial presence sending, sending of subscription
+/// request management requests and triggers events for incoming presence stanzas.
 class PresenceManager extends XmppManagerBase {
-  PresenceManager(this._capHashNode) : _capabilityHash = null, super();
-  String? _capabilityHash;
-  final String _capHashNode;
+  PresenceManager() : super();
 
-  String get capabilityHashNode => _capHashNode;
+  /// The list of pre-send callbacks.
+  final List<PresencePreSendCallback> _presenceCallbacks = List.empty(growable: true);
   
   @override
   String getId() => presenceManager;
@@ -39,6 +41,11 @@ class PresenceManager extends XmppManagerBase {
 
   @override
   Future<bool> isSupported() async => true;
+
+  /// Register the pre-send callback [callback].
+  void registerPreSendCallback(PresencePreSendCallback callback) {
+    _presenceCallbacks.add(callback);
+  }
   
   Future<StanzaHandlerData> _onPresence(Stanza presence, StanzaHandlerData state) async {
     final attrs = getAttributes();
@@ -63,43 +70,26 @@ class PresenceManager extends XmppManagerBase {
     return state;
   }
 
-  /// Returns the capability hash.
-  Future<String> getCapabilityHash() async {
-    final manager = getAttributes().getManagerById(discoManager)! as DiscoManager;
-    _capabilityHash ??= await calculateCapabilityHash(
-      DiscoInfo(
-        manager.getRegisteredDiscoFeatures(),
-        manager.getIdentities(),
-        [],
-        getAttributes().getFullJID(),
-      ),
-      getHashByName('sha-1')!,
-    );
-
-    return _capabilityHash!;
-  }
-  
   /// Sends the initial presence to enable receiving messages.
   Future<void> sendInitialPresence() async {
+    final children = List<XMLNode>.from([
+      XMLNode(
+        tag: 'show',
+        text: 'chat',
+      ),
+    ]);
+
+    for (final callback in _presenceCallbacks) {
+      children.addAll(
+        await callback(),
+      );
+    }
+
     final attrs = getAttributes();
     attrs.sendNonza(
       Stanza.presence(
         from: attrs.getFullJID().toString(),
-        children: [
-          XMLNode(
-            tag: 'show',
-            text: 'chat',
-          ),
-          XMLNode.xmlns(
-            tag: 'c',
-            xmlns: capsXmlns,
-            attributes: {
-              'hash': 'sha-1',
-              'node': _capHashNode,
-              'ver': await getCapabilityHash()
-            },
-          )
-        ],
+        children: children,
       ),
     );
   }

@@ -246,12 +246,13 @@ void main() {
       ),);
       final sm = StreamManagementManager();
       conn.registerManagers([
-          PresenceManager('http://moxxmpp.example'),
-          RosterManager(TestingRosterStateManager('', [])),
-          DiscoManager(),
-          PingManager(),
-          sm,
-          CarbonsManager()..forceEnable(),
+        PresenceManager(),
+        RosterManager(TestingRosterStateManager('', [])),
+        DiscoManager([]),
+        PingManager(),
+        sm,
+        CarbonsManager()..forceEnable(),
+        EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
       conn.registerFeatureNegotiators(
         [
@@ -347,7 +348,7 @@ void main() {
             '<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true" />',
           ),
           StringExpectation(
-            "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='QRTBC5cg/oYd+UOTYazSQR4zb/I=' /></presence>",
+            "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='3QvQ2RAy45XBDhArjxy/vEWMl+E=' /></presence>",
             '<iq type="result" />',
           ),
           StanzaExpectation(
@@ -372,12 +373,13 @@ void main() {
       ),);
       final sm = StreamManagementManager();
       conn.registerManagers([
-          PresenceManager('http://moxxmpp.example'),
+          PresenceManager(),
           RosterManager(TestingRosterStateManager('', [])),
-          DiscoManager(),
+          DiscoManager([]),
           PingManager(),
           sm,
           CarbonsManager()..forceEnable(),
+          EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
       conn.registerFeatureNegotiators(
         [
@@ -530,9 +532,9 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-          PresenceManager('http://moxxmpp.example'),
+          PresenceManager(),
           RosterManager(TestingRosterStateManager('', [])),
-          DiscoManager(),
+          DiscoManager([]),
           PingManager(),
           StreamManagementManager(),
       ]);
@@ -626,9 +628,9 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-          PresenceManager('http://moxxmpp.example'),
+          PresenceManager(),
           RosterManager(TestingRosterStateManager('', [])),
-          DiscoManager(),
+          DiscoManager([]),
           PingManager(),
           StreamManagementManager(),
       ]);
@@ -722,9 +724,9 @@ void main() {
           allowPlainAuth: true,
       ),);
       conn.registerManagers([
-          PresenceManager('http://moxxmpp.example'),
+          PresenceManager(),
           RosterManager(TestingRosterStateManager('', [])),
-          DiscoManager(),
+          DiscoManager([]),
           PingManager(),
           StreamManagementManager(),
       ]);

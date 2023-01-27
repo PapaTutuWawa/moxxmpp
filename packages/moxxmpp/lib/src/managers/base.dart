@@ -1,14 +1,21 @@
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
+import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 
 abstract class XmppManagerBase {
   late final XmppManagerAttributes _managerAttributes;
   late final Logger _log;
 
+  /// Flag indicating that the post registration callback has been called once.
+  bool initialized = false;
+  
   /// Registers the callbacks from XmppConnection with the manager
   void register(XmppManagerAttributes attributes) {
     _managerAttributes = attributes;
@@ -48,6 +55,9 @@ abstract class XmppManagerBase {
 
   /// Return a list of features that should be included in a disco response.
   List<String> getDiscoFeatures() => [];
+
+  /// Return a list of identities that should be included in a disco response.
+  List<Identity> getDiscoIdentities() => [];
   
   /// Return the Id (akin to xmlns) of this manager.
   String getId();
@@ -63,6 +73,24 @@ abstract class XmppManagerBase {
 
   /// Returns true if the XEP is supported on the server. If not, returns false
   Future<bool> isSupported();
+
+  /// Called after the registration of all managers against the XmppConnection is done.
+  /// This method is only called once during the entire lifetime of it.
+  @mustCallSuper
+  Future<void> postRegisterCallback() async {
+    initialized = true;
+
+    final disco = getAttributes().getManagerById<DiscoManager>(discoManager);
+    if (disco != null) {
+      if (getDiscoFeatures().isNotEmpty) {
+        disco.addFeatures(getDiscoFeatures());
+      }
+
+      if (getDiscoIdentities().isNotEmpty) {
+        disco.addIdentities(getDiscoIdentities());
+      }
+    }
+  }
   
   /// Runs all NonzaHandlers of this Manager which match the nonza. Resolves to true if
   /// the nonza has been handled by one of the handlers. Resolves to false otherwise.
