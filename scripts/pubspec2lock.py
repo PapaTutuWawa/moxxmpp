@@ -1,3 +1,9 @@
+'''
+Takes a Dart pubspec.lock file as input and outputs a specialized lock file
+that contains archive URLs and sha256 hashes for nix. Only useful in combination
+with lock2nix.py.
+'''
+
 import sys
 import subprocess
 import urllib

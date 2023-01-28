@@ -1,3 +1,9 @@
+'''
+This script generates a .nix file containing all dependencies specified in the
+special lock file. The .nix file also contains the derivation "pubCache", which can
+be used as the path in the PUB_CACHE environment variable.
+'''
+
 import sys
 import yaml
 import urllib.parse
