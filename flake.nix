@@ -3,15 +3,23 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    nix-dart.url = "github:tadfisher/nix-dart";
   };
 
-  outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system: let
+  outputs = { self, nixpkgs, flake-utils, nix-dart }: flake-utils.lib.eachDefaultSystem (system: let
     pkgs = import nixpkgs {
       inherit system;
       config = {
         android_sdk.accept_license = true;
         allowUnfree = true;
       };
+
+      overlays = [
+        (prev: final: {
+          pub2nix-lock = nix-dart.packages."${system}".pub2nix-lock;
+          buildDartPackage = (nix-dart.overlay prev final).buildDartPackage;
+        })
+      ];
     };
     android = pkgs.androidenv.composeAndroidPackages {
       # TODO: Find a way to pin these
@@ -30,14 +38,29 @@
       useGoogleTVAddOns = false;
     };
     pinnedJDK = pkgs.jdk;
+
+    pythonEnv = pkgs.python3.withPackages (ps: with ps; [
+      pyyaml
+      requests
+    ]);
+
+    moxxmppPubCache = import ./nix/pubcache.moxxmpp.nix {
+      inherit (pkgs) fetchzip runCommand;
+    };
   in {
+    packages = {
+      moxxmppDartDocs = pkgs.callPackage ./nix/moxxmpp-docs.nix {
+        inherit (moxxmppPubCache) pubCache;
+      };
+    };
+
     devShell = pkgs.mkShell {
       buildInputs = with pkgs; [
-        flutter pinnedJDK android.platform-tools dart # Flutter/Android
+        flutter pinnedJDK android.platform-tools dart pub2nix-lock # Dart
 	      gitlint # Code hygiene
-	      ripgrep # General utilities
+	      ripgrep # General utilities 
 
-        # Flutter dependencies for linux desktop
+        # Flutter dependencies for Linux desktop
         atk
         cairo
         clang
@@ -53,6 +76,9 @@
         pkg-config
         xorg.libX11
         xorg.xorgproto
+
+        # Dev
+        pythonEnv
       ];
 
       CPATH = "${pkgs.xorg.libX11.dev}/include:${pkgs.xorg.xorgproto}/include";
