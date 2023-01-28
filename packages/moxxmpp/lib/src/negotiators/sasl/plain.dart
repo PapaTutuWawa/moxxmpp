@@ -59,7 +59,9 @@ class SaslPlainNegotiator extends SaslNegotiator {
         // We assume it's a <failure/>
         final error = nonza.children.first.tag;
         await attributes.sendEvent(AuthenticationFailedEvent(error));
-        return Result(SaslFailedError());
+        return Result(
+          SaslError.fromFailure(nonza),
+        );
       }
     }
   }

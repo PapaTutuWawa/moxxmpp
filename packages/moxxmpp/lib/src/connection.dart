@@ -373,7 +373,7 @@ class XmppConnection {
   /// Called when a stream ending error has occurred
   Future<void> handleError(XmppError error) async {
     _log.severe('handleError called with ${error.toString()}');
-
+    
     // Whenever we encounter an error that would trigger a reconnection attempt while
     // the connection result is being awaited, don't attempt a reconnection but instead
     // try to gracefully disconnect.
@@ -390,11 +390,18 @@ class XmppConnection {
       return;
     }
 
-    if (await _connectivityManager.hasConnection()) {
+    if (!error.isRecoverable()) {
+      // We cannot recover this error
+      _log.severe('Since a $error is not recoverable, not attempting a reconnection');
       await _setConnectionState(XmppConnectionState.error);
-    } else {
-      await _setConnectionState(XmppConnectionState.notConnected);
+      await _sendEvent(
+        NonRecoverableErrorEvent(error),
+      );
+      return;
     }
+
+    // The error is recoverable
+    await _setConnectionState(XmppConnectionState.notConnected);
     await _reconnectionPolicy.onFailure();
   }
 

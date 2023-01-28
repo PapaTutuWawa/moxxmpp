@@ -10,7 +10,10 @@ enum _StartTlsState {
   requested
 }
 
-class StartTLSFailedError extends NegotiatorError {}
+class StartTLSFailedError extends NegotiatorError {
+  @override
+  bool isRecoverable() => true;
+}
 
 class StartTLSNonza extends XMLNode {
   StartTLSNonza() : super.xmlns(
@@ -19,15 +22,15 @@ class StartTLSNonza extends XMLNode {
   );
 }
 
+/// A negotiator implementing StartTLS.
 class StartTlsNegotiator extends XmppFeatureNegotiatorBase {
-  
-  StartTlsNegotiator()
-    : _state = _StartTlsState.ready,
-      _log = Logger('StartTlsNegotiator'),
-      super(10, true, startTlsXmlns, startTlsNegotiator);
-  _StartTlsState _state;
+  StartTlsNegotiator() : super(10, true, startTlsXmlns, startTlsNegotiator);
 
-  final Logger _log;
+  /// The state of the negotiator.
+  _StartTlsState _state = _StartTlsState.ready;
+
+  /// Logger.
+  final Logger _log = Logger('StartTlsNegotiator');
 
   @override
   Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {

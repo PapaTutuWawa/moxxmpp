@@ -1,4 +1,5 @@
 import 'package:moxxmpp/src/connection.dart';
+import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/roster/roster.dart';
@@ -235,4 +236,13 @@ class OmemoDeviceListUpdatedEvent extends XmppEvent {
   OmemoDeviceListUpdatedEvent(this.jid, this.deviceList);
   final JID jid;
   final List<int> deviceList;
+}
+
+/// Triggered when a reconnection is not performed due to a non-recoverable
+/// error.
+class NonRecoverableErrorEvent extends XmppEvent {
+  NonRecoverableErrorEvent(this.error);
+  
+  /// The error in question.
+  final XmppError error;
 }

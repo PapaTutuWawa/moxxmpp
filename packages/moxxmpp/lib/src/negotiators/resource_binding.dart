@@ -8,12 +8,20 @@ import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:uuid/uuid.dart';
 
-class ResourceBindingFailedError extends NegotiatorError {}
+class ResourceBindingFailedError extends NegotiatorError {
+  @override
+  bool isRecoverable() => true;
+}
 
+/// A negotiator that implements resource binding against a random server-provided
+/// resource.
 class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
+  ResourceBindingNegotiator() : super(0, false, bindXmlns, resourceBindingNegotiator);
 
-  ResourceBindingNegotiator() : _requestSent = false, super(0, false, bindXmlns, resourceBindingNegotiator);
-  bool _requestSent;
+  /// Flag indicating the state of the negotiator:
+  /// - True: We sent a binding request
+  /// - False: We have not yet sent the binding request
+  bool _requestSent = false;
 
   @override
   bool matchesFeature(List<XMLNode> features) {

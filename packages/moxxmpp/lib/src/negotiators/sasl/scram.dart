@@ -218,7 +218,9 @@ class SaslScramNegotiator extends SaslNegotiator {
           await attributes.sendEvent(AuthenticationFailedEvent(error));
 
           _scramState = ScramState.error;
-          return Result(SaslFailedError());
+          return Result(
+            SaslError.fromFailure(nonza),
+          );
         }
 
         final challengeBase64 = nonza.innerText();
@@ -236,7 +238,9 @@ class SaslScramNegotiator extends SaslNegotiator {
           final error = nonza.children.first.tag;
           await attributes.sendEvent(AuthenticationFailedEvent(error));
           _scramState = ScramState.error;
-          return Result(SaslFailedError());
+          return Result(
+            SaslError.fromFailure(nonza),
+          );
         }
 
         // NOTE: This assumes that the string is always "v=..." and contains no other parameters
@@ -246,13 +250,17 @@ class SaslScramNegotiator extends SaslNegotiator {
           //final error = nonza.children.first.tag;
           //attributes.sendEvent(AuthenticationFailedEvent(error));
           _scramState = ScramState.error;
-          return Result(SaslFailedError());
+          return Result(
+            SaslError.fromFailure(nonza),
+          );
         }
 
         await attributes.sendEvent(AuthenticationSuccessEvent());
         return const Result(NegotiatorState.done);
       case ScramState.error:
-        return Result(SaslFailedError());
+        return Result(
+          SaslError.fromFailure(nonza),
+        );
     }
   }
 
