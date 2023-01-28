@@ -3,23 +3,15 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    nix-dart.url = "github:tadfisher/nix-dart";
   };
 
-  outputs = { self, nixpkgs, flake-utils, nix-dart }: flake-utils.lib.eachDefaultSystem (system: let
+  outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system: let
     pkgs = import nixpkgs {
       inherit system;
       config = {
         android_sdk.accept_license = true;
         allowUnfree = true;
       };
-
-      overlays = [
-        (prev: final: {
-          pub2nix-lock = nix-dart.packages."${system}".pub2nix-lock;
-          buildDartPackage = (nix-dart.overlay prev final).buildDartPackage;
-        })
-      ];
     };
     android = pkgs.androidenv.composeAndroidPackages {
       # TODO: Find a way to pin these
@@ -56,7 +48,7 @@
 
     devShell = pkgs.mkShell {
       buildInputs = with pkgs; [
-        flutter pinnedJDK android.platform-tools dart pub2nix-lock # Dart
+        flutter pinnedJDK android.platform-tools dart # Dart
 	      gitlint # Code hygiene
 	      ripgrep # General utilities 
 
@@ -77,7 +69,7 @@
         xorg.libX11
         xorg.xorgproto
 
-        # Dev
+        # For the scripts in ./scripts/
         pythonEnv
       ];
 
