@@ -7,6 +7,8 @@ moxxmpp is a XMPP library written purely in Dart for usage in Moxxy.
 
 This package contains the actual XMPP code that is platform-independent.
 
+Documentation is available [here](https://moxxy.org/developers/docs/moxxmpp/).
+
 ### [moxxmpp_socket_tcp](./packages/moxxmpp_socket_tcp)
 
 `moxxmpp_socket_tcp` contains the implementation of the `BaseSocketWrapper` class that
