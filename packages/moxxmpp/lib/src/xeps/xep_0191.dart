@@ -46,9 +46,12 @@ class BlockingManager extends XmppManagerBase {
 
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
-    if (event is StreamResumeFailedEvent) {
-      _gotSupported = false;
-      _supported = false;
+    if (event is StreamNegotiationsDoneEvent) {
+      final newStream = await isNewStream();
+      if (newStream) {
+        _gotSupported = false;
+        _supported = false;
+      }
     }
   }
   

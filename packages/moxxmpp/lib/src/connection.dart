@@ -790,6 +790,10 @@ class XmppConnection {
     // Resolve the connection completion future
     _connectionCompleter?.complete(const XmppConnectionResult(true));
     _connectionCompleter = null;
+
+    // Tell consumers of the event stream that we're done with stream feature
+    // negotiations
+    await _sendEvent(StreamNegotiationsDoneEvent());
     
     // Send out initial presence
     await getPresenceManager().sendInitialPresence();

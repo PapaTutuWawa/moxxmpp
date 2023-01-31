@@ -77,11 +77,14 @@ class HttpFileUploadManager extends XmppManagerBase {
 
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
-    if (event is StreamResumeFailedEvent) {
-      _gotSupported = false;
-      _supported = false;
-      _entityJid = null;
-      _maxUploadSize = null;
+    if (event is StreamNegotiationsDoneEvent) {
+      final newStream = await isNewStream();
+      if (newStream) {
+        _gotSupported = false;
+        _supported = false;
+        _entityJid = null;
+        _maxUploadSize = null;
+      }
     }
   }
   

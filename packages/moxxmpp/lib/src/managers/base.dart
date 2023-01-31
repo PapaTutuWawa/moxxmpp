@@ -8,6 +8,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 
 abstract class XmppManagerBase {
   XmppManagerBase(this.id);
@@ -111,6 +112,15 @@ abstract class XmppManagerBase {
     return handled;
   }
 
+  /// Returns true, if the current stream negotiations resulted in a new stream. Useful
+  /// for plugins to reset their cache in case of a new stream.
+  /// The value only makes sense after receiving a StreamNegotiationsDoneEvent.
+  Future<bool> isNewStream() async {
+    final sm = getAttributes().getManagerById<StreamManagementManager>(smManager);
+
+    return sm?.streamResumed == false;
+  }
+  
   /// Sends a reply of the stanza in [data] with [type]. Replaces the original stanza's
   /// children with [children].
   ///

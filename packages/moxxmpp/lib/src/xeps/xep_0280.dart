@@ -59,19 +59,13 @@ class CarbonsManager extends XmppManagerBase {
 
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
-    if (event is ServerDiscoDoneEvent && !_isEnabled) {
-      final attrs = getAttributes();
-
-      if (attrs.isFeatureSupported(carbonsXmlns)) {
-        logger.finest('Message carbons supported. Enabling...');
-        await enableCarbons();
-        logger.finest('Message carbons enabled');
-      } else {
-        logger.info('Message carbons not supported.');
+    if (event is StreamNegotiationsDoneEvent) {
+      // Reset disco cache info on a new stream
+      final newStream = await isNewStream();
+      if (newStream) {
+        _gotSupported = false;
+        _supported = false;
       }
-    } else if (event is StreamResumeFailedEvent) {
-      _gotSupported = false;
-      _supported = false;
     }
   }
   

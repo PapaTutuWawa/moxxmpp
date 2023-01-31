@@ -246,3 +246,6 @@ class NonRecoverableErrorEvent extends XmppEvent {
   /// The error in question.
   final XmppError error;
 }
+
+/// Triggered when the stream negotiations are done.
+class StreamNegotiationsDoneEvent extends XmppEvent {}
