@@ -11,19 +11,22 @@ class ExampleTcpSocketWrapper extends TCPSocketWrapper {
   Future<List<MoxSrvRecord>> srvQuery(String domain, bool dnssec) async {
     final records = await MoxdnsPlugin.srvQuery(domain, false);
     return records
-      .map((record) => MoxSrvRecord(
-        record.priority,
-        record.weight,
-        record.target,
-        record.port,
-      ),)
-      .toList();
+        .map(
+          (record) => MoxSrvRecord(
+            record.priority,
+            record.weight,
+            record.target,
+            record.port,
+          ),
+        )
+        .toList();
   }
 }
 
 void main() {
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
+    // ignore: avoid_print
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
 
@@ -54,11 +57,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final logger = Logger('MyHomePage');
   final XmppConnection connection = XmppConnection(
     RandomBackoffReconnectionPolicy(1, 60),
     AlwaysConnectedConnectivityManager(),
     //ExampleTcpSocketWrapper(), // this causes the app to crash
-    TCPSocketWrapper(true), // Note: you probably want this to be false in a real app
+    TCPSocketWrapper(
+        true), // Note: you probably want this to be false in a real app
   );
   TextEditingController jidController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -91,29 +96,38 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _buttonPressed() async {
     if (connected) {
       await connection.disconnect();
-      setState(() {connected = false;});
+      setState(() {
+        connected = false;
+      });
       return;
     }
-    setState(() {loading = true;});
+    setState(() {
+      loading = true;
+    });
     connection.setConnectionSettings(
       ConnectionSettings(
         jid: JID.fromString(jidController.text),
         password: passwordController.text,
         useDirectTLS: true,
         allowPlainAuth: true,
-          // otherwise, connecting to some servers will
-          // cause an app to hang
+        // otherwise, connecting to some servers will
+        // cause an app to hang
       ),
     );
     final result = await connection.connectAwaitable();
-    setState(() {connected = result.success; loading = false;});
+    setState(() {
+      connected = result.success;
+      loading = false;
+    });
     if (result.error != null) {
-      print(result.error);
+      logger.severe(result.error);
       if (context.mounted) {
-        showDialog(context: context, builder: (_) => AlertDialog(
-          title: const Text('Error'),
-          content: Text(result.error.toString()),
-        ));
+        showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+                  title: const Text('Error'),
+                  content: Text(result.error.toString()),
+                ));
       }
     }
   }
@@ -133,14 +147,14 @@ class _MyHomePageState extends State<MyHomePage> {
             TextField(
               enabled: !loading,
               controller: jidController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'JID',
               ),
             ),
             TextField(
               enabled: !loading,
               controller: passwordController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Password',
               ),
               obscureText: true,
