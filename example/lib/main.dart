@@ -87,7 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
         SaslScramNegotiator(8, '', '', ScramHashType.sha1),
       ]);
   }
-  
+
   Future<void> _buttonPressed() async {
     if (connected) {
       await connection.disconnect();
@@ -100,13 +100,22 @@ class _MyHomePageState extends State<MyHomePage> {
         jid: JID.fromString(jidController.text),
         password: passwordController.text,
         useDirectTLS: true,
-        allowPlainAuth: false,
+        allowPlainAuth: true,
           // otherwise, connecting to some servers will
           // cause an app to hang
       ),
     );
-    await connection.connect();
-    setState(() {connected = true; loading = false;});
+    final result = await connection.connectAwaitable();
+    setState(() {connected = result.success; loading = false;});
+    if (result.error != null) {
+      print(result.error);
+      if (context.mounted) {
+        showDialog(context: context, builder: (_) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(result.error.toString()),
+        ));
+      }
+    }
   }
 
   @override
