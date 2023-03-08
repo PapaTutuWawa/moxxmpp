@@ -15,22 +15,25 @@ class MessageRetractionManager extends XmppManagerBase {
   MessageRetractionManager() : super(messageRetractionManager);
 
   @override
-  List<String> getDiscoFeatures() => [ messageRetractionXmlns ];
+  List<String> getDiscoFeatures() => [messageRetractionXmlns];
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      callback: _onMessage,
-      // Before the MessageManager
-      priority: -99,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          callback: _onMessage,
+          // Before the MessageManager
+          priority: -99,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
-  
-  Future<StanzaHandlerData> _onMessage(Stanza message, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessage(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final applyTo = message.firstTag('apply-to', xmlns: fasteningXmlns);
     if (applyTo == null) {
       return state;
@@ -41,14 +44,13 @@ class MessageRetractionManager extends XmppManagerBase {
       return state;
     }
 
-    final isFallbackBody = message.firstTag('fallback', xmlns: fallbackIndicationXmlns) != null;
+    final isFallbackBody =
+        message.firstTag('fallback', xmlns: fallbackIndicationXmlns) != null;
 
     return state.copyWith(
       messageRetraction: MessageRetractionData(
         applyTo.attributes['id']! as String,
-        isFallbackBody ?
-          message.firstTag('body')?.innerText() :
-          null,
+        isFallbackBody ? message.firstTag('body')?.innerText() : null,
       ),
     );
   }

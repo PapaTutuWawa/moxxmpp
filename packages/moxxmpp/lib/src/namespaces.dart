@@ -28,9 +28,11 @@ const vCardTempUpdate = 'vcard-temp:x:update';
 const pubsubXmlns = 'http://jabber.org/protocol/pubsub';
 const pubsubEventXmlns = 'http://jabber.org/protocol/pubsub#event';
 const pubsubOwnerXmlns = 'http://jabber.org/protocol/pubsub#owner';
-const pubsubPublishOptionsXmlns = 'http://jabber.org/protocol/pubsub#publish-options';
+const pubsubPublishOptionsXmlns =
+    'http://jabber.org/protocol/pubsub#publish-options';
 const pubsubNodeConfigMax = 'http://jabber.org/protocol/pubsub#config-node-max';
-const pubsubNodeConfigMultiItems = 'http://jabber.org/protocol/pubsub#multi-items';
+const pubsubNodeConfigMultiItems =
+    'http://jabber.org/protocol/pubsub#multi-items';
 
 // XEP-0066
 const oobDataXmlns = 'jabber:x:oob';
@@ -137,8 +139,10 @@ const sfsXmlns = 'urn:xmpp:sfs:0';
 
 // XEP-0448
 const sfsEncryptionXmlns = 'urn:xmpp:esfs:0';
-const sfsEncryptionAes128GcmNoPaddingXmlns = 'urn:xmpp:ciphers:aes-128-gcm-nopadding:0';
-const sfsEncryptionAes256GcmNoPaddingXmlns = 'urn:xmpp:ciphers:aes-256-gcm-nopadding:0';
+const sfsEncryptionAes128GcmNoPaddingXmlns =
+    'urn:xmpp:ciphers:aes-128-gcm-nopadding:0';
+const sfsEncryptionAes256GcmNoPaddingXmlns =
+    'urn:xmpp:ciphers:aes-256-gcm-nopadding:0';
 const sfsEncryptionAes256CbcPkcs7Xmlns = 'urn:xmpp:ciphers:aes-256-cbc-pkcs7:0';
 
 // XEP-0449

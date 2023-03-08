@@ -12,9 +12,12 @@ abstract class SaslError extends NegotiatorError {
     }
 
     switch (error?.tag) {
-      case 'credentials-expired': return SaslCredentialsExpiredError();
-      case 'not-authorized': return SaslNotAuthorizedError();
-      case 'account-disabled': return SaslAccountDisabledError();
+      case 'credentials-expired':
+        return SaslCredentialsExpiredError();
+      case 'not-authorized':
+        return SaslNotAuthorizedError();
+      case 'account-disabled':
+        return SaslAccountDisabledError();
     }
 
     return SaslUnspecifiedError();

@@ -25,59 +25,83 @@ class StanzaError {
 
 class Stanza extends XMLNode {
   // ignore: use_super_parameters
-  Stanza({ this.to, this.from, this.type, this.id, List<XMLNode> children = const [], required String tag, Map<String, String> attributes = const {} }) : super(
-    tag: tag,
-    attributes: <String, dynamic>{
-      ...attributes,
-      ...type != null ? <String, dynamic>{ 'type': type } : <String, dynamic>{},
-      ...id != null ? <String, dynamic>{ 'id': id } : <String, dynamic>{},
-      ...to != null ? <String, dynamic>{ 'to': to } : <String, dynamic>{},
-      ...from != null ? <String, dynamic>{ 'from': from } : <String, dynamic>{},
-      'xmlns': stanzaXmlns
-    },
-    children: children,
-  );
+  Stanza({
+    this.to,
+    this.from,
+    this.type,
+    this.id,
+    List<XMLNode> children = const [],
+    required String tag,
+    Map<String, String> attributes = const {},
+  }) : super(
+          tag: tag,
+          attributes: <String, dynamic>{
+            ...attributes,
+            ...type != null
+                ? <String, dynamic>{'type': type}
+                : <String, dynamic>{},
+            ...id != null ? <String, dynamic>{'id': id} : <String, dynamic>{},
+            ...to != null ? <String, dynamic>{'to': to} : <String, dynamic>{},
+            ...from != null
+                ? <String, dynamic>{'from': from}
+                : <String, dynamic>{},
+            'xmlns': stanzaXmlns
+          },
+          children: children,
+        );
 
-  factory Stanza.iq({ String? to, String? from, String? type, String? id, List<XMLNode> children = const [], Map<String, String>? attributes = const {} }) {
+  factory Stanza.iq({
+    String? to,
+    String? from,
+    String? type,
+    String? id,
+    List<XMLNode> children = const [],
+    Map<String, String>? attributes = const {},
+  }) {
     return Stanza(
       tag: 'iq',
       from: from,
       to: to,
       id: id,
       type: type,
-      attributes: <String, String>{
-        ...attributes!,
-        'xmlns': stanzaXmlns
-      },
+      attributes: <String, String>{...attributes!, 'xmlns': stanzaXmlns},
       children: children,
     );
   }
 
-  factory Stanza.presence({ String? to, String? from, String? type, String? id, List<XMLNode> children = const [], Map<String, String>? attributes = const {} }) {
+  factory Stanza.presence({
+    String? to,
+    String? from,
+    String? type,
+    String? id,
+    List<XMLNode> children = const [],
+    Map<String, String>? attributes = const {},
+  }) {
     return Stanza(
       tag: 'presence',
       from: from,
       to: to,
       id: id,
       type: type,
-      attributes: <String, String>{
-        ...attributes!,
-        'xmlns': stanzaXmlns
-      },
+      attributes: <String, String>{...attributes!, 'xmlns': stanzaXmlns},
       children: children,
     );
   }
-  factory Stanza.message({ String? to, String? from, String? type, String? id, List<XMLNode> children = const [], Map<String, String>? attributes = const {} }) {
+  factory Stanza.message({
+    String? to,
+    String? from,
+    String? type,
+    String? id,
+    List<XMLNode> children = const [],
+    Map<String, String>? attributes = const {},
+  }) {
     return Stanza(
       tag: 'message',
       from: from,
       to: to,
       id: id,
       type: type,
-      attributes: <String, String>{
-        ...attributes!,
-        'xmlns': stanzaXmlns
-      },
+      attributes: <String, String>{...attributes!, 'xmlns': stanzaXmlns},
       children: children,
     );
   }
@@ -92,10 +116,10 @@ class Stanza extends XMLNode {
       children: node.children,
       // TODO(Unknown): Remove to, from, id, and type
       // TODO(Unknown): Not sure if this is the correct way to approach this
-      attributes: node.attributes
-        .map<String, String>((String key, dynamic value) {
-          return MapEntry(key, value.toString());
-        }),
+      attributes:
+          node.attributes.map<String, String>((String key, dynamic value) {
+        return MapEntry(key, value.toString());
+      }),
     );
   }
 
@@ -104,7 +128,13 @@ class Stanza extends XMLNode {
   String? type;
   String? id;
 
-  Stanza copyWith({ String? id, String? from, String? to, String? type, List<XMLNode>? children }) {
+  Stanza copyWith({
+    String? id,
+    String? from,
+    String? to,
+    String? type,
+    List<XMLNode>? children,
+  }) {
     return Stanza(
       tag: tag,
       to: to ?? this.to,
@@ -119,21 +149,23 @@ class Stanza extends XMLNode {
 /// Build an <error /> element with a child <[condition] type="[type]" />. If [text]
 /// is not null, then the condition element will contain a <text /> element with [text]
 /// as the body.
-XMLNode buildErrorElement(String type, String condition, { String? text }) {
+XMLNode buildErrorElement(String type, String condition, {String? text}) {
   return XMLNode(
     tag: 'error',
-    attributes: <String, dynamic>{ 'type': type },
+    attributes: <String, dynamic>{'type': type},
     children: [
       XMLNode.xmlns(
         tag: condition,
         xmlns: fullStanzaXmlns,
-        children: text != null ? [
-          XMLNode.xmlns(
-            tag: 'text',
-            xmlns: fullStanzaXmlns,
-            text: text,
-          )
-        ] : [],
+        children: text != null
+            ? [
+                XMLNode.xmlns(
+                  tag: 'text',
+                  xmlns: fullStanzaXmlns,
+                  text: text,
+                )
+              ]
+            : [],
       ),
     ],
   );

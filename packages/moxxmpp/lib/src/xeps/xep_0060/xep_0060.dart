@@ -22,7 +22,7 @@ class PubSubPublishOptions {
   });
   final String? accessModel;
   final String? maxItems;
-  
+
   XMLNode toXml() {
     return DataForm(
       type: 'submit',
@@ -33,33 +33,41 @@ class PubSubPublishOptions {
         const DataFormField(
           options: [],
           isRequired: false,
-          values: [ pubsubPublishOptionsXmlns ],
+          values: [pubsubPublishOptionsXmlns],
           varAttr: 'FORM_TYPE',
           type: 'hidden',
         ),
-        ...accessModel != null ? [
-            DataFormField(
-              options: [],
-              isRequired: false,
-              values: [ accessModel! ],
-              varAttr: 'pubsub#access_model',
-            )
-          ] : [],
-        ...maxItems != null ? [
-          DataFormField(
-            options: [],
-            isRequired: false,
-            values: [maxItems! ],
-            varAttr: 'pubsub#max_items',
-          ),
-        ] : [],
+        ...accessModel != null
+            ? [
+                DataFormField(
+                  options: [],
+                  isRequired: false,
+                  values: [accessModel!],
+                  varAttr: 'pubsub#access_model',
+                )
+              ]
+            : [],
+        ...maxItems != null
+            ? [
+                DataFormField(
+                  options: [],
+                  isRequired: false,
+                  values: [maxItems!],
+                  varAttr: 'pubsub#max_items',
+                ),
+              ]
+            : [],
       ],
     ).toXml();
   }
 }
 
 class PubSubItem {
-  const PubSubItem({ required this.id, required this.node, required this.payload });
+  const PubSubItem({
+    required this.id,
+    required this.node,
+    required this.payload,
+  });
   final String id;
   final String node;
   final XMLNode payload;
@@ -73,32 +81,37 @@ class PubSubManager extends XmppManagerBase {
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'event',
-      tagXmlns: pubsubEventXmlns,
-      callback: _onPubsubMessage,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'event',
+          tagXmlns: pubsubEventXmlns,
+          callback: _onPubsubMessage,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
 
-  Future<StanzaHandlerData> _onPubsubMessage(Stanza message, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onPubsubMessage(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     logger.finest('Received PubSub event');
     final event = message.firstTag('event', xmlns: pubsubEventXmlns)!;
     final items = event.firstTag('items')!;
     final item = items.firstTag('item')!;
 
-    getAttributes().sendEvent(PubSubNotificationEvent(
-      item: PubSubItem(
-        id: item.attributes['id']! as String,
-        node: items.attributes['node']! as String,
-        payload: item.children[0],
+    getAttributes().sendEvent(
+      PubSubNotificationEvent(
+        item: PubSubItem(
+          id: item.attributes['id']! as String,
+          node: items.attributes['node']! as String,
+          payload: item.children[0],
+        ),
+        from: message.attributes['from']! as String,
       ),
-      from: message.attributes['from']! as String,
-    ),);
-    
+    );
+
     return state.copyWith(done: true);
   }
 
@@ -107,27 +120,37 @@ class PubSubManager extends XmppManagerBase {
     final response = await dm.discoItemsQuery(jid, node: node);
     var count = 0;
     if (response.isType<DiscoError>()) {
-      logger.warning('_getNodeItemCount: disco#items query failed. Assuming no items.');
+      logger.warning(
+        '_getNodeItemCount: disco#items query failed. Assuming no items.',
+      );
     } else {
       count = response.get<List<DiscoItem>>().length;
     }
 
     return count;
   }
-  
-  Future<PubSubPublishOptions> _preprocessPublishOptions(String jid, String node, PubSubPublishOptions options) async {
+
+  Future<PubSubPublishOptions> _preprocessPublishOptions(
+    String jid,
+    String node,
+    PubSubPublishOptions options,
+  ) async {
     if (options.maxItems != null) {
       final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
       final result = await dm.discoInfoQuery(jid);
       if (result.isType<DiscoError>()) {
         if (options.maxItems == 'max') {
-          logger.severe('disco#info query failed and options.maxItems is set to "max".');
+          logger.severe(
+            'disco#info query failed and options.maxItems is set to "max".',
+          );
           return options;
         }
       }
 
-      final nodeMultiItemsSupported = result.isType<DiscoInfo>() && result.get<DiscoInfo>().features.contains(pubsubNodeConfigMultiItems);
-      final nodeMaxSupported = result.isType<DiscoInfo>() && result.get<DiscoInfo>().features.contains(pubsubNodeConfigMax);
+      final nodeMultiItemsSupported = result.isType<DiscoInfo>() &&
+          result.get<DiscoInfo>().features.contains(pubsubNodeConfigMultiItems);
+      final nodeMaxSupported = result.isType<DiscoInfo>() &&
+          result.get<DiscoInfo>().features.contains(pubsubNodeConfigMax);
       if (options.maxItems != null && !nodeMultiItemsSupported) {
         // TODO(PapaTutuWawa): Here, we need to admit defeat
         logger.finest('PubSub host does not support multi-items!');
@@ -136,7 +159,9 @@ class PubSubManager extends XmppManagerBase {
           accessModel: options.accessModel,
         );
       } else if (options.maxItems == 'max' && !nodeMaxSupported) {
-        logger.finest('PubSub host does not support node-config-max. Working around it');
+        logger.finest(
+          'PubSub host does not support node-config-max. Working around it',
+        );
         final count = await _getNodeItemCount(jid, node) + 1;
 
         return PubSubPublishOptions(
@@ -148,7 +173,7 @@ class PubSubManager extends XmppManagerBase {
 
     return options;
   }
-  
+
   Future<Result<PubSubError, bool>> subscribe(String jid, String node) async {
     final attrs = getAttributes();
     final result = await attrs.sendStanza(
@@ -173,13 +198,19 @@ class PubSubManager extends XmppManagerBase {
       ),
     );
 
-    if (result.attributes['type'] != 'result') return Result(UnknownPubSubError());
+    if (result.attributes['type'] != 'result') {
+      return Result(UnknownPubSubError());
+    }
 
     final pubsub = result.firstTag('pubsub', xmlns: pubsubXmlns);
-    if (pubsub == null) return Result(UnknownPubSubError());
+    if (pubsub == null) {
+      return Result(UnknownPubSubError());
+    }
 
     final subscription = pubsub.firstTag('subscription');
-    if (subscription == null) return Result(UnknownPubSubError());
+    if (subscription == null) {
+      return Result(UnknownPubSubError());
+    }
 
     return Result(subscription.attributes['subscription'] == 'subscribed');
   }
@@ -208,27 +239,32 @@ class PubSubManager extends XmppManagerBase {
       ),
     );
 
-    if (result.attributes['type'] != 'result') return Result(UnknownPubSubError());
+    if (result.attributes['type'] != 'result') {
+      return Result(UnknownPubSubError());
+    }
 
     final pubsub = result.firstTag('pubsub', xmlns: pubsubXmlns);
-    if (pubsub == null) return Result(UnknownPubSubError());
+    if (pubsub == null) {
+      return Result(UnknownPubSubError());
+    }
 
     final subscription = pubsub.firstTag('subscription');
-    if (subscription == null) return Result(UnknownPubSubError());
+    if (subscription == null) {
+      return Result(UnknownPubSubError());
+    }
 
     return Result(subscription.attributes['subscription'] == 'none');
   }
-  
+
   /// Publish [payload] to the PubSub node [node] on JID [jid]. Returns true if it
   /// was successful. False otherwise.
   Future<Result<PubSubError, bool>> publish(
     String jid,
     String node,
     XMLNode payload, {
-      String? id,
-      PubSubPublishOptions? options,
-    }
-  ) async {
+    String? id,
+    PubSubPublishOptions? options,
+  }) async {
     return _publish(
       jid,
       node,
@@ -242,12 +278,11 @@ class PubSubManager extends XmppManagerBase {
     String jid,
     String node,
     XMLNode payload, {
-      String? id,
-      PubSubPublishOptions? options,
-      // Should, if publishing fails, try to reconfigure and publish again?
-      bool tryConfigureAndPublish = true,
-    }
-  ) async {
+    String? id,
+    PubSubPublishOptions? options,
+    // Should, if publishing fails, try to reconfigure and publish again?
+    bool tryConfigureAndPublish = true,
+  }) async {
     PubSubPublishOptions? pubOptions;
     if (options != null) {
       pubOptions = await _preprocessPublishOptions(jid, node, options);
@@ -264,21 +299,25 @@ class PubSubManager extends XmppManagerBase {
             children: [
               XMLNode(
                 tag: 'publish',
-                attributes: <String, String>{ 'node': node },
+                attributes: <String, String>{'node': node},
                 children: [
                   XMLNode(
                     tag: 'item',
-                    attributes: id != null ? <String, String>{ 'id': id } : <String, String>{},
-                    children: [ payload ],
+                    attributes: id != null
+                        ? <String, String>{'id': id}
+                        : <String, String>{},
+                    children: [payload],
                   )
                 ],
               ),
-              ...options != null ? [
-                XMLNode(
-                  tag: 'publish-options',
-                  children: [options.toXml()],
-                ), 
-              ] : [],
+              ...options != null
+                  ? [
+                      XMLNode(
+                        tag: 'publish-options',
+                        children: [options.toXml()],
+                      ),
+                    ]
+                  : [],
             ],
           )
         ],
@@ -302,10 +341,16 @@ class PubSubManager extends XmppManagerBase {
           options: options,
           tryConfigureAndPublish: false,
         );
-        if (publishResult.isType<PubSubError>()) return publishResult;
-      } else if (error is EjabberdMaxItemsError && tryConfigureAndPublish && options != null) {
+        if (publishResult.isType<PubSubError>()) {
+          return publishResult;
+        }
+      } else if (error is EjabberdMaxItemsError &&
+          tryConfigureAndPublish &&
+          options != null) {
         // TODO(Unknown): Remove once ejabberd fixes the bug. See errors.dart for more info.
-        logger.warning('Publish failed due to the server rejecting the usage of "max" for "max_items" in publish options. Configuring...');
+        logger.warning(
+          'Publish failed due to the server rejecting the usage of "max" for "max_items" in publish options. Configuring...',
+        );
         final count = await _getNodeItemCount(jid, node) + 1;
         return publish(
           jid,
@@ -323,20 +368,31 @@ class PubSubManager extends XmppManagerBase {
     }
 
     final pubsubElement = result.firstTag('pubsub', xmlns: pubsubXmlns);
-    if (pubsubElement == null) return Result(MalformedResponseError());
+    if (pubsubElement == null) {
+      return Result(MalformedResponseError());
+    }
 
     final publishElement = pubsubElement.firstTag('publish');
-    if (publishElement == null) return Result(MalformedResponseError());
+    if (publishElement == null) {
+      return Result(MalformedResponseError());
+    }
 
     final item = publishElement.firstTag('item');
-    if (item == null) return Result(MalformedResponseError());
+    if (item == null) {
+      return Result(MalformedResponseError());
+    }
 
-    if (id != null) return Result(item.attributes['id'] == id);
+    if (id != null) {
+      return Result(item.attributes['id'] == id);
+    }
 
     return const Result(true);
   }
-  
-  Future<Result<PubSubError, List<PubSubItem>>> getItems(String jid, String node) async {
+
+  Future<Result<PubSubError, List<PubSubItem>>> getItems(
+    String jid,
+    String node,
+  ) async {
     final result = await getAttributes().sendStanza(
       Stanza.iq(
         type: 'get',
@@ -346,33 +402,38 @@ class PubSubManager extends XmppManagerBase {
             tag: 'pubsub',
             xmlns: pubsubXmlns,
             children: [
-              XMLNode(tag: 'items', attributes: <String, String>{ 'node': node }),
+              XMLNode(tag: 'items', attributes: <String, String>{'node': node}),
             ],
           )
         ],
       ),
     );
 
-    if (result.attributes['type'] != 'result') return Result(getPubSubError(result));
+    if (result.attributes['type'] != 'result') {
+      return Result(getPubSubError(result));
+    }
 
     final pubsub = result.firstTag('pubsub', xmlns: pubsubXmlns);
-    if (pubsub == null) return Result(getPubSubError(result));
+    if (pubsub == null) {
+      return Result(getPubSubError(result));
+    }
 
-    final items = pubsub
-      .firstTag('items')!
-      .children.map((item) {
-        return PubSubItem(
-          id: item.attributes['id']! as String,
-          payload: item.children[0],
-          node: node,
-        );
-      })
-      .toList();
+    final items = pubsub.firstTag('items')!.children.map((item) {
+      return PubSubItem(
+        id: item.attributes['id']! as String,
+        payload: item.children[0],
+        node: node,
+      );
+    }).toList();
 
     return Result(items);
   }
 
-  Future<Result<PubSubError, PubSubItem>> getItem(String jid, String node, String id) async {
+  Future<Result<PubSubError, PubSubItem>> getItem(
+    String jid,
+    String node,
+    String id,
+  ) async {
     final result = await getAttributes().sendStanza(
       Stanza.iq(
         type: 'get',
@@ -384,11 +445,11 @@ class PubSubManager extends XmppManagerBase {
             children: [
               XMLNode(
                 tag: 'items',
-                attributes: <String, String>{ 'node': node },
+                attributes: <String, String>{'node': node},
                 children: [
                   XMLNode(
                     tag: 'item',
-                    attributes: <String, String>{ 'id': id },
+                    attributes: <String, String>{'id': id},
                   ),
                 ],
               ),
@@ -398,7 +459,9 @@ class PubSubManager extends XmppManagerBase {
       ),
     );
 
-    if (result.attributes['type'] != 'result') return Result(getPubSubError(result));
+    if (result.attributes['type'] != 'result') {
+      return Result(getPubSubError(result));
+    }
 
     final pubsub = result.firstTag('pubsub', xmlns: pubsubXmlns);
     if (pubsub == null) return Result(getPubSubError(result));
@@ -415,7 +478,11 @@ class PubSubManager extends XmppManagerBase {
     return Result(item);
   }
 
-  Future<Result<PubSubError, bool>> configure(String jid, String node, PubSubPublishOptions options) async {
+  Future<Result<PubSubError, bool>> configure(
+    String jid,
+    String node,
+    PubSubPublishOptions options,
+  ) async {
     final attrs = getAttributes();
 
     // Request the form
@@ -439,7 +506,9 @@ class PubSubManager extends XmppManagerBase {
         ],
       ),
     );
-    if (form.attributes['type'] != 'result') return Result(getPubSubError(form));
+    if (form.attributes['type'] != 'result') {
+      return Result(getPubSubError(form));
+    }
 
     final submit = await attrs.sendStanza(
       Stanza.iq(
@@ -464,7 +533,9 @@ class PubSubManager extends XmppManagerBase {
         ],
       ),
     );
-    if (submit.attributes['type'] != 'result') return Result(getPubSubError(form));
+    if (submit.attributes['type'] != 'result') {
+      return Result(getPubSubError(form));
+    }
 
     return const Result(true);
   }
@@ -499,7 +570,11 @@ class PubSubManager extends XmppManagerBase {
     return const Result(true);
   }
 
-  Future<Result<PubSubError, bool>> retract(JID host, String node, String itemId) async {
+  Future<Result<PubSubError, bool>> retract(
+    JID host,
+    String node,
+    String itemId,
+  ) async {
     final request = await getAttributes().sendStanza(
       Stanza.iq(
         type: 'set',

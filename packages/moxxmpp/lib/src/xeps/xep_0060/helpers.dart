@@ -20,6 +20,6 @@ PubSubError getPubSubError(XMLNode stanza) {
       return EjabberdMaxItemsError();
     }
   }
-  
+
   return UnknownPubSubError();
 }

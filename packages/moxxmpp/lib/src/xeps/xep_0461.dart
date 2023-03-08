@@ -45,17 +45,14 @@ class QuoteData {
   /// Takes the body of the message we want to quote [quoteBody] and the content of
   /// the reply [body] and computes the fallback body and its length.
   factory QuoteData.fromBodies(String quoteBody, String body) {
-    final fallback = quoteBody
-      .split('\n')
-      .map((line) => '> $line\n')
-      .join();
+    final fallback = quoteBody.split('\n').map((line) => '> $line\n').join();
 
     return QuoteData(
       '$fallback$body',
       fallback.length,
     );
   }
-  
+
   /// The new body with fallback data at the beginning
   final String body;
 
@@ -70,25 +67,28 @@ class MessageRepliesManager extends XmppManagerBase {
 
   @override
   List<String> getDiscoFeatures() => [
-    replyXmlns,
-  ];
-  
+        replyXmlns,
+      ];
+
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'reply',
-      tagXmlns: replyXmlns,
-      callback: _onMessage,
-      // Before the message handler
-      priority: -99,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'reply',
+          tagXmlns: replyXmlns,
+          callback: _onMessage,
+          // Before the message handler
+          priority: -99,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
-  
-  Future<StanzaHandlerData> _onMessage(Stanza stanza, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessage(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     final reply = stanza.firstTag('reply', xmlns: replyXmlns)!;
     final id = reply.attributes['id']! as String;
     final to = reply.attributes['to'] as String?;

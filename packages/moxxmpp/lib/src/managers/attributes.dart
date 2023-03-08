@@ -22,8 +22,16 @@ class XmppManagerAttributes {
     required this.getConnection,
     required this.getNegotiatorById,
   });
+
   /// Send a stanza whose response can be awaited.
-  final Future<XMLNode> Function(Stanza stanza, { StanzaFromType addFrom, bool addId, bool awaitable, bool encrypted, bool forceEncryption}) sendStanza;
+  final Future<XMLNode> Function(
+    Stanza stanza, {
+    StanzaFromType addFrom,
+    bool addId,
+    bool awaitable,
+    bool encrypted,
+    bool forceEncryption,
+  }) sendStanza;
 
   /// Send a nonza.
   final void Function(XMLNode) sendNonza;
@@ -39,7 +47,7 @@ class XmppManagerAttributes {
 
   /// Returns true if a server feature is supported
   final bool Function(String) isFeatureSupported;
-  
+
   /// Returns the full JID of the current account
   final JID Function() getFullJID;
 
@@ -49,5 +57,6 @@ class XmppManagerAttributes {
   /// Return the [XmppConnection] the manager is registered against.
   final XmppConnection Function() getConnection;
 
-  final T? Function<T extends XmppFeatureNegotiatorBase>(String) getNegotiatorById;
+  final T? Function<T extends XmppFeatureNegotiatorBase>(String)
+      getNegotiatorById;
 }

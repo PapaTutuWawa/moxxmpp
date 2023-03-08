@@ -5,10 +5,7 @@ import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
-enum _StartTlsState {
-  ready,
-  requested
-}
+enum _StartTlsState { ready, requested }
 
 class StartTLSFailedError extends NegotiatorError {
   @override
@@ -16,10 +13,11 @@ class StartTLSFailedError extends NegotiatorError {
 }
 
 class StartTLSNonza extends XMLNode {
-  StartTLSNonza() : super.xmlns(
-    tag: 'starttls',
-    xmlns: startTlsXmlns,
-  );
+  StartTLSNonza()
+      : super.xmlns(
+          tag: 'starttls',
+          xmlns: startTlsXmlns,
+        );
 }
 
 /// A negotiator implementing StartTLS.
@@ -33,7 +31,9 @@ class StartTlsNegotiator extends XmppFeatureNegotiatorBase {
   final Logger _log = Logger('StartTlsNegotiator');
 
   @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
     switch (_state) {
       case _StartTlsState.ready:
         _log.fine('StartTLS is available. Performing StartTLS upgrade...');
@@ -41,14 +41,16 @@ class StartTlsNegotiator extends XmppFeatureNegotiatorBase {
         attributes.sendNonza(StartTLSNonza());
         return const Result(NegotiatorState.ready);
       case _StartTlsState.requested:
-        if (nonza.tag != 'proceed' || nonza.attributes['xmlns'] != startTlsXmlns) {
+        if (nonza.tag != 'proceed' ||
+            nonza.attributes['xmlns'] != startTlsXmlns) {
           _log.severe('Failed to perform StartTLS negotiation');
           return Result(StartTLSFailedError());
         }
 
         _log.fine('Securing socket');
-        final result = await attributes.getSocket()
-          .secure(attributes.getConnectionSettings().jid.domain);
+        final result = await attributes
+            .getSocket()
+            .secure(attributes.getConnectionSettings().jid.domain);
         if (!result) {
           _log.severe('Failed to secure stream');
           return Result(StartTLSFailedError());

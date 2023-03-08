@@ -20,18 +20,19 @@ class PresenceManager extends XmppManagerBase {
   PresenceManager() : super(presenceManager);
 
   /// The list of pre-send callbacks.
-  final List<PresencePreSendCallback> _presenceCallbacks = List.empty(growable: true);
+  final List<PresencePreSendCallback> _presenceCallbacks =
+      List.empty(growable: true);
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'presence',
-      callback: _onPresence,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'presence',
+          callback: _onPresence,
+        )
+      ];
 
   @override
-  List<String> getDiscoFeatures() => [ capsXmlns ];
+  List<String> getDiscoFeatures() => [capsXmlns];
 
   @override
   Future<bool> isSupported() async => true;
@@ -40,26 +41,35 @@ class PresenceManager extends XmppManagerBase {
   void registerPreSendCallback(PresencePreSendCallback callback) {
     _presenceCallbacks.add(callback);
   }
-  
-  Future<StanzaHandlerData> _onPresence(Stanza presence, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onPresence(
+    Stanza presence,
+    StanzaHandlerData state,
+  ) async {
     final attrs = getAttributes();
     switch (presence.type) {
       case 'subscribe':
-      case 'subscribed': {
-        attrs.sendEvent(
-          SubscriptionRequestReceivedEvent(from: JID.fromString(presence.from!)),
-        );
-        return state.copyWith(done: true);
-      }
-      default: break;
+      case 'subscribed':
+        {
+          attrs.sendEvent(
+            SubscriptionRequestReceivedEvent(
+              from: JID.fromString(presence.from!),
+            ),
+          );
+          return state.copyWith(done: true);
+        }
+      default:
+        break;
     }
 
     if (presence.from != null) {
       logger.finest("Received presence from '${presence.from}'");
 
-      getAttributes().sendEvent(PresenceReceivedEvent(JID.fromString(presence.from!), presence));
+      getAttributes().sendEvent(
+        PresenceReceivedEvent(JID.fromString(presence.from!), presence),
+      );
       return state.copyWith(done: true);
-    } 
+    }
 
     return state;
   }
@@ -97,7 +107,7 @@ class PresenceManager extends XmppManagerBase {
       addFrom: StanzaFromType.full,
     );
   }
-  
+
   /// Sends a subscription request to [to].
   void sendSubscriptionRequest(String to) {
     getAttributes().sendStanza(

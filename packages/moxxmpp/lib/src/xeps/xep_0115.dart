@@ -21,11 +21,17 @@ class CapabilityHashInfo {
 
 /// Calculates the Entitiy Capability hash according to XEP-0115 based on the
 /// disco information.
-Future<String> calculateCapabilityHash(DiscoInfo info, HashAlgorithm algorithm) async {
+Future<String> calculateCapabilityHash(
+  DiscoInfo info,
+  HashAlgorithm algorithm,
+) async {
   final buffer = StringBuffer();
   final identitiesSorted = info.identities
-    .map((Identity i) => '${i.category}/${i.type}/${i.lang ?? ""}/${i.name ?? ""}')
-    .toList();
+      .map(
+        (Identity i) =>
+            '${i.category}/${i.type}/${i.lang ?? ""}/${i.name ?? ""}',
+      )
+      .toList();
   // ignore: cascade_invocations
   identitiesSorted.sort(ioctetSortComparator);
   buffer.write('${identitiesSorted.join("<")}<');
@@ -36,20 +42,23 @@ Future<String> calculateCapabilityHash(DiscoInfo info, HashAlgorithm algorithm) 
 
   if (info.extendedInfo.isNotEmpty) {
     final sortedExt = info.extendedInfo
-      ..sort((a, b) => ioctetSortComparator(
-        a.getFieldByVar('FORM_TYPE')!.values.first,
-        b.getFieldByVar('FORM_TYPE')!.values.first,
-      ),
-    );
+      ..sort(
+        (a, b) => ioctetSortComparator(
+          a.getFieldByVar('FORM_TYPE')!.values.first,
+          b.getFieldByVar('FORM_TYPE')!.values.first,
+        ),
+      );
 
     for (final ext in sortedExt) {
       buffer.write('${ext.getFieldByVar("FORM_TYPE")!.values.first}<');
 
-      final sortedFields = ext.fields..sort((a, b) => ioctetSortComparator(
-          a.varAttr!,
-          b.varAttr!,
-        ),
-      );
+      final sortedFields = ext.fields
+        ..sort(
+          (a, b) => ioctetSortComparator(
+            a.varAttr!,
+            b.varAttr!,
+          ),
+        );
 
       for (final field in sortedFields) {
         if (field.varAttr == 'FORM_TYPE') continue;
@@ -62,8 +71,9 @@ Future<String> calculateCapabilityHash(DiscoInfo info, HashAlgorithm algorithm) 
       }
     }
   }
-  
-  return base64.encode((await algorithm.hash(utf8.encode(buffer.toString()))).bytes);
+
+  return base64
+      .encode((await algorithm.hash(utf8.encode(buffer.toString()))).bytes);
 }
 
 /// A manager implementing the advertising of XEP-0115. It responds to the
@@ -71,7 +81,8 @@ Future<String> calculateCapabilityHash(DiscoInfo info, HashAlgorithm algorithm) 
 /// the DiscoManager.
 /// NOTE: This manager requires that the DiscoManager is also registered.
 class EntityCapabilitiesManager extends XmppManagerBase {
-  EntityCapabilitiesManager(this._capabilityHashBase) : super(entityCapabilitiesManager);
+  EntityCapabilitiesManager(this._capabilityHashBase)
+      : super(entityCapabilitiesManager);
 
   /// The string that is both the node under which we advertise the disco info
   /// and the base for the actual node on which we respond to disco#info requests.
@@ -84,15 +95,15 @@ class EntityCapabilitiesManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   @override
-  List<String> getDiscoFeatures() => [ capsXmlns ];
+  List<String> getDiscoFeatures() => [capsXmlns];
 
   /// Computes, if required, the capability hash of the data provided by
   /// the DiscoManager.
   Future<String> getCapabilityHash() async {
     _capabilityHash ??= await calculateCapabilityHash(
       getAttributes()
-        .getManagerById<DiscoManager>(discoManager)!
-        .getDiscoInfo(null),
+          .getManagerById<DiscoManager>(discoManager)!
+          .getDiscoInfo(null),
       getHashByName('sha-1')!,
     );
 
@@ -103,11 +114,11 @@ class EntityCapabilitiesManager extends XmppManagerBase {
     final hash = await getCapabilityHash();
     return '$_capabilityHashBase#$hash';
   }
-  
+
   Future<DiscoInfo> _onInfoQuery() async {
     return getAttributes()
-      .getManagerById<DiscoManager>(discoManager)!
-      .getDiscoInfo(await _getNode());
+        .getManagerById<DiscoManager>(discoManager)!
+        .getDiscoInfo(await _getNode());
   }
 
   Future<List<XMLNode>> _prePresenceSent() async {
@@ -123,20 +134,22 @@ class EntityCapabilitiesManager extends XmppManagerBase {
       ),
     ];
   }
-  
+
   @override
   Future<void> postRegisterCallback() async {
     await super.postRegisterCallback();
-    
-    getAttributes().getManagerById<DiscoManager>(discoManager)!.registerInfoCallback(
-        await _getNode(),
-        _onInfoQuery,
-      );
 
     getAttributes()
-      .getManagerById<PresenceManager>(presenceManager)!
-      .registerPreSendCallback(
-        _prePresenceSent,
-      );
+        .getManagerById<DiscoManager>(discoManager)!
+        .registerInfoCallback(
+          await _getNode(),
+          _onInfoQuery,
+        );
+
+    getAttributes()
+        .getManagerById<PresenceManager>(presenceManager)!
+        .registerPreSendCallback(
+          _prePresenceSent,
+        );
   }
 }

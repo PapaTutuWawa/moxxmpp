@@ -18,16 +18,16 @@ class _StanzaSurrogateKey {
 
   /// The tag name of the stanza.
   final String tag;
-  
+
   @override
   int get hashCode => sentTo.hashCode ^ id.hashCode ^ tag.hashCode;
 
   @override
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     return other is _StanzaSurrogateKey &&
-           other.sentTo == sentTo &&
-           other.id == id &&
-           other.tag == tag;
+        other.sentTo == sentTo &&
+        other.id == id &&
+        other.tag == tag;
   }
 }
 
@@ -71,7 +71,7 @@ class StanzaAwaiter {
 
     final id = stanza.attributes['id'] as String?;
     if (id == null) return false;
-    
+
     final key = _StanzaSurrogateKey(
       // Section 8.1.2.1 § 3 of RFC 6120 says that an empty "from" indicates that the
       // attribute is implicitly from our own bare JID.

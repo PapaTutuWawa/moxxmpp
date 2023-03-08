@@ -14,7 +14,7 @@ class AsyncQueue {
 
   /// The actual job queue.
   final Queue<AsyncQueueJob> _queue = Queue<AsyncQueueJob>();
-  
+
   /// Indicates whether we are currently executing a job.
   bool _running = false;
 
@@ -23,7 +23,7 @@ class AsyncQueue {
 
   @visibleForTesting
   bool get isRunning => _running;
-  
+
   /// Adds a job [job] to the queue.
   Future<void> addJob(AsyncQueueJob job) async {
     await _lock.synchronized(() {
@@ -39,7 +39,7 @@ class AsyncQueue {
   Future<void> clear() async {
     await _lock.synchronized(_queue.clear);
   }
-  
+
   Future<void> _popJob() async {
     final job = _queue.removeFirst();
     final future = job();

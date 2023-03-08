@@ -22,7 +22,9 @@ class Sticker {
     assert(node.tag == 'item', 'sticker has wrong tag');
 
     return Sticker(
-      FileMetadataData.fromXML(node.firstTag('file', xmlns: fileMetadataXmlns)!),
+      FileMetadataData.fromXML(
+        node.firstTag('file', xmlns: fileMetadataXmlns)!,
+      ),
       processStatelessFileSharingSources(node, checkXmlns: false),
       {},
     );
@@ -31,7 +33,7 @@ class Sticker {
   final FileMetadataData metadata;
   final List<StatelessFileSharingSource> sources;
   // Language -> suggestion
-  final Map<String, String> suggests; 
+  final Map<String, String> suggests;
 
   XMLNode toPubSubXML() {
     final suggestsElements = suggests.keys.map((suggest) {
@@ -73,7 +75,11 @@ class StickerPack {
     this.restricted,
   );
 
-  factory StickerPack.fromXML(String id, XMLNode node, { bool hashAvailable = true }) {
+  factory StickerPack.fromXML(
+    String id,
+    XMLNode node, {
+    bool hashAvailable = true,
+  }) {
     assert(node.tag == 'pack', 'node has wrong tag');
     assert(node.attributes['xmlns'] == stickersXmlns, 'node has wrong XMLNS');
 
@@ -84,7 +90,7 @@ class StickerPack {
       hashAlgorithm = hashFunctionFromName(hash.attributes['algo']! as String);
       hashValue = hash.innerText();
     }
-    
+
     return StickerPack(
       id,
       node.firstTag('name')!.innerText(),
@@ -92,9 +98,9 @@ class StickerPack {
       hashAlgorithm,
       hashValue,
       node.children
-        .where((e) => e.tag == 'item')
-        .map<Sticker>(Sticker.fromXML)
-        .toList(),
+          .where((e) => e.tag == 'item')
+          .map<Sticker>(Sticker.fromXML)
+          .toList(),
       node.firstTag('restricted') != null,
     );
   }
@@ -122,7 +128,7 @@ class StickerPack {
       restricted,
     );
   }
-  
+
   XMLNode toXML() {
     return XMLNode.xmlns(
       tag: 'pack',
@@ -142,13 +148,10 @@ class StickerPack {
           hashValue,
         ),
 
-        ...restricted ?
-          [XMLNode(tag: 'restricted')] :
-          [],
-        
+        ...restricted ? [XMLNode(tag: 'restricted')] : [],
+
         // Stickers
-        ...stickers
-          .map((sticker) => sticker.toPubSubXML()),
+        ...stickers.map((sticker) => sticker.toPubSubXML()),
       ],
     );
   }
@@ -232,16 +235,19 @@ class StickersManager extends XmppManagerBase {
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagXmlns: stickersXmlns,
-      tagName: 'sticker',
-      callback: _onIncomingMessage,
-      priority: -99,
-    ),
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagXmlns: stickersXmlns,
+          tagName: 'sticker',
+          callback: _onIncomingMessage,
+          priority: -99,
+        ),
+      ];
 
-  Future<StanzaHandlerData> _onIncomingMessage(Stanza stanza, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onIncomingMessage(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     final sticker = stanza.firstTag('sticker', xmlns: stickersXmlns)!;
     return state.copyWith(
       stickerPackId: sticker.attributes['pack']! as String,
@@ -252,7 +258,11 @@ class StickersManager extends XmppManagerBase {
   /// [accessModel] will be used as the PubSub node's access model.
   ///
   /// On success, returns true. On failure, returns a PubSubError.
-  Future<Result<PubSubError, bool>> publishStickerPack(JID jid, StickerPack pack, { String? accessModel }) async {
+  Future<Result<PubSubError, bool>> publishStickerPack(
+    JID jid,
+    StickerPack pack, {
+    String? accessModel,
+  }) async {
     assert(pack.id != '', 'The sticker pack must have an id');
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
 
@@ -271,7 +281,10 @@ class StickersManager extends XmppManagerBase {
   /// Removes the sticker pack with id [id] from the PubSub node of [jid].
   ///
   /// On success, returns the true. On failure, returns a PubSubError.
-  Future<Result<PubSubError, bool>> retractStickerPack(JID jid, String id) async {
+  Future<Result<PubSubError, bool>> retractStickerPack(
+    JID jid,
+    String id,
+  ) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
 
     return pm.retract(
@@ -284,7 +297,10 @@ class StickersManager extends XmppManagerBase {
   /// Fetches the sticker pack with id [id] from [jid].
   ///
   /// On success, returns the StickerPack. On failure, returns a PubSubError.
-  Future<Result<PubSubError, StickerPack>> fetchStickerPack(JID jid, String id) async {
+  Future<Result<PubSubError, StickerPack>> fetchStickerPack(
+    JID jid,
+    String id,
+  ) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
     final stickerPackDataRaw = await pm.getItem(
       jid.toBare().toString(),

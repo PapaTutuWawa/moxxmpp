@@ -16,19 +16,19 @@ class BlockingManager extends XmppManagerBase {
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'iq',
-      tagName: 'unblock',
-      tagXmlns: blockingXmlns,
-      callback: _unblockPush,
-    ),
-    StanzaHandler(
-      stanzaTag: 'iq',
-      tagName: 'block',
-      tagXmlns: blockingXmlns,
-      callback: _blockPush,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'iq',
+          tagName: 'unblock',
+          tagXmlns: blockingXmlns,
+          callback: _unblockPush,
+        ),
+        StanzaHandler(
+          stanzaTag: 'iq',
+          tagName: 'block',
+          tagXmlns: blockingXmlns,
+          callback: _blockPush,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async {
@@ -54,20 +54,29 @@ class BlockingManager extends XmppManagerBase {
       }
     }
   }
-  
-  Future<StanzaHandlerData> _blockPush(Stanza iq, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _blockPush(
+    Stanza iq,
+    StanzaHandlerData state,
+  ) async {
     final block = iq.firstTag('block', xmlns: blockingXmlns)!;
 
     getAttributes().sendEvent(
       BlocklistBlockPushEvent(
-        items: block.findTags('item').map((i) => i.attributes['jid']! as String).toList(),
+        items: block
+            .findTags('item')
+            .map((i) => i.attributes['jid']! as String)
+            .toList(),
       ),
     );
 
     return state.copyWith(done: true);
   }
 
-  Future<StanzaHandlerData> _unblockPush(Stanza iq, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _unblockPush(
+    Stanza iq,
+    StanzaHandlerData state,
+  ) async {
     final unblock = iq.firstTag('unblock', xmlns: blockingXmlns)!;
     final items = unblock.findTags('item');
 
@@ -85,7 +94,7 @@ class BlockingManager extends XmppManagerBase {
 
     return state.copyWith(done: true);
   }
-  
+
   Future<bool> block(List<String> items) async {
     final result = await getAttributes().sendStanza(
       Stanza.iq(
@@ -94,14 +103,12 @@ class BlockingManager extends XmppManagerBase {
           XMLNode.xmlns(
             tag: 'block',
             xmlns: blockingXmlns,
-            children: items
-              .map((item) {
-                return XMLNode(
-                  tag: 'item',
-                  attributes: <String, String>{ 'jid': item },
-                );
-              })
-              .toList(),
+            children: items.map((item) {
+              return XMLNode(
+                tag: 'item',
+                attributes: <String, String>{'jid': item},
+              );
+            }).toList(),
           )
         ],
       ),
@@ -125,7 +132,7 @@ class BlockingManager extends XmppManagerBase {
 
     return result.attributes['type'] == 'result';
   }
-  
+
   Future<bool> unblock(List<String> items) async {
     assert(items.isNotEmpty, 'The list of items to unblock must be non-empty');
 
@@ -136,10 +143,14 @@ class BlockingManager extends XmppManagerBase {
           XMLNode.xmlns(
             tag: 'unblock',
             xmlns: blockingXmlns,
-            children: items.map((item) => XMLNode(
-                tag: 'item',
-                attributes: <String, String>{ 'jid': item },
-            ),).toList(),
+            children: items
+                .map(
+                  (item) => XMLNode(
+                    tag: 'item',
+                    attributes: <String, String>{'jid': item},
+                  ),
+                )
+                .toList(),
           )
         ],
       ),
@@ -162,6 +173,9 @@ class BlockingManager extends XmppManagerBase {
     );
 
     final blocklist = result.firstTag('blocklist', xmlns: blockingXmlns)!;
-    return blocklist.findTags('item').map((item) => item.attributes['jid']! as String).toList();
+    return blocklist
+        .findTags('item')
+        .map((item) => item.attributes['jid']! as String)
+        .toList();
   }
 }

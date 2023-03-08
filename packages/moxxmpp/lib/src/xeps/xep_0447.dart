@@ -21,9 +21,14 @@ class StatelessFileSharingUrlSource extends StatelessFileSharingSource {
   StatelessFileSharingUrlSource(this.url);
 
   factory StatelessFileSharingUrlSource.fromXml(XMLNode element) {
-    assert(element.attributes['xmlns'] == urlDataXmlns, 'Element has the wrong xmlns');
+    assert(
+      element.attributes['xmlns'] == urlDataXmlns,
+      'Element has the wrong xmlns',
+    );
 
-    return StatelessFileSharingUrlSource(element.attributes['target']! as String);
+    return StatelessFileSharingUrlSource(
+      element.attributes['target']! as String,
+    );
   }
 
   final String url;
@@ -44,9 +49,12 @@ class StatelessFileSharingUrlSource extends StatelessFileSharingSource {
 /// StatelessFileSharingSources contained with it.
 /// If [checkXmlns] is true, then the sources element must also have an xmlns attribute
 /// of "urn:xmpp:sfs:0".
-List<StatelessFileSharingSource> processStatelessFileSharingSources(XMLNode node, { bool checkXmlns = true }) {
+List<StatelessFileSharingSource> processStatelessFileSharingSources(
+  XMLNode node, {
+  bool checkXmlns = true,
+}) {
   final sources = List<StatelessFileSharingSource>.empty(growable: true);
-  
+
   final sourcesElement = node.firstTag(
     'sources',
     xmlns: checkXmlns ? sfsXmlns : null,
@@ -88,9 +96,7 @@ class StatelessFileSharingData {
         metadata.toXML(),
         XMLNode(
           tag: 'sources',
-          children: sources
-            .map((source) => source.toXml())
-            .toList(),
+          children: sources.map((source) => source.toXml()).toList(),
         ),
       ],
     );
@@ -99,7 +105,8 @@ class StatelessFileSharingData {
   StatelessFileSharingUrlSource? getFirstUrlSource() {
     return firstWhereOrNull(
       sources,
-      (StatelessFileSharingSource source) => source is StatelessFileSharingUrlSource,
+      (StatelessFileSharingSource source) =>
+          source is StatelessFileSharingUrlSource,
     ) as StatelessFileSharingUrlSource?;
   }
 }
@@ -109,24 +116,29 @@ class SFSManager extends XmppManagerBase {
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'file-sharing',
-      tagXmlns: sfsXmlns,
-      callback: _onMessage,
-      // Before the message handler
-      priority: -99,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'file-sharing',
+          tagXmlns: sfsXmlns,
+          callback: _onMessage,
+          // Before the message handler
+          priority: -99,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
-  
-  Future<StanzaHandlerData> _onMessage(Stanza message, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessage(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final sfs = message.firstTag('file-sharing', xmlns: sfsXmlns)!;
 
     return state.copyWith(
-      sfs: StatelessFileSharingData.fromXML(sfs, ),
+      sfs: StatelessFileSharingData.fromXML(
+        sfs,
+      ),
     );
   }
 }

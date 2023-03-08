@@ -5,7 +5,12 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0004.dart';
 
 class Identity {
-  const Identity({ required this.category, required this.type, this.name, this.lang });
+  const Identity({
+    required this.category,
+    required this.type,
+    this.name,
+    this.lang,
+  });
   final String category;
   final String type;
   final String? name;
@@ -18,7 +23,9 @@ class Identity {
         'category': category,
         'type': type,
         'name': name,
-        ...lang == null ? <String, dynamic>{} : <String, dynamic>{ 'xml:lang': lang }
+        ...lang == null
+            ? <String, dynamic>{}
+            : <String, dynamic>{'xml:lang': lang}
       },
     );
   }
@@ -50,7 +57,8 @@ class DiscoInfo {
             name: element.attributes['name'] as String?,
           ),
         );
-      } else if (element.tag == 'x' && element.attributes['xmlns'] == dataFormsXmlns) {
+      } else if (element.tag == 'x' &&
+          element.attributes['xmlns'] == dataFormsXmlns) {
         extendedInfo.add(
           parseDataForm(element),
         );
@@ -76,18 +84,22 @@ class DiscoInfo {
     return XMLNode.xmlns(
       tag: 'query',
       xmlns: discoInfoXmlns,
-      attributes: node != null ?
-        <String, String>{ 'node': node!, } :
-        <String, String>{},
+      attributes: node != null
+          ? <String, String>{
+              'node': node!,
+            }
+          : <String, String>{},
       children: [
         ...identities.map((identity) => identity.toXMLNode()),
-        ...features.map((feature) => XMLNode(
-          tag: 'feature',
-          attributes: { 'var': feature, },
-        ),),
-        
-        if (extendedInfo.isNotEmpty)
-          ...extendedInfo.map((ei) => ei.toXml()),
+        ...features.map(
+          (feature) => XMLNode(
+            tag: 'feature',
+            attributes: {
+              'var': feature,
+            },
+          ),
+        ),
+        if (extendedInfo.isNotEmpty) ...extendedInfo.map((ei) => ei.toXml()),
       ],
     );
   }
@@ -95,7 +107,7 @@ class DiscoInfo {
 
 @immutable
 class DiscoItem {
-  const DiscoItem({ required this.jid, this.node, this.name });
+  const DiscoItem({required this.jid, this.node, this.name});
   final String jid;
   final String? node;
   final String? name;

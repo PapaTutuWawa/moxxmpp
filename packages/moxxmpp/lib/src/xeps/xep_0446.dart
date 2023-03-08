@@ -18,13 +18,18 @@ class FileMetadataData {
 
   /// Parse [node] as a FileMetadataData element.
   factory FileMetadataData.fromXML(XMLNode node) {
-    assert(node.attributes['xmlns'] == fileMetadataXmlns, 'Invalid element xmlns');
+    assert(
+      node.attributes['xmlns'] == fileMetadataXmlns,
+      'Invalid element xmlns',
+    );
     assert(node.tag == 'file', 'Invalid element anme');
 
     final lengthElement = node.firstTag('length');
-    final length = lengthElement != null ? int.parse(lengthElement.innerText()) : null;
+    final length =
+        lengthElement != null ? int.parse(lengthElement.innerText()) : null;
     final sizeElement = node.firstTag('size');
-    final size = sizeElement != null ? int.parse(sizeElement.innerText()) : null;
+    final size =
+        sizeElement != null ? int.parse(sizeElement.innerText()) : null;
 
     final hashes = <String, String>{};
     for (final e in node.findTags('hash')) {
@@ -51,7 +56,7 @@ class FileMetadataData {
     if (heightString != null) {
       height = int.parse(heightString.innerText());
     }
-    
+
     return FileMetadataData(
       mediaType: node.firstTag('media-type')?.innerText(),
       width: width,
@@ -82,13 +87,27 @@ class FileMetadataData {
       children: List.empty(growable: true),
     );
 
-    if (mediaType != null) node.addChild(XMLNode(tag: 'media-type', text: mediaType));
-    if (width != null) node.addChild(XMLNode(tag: 'width', text: '$width'));
-    if (height != null) node.addChild(XMLNode(tag: 'height', text: '$height'));
-    if (desc != null) node.addChild(XMLNode(tag: 'desc', text: desc));
-    if (length != null) node.addChild(XMLNode(tag: 'length', text: length.toString()));
-    if (name != null) node.addChild(XMLNode(tag: 'name', text: name));
-    if (size != null) node.addChild(XMLNode(tag: 'size', text: size.toString()));
+    if (mediaType != null) {
+      node.addChild(XMLNode(tag: 'media-type', text: mediaType));
+    }
+    if (width != null) {
+      node.addChild(XMLNode(tag: 'width', text: '$width'));
+    }
+    if (height != null) {
+      node.addChild(XMLNode(tag: 'height', text: '$height'));
+    }
+    if (desc != null) {
+      node.addChild(XMLNode(tag: 'desc', text: desc));
+    }
+    if (length != null) {
+      node.addChild(XMLNode(tag: 'length', text: length.toString()));
+    }
+    if (name != null) {
+      node.addChild(XMLNode(tag: 'name', text: name));
+    }
+    if (size != null) {
+      node.addChild(XMLNode(tag: 'size', text: size.toString()));
+    }
 
     for (final hash in hashes.entries) {
       node.addChild(
@@ -101,7 +120,7 @@ class FileMetadataData {
         constructFileThumbnailElement(thumbnail),
       );
     }
-    
+
     return node;
   }
 }

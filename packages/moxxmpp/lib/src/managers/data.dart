@@ -27,50 +27,48 @@ class StanzaHandlerData with _$StanzaHandlerData {
     dynamic cancelReason,
     // The stanza that is being dealt with. SHOULD NOT be overwritten, unless it is absolutely
     // necessary, e.g. with Message Carbons or OMEMO
-    Stanza stanza,
-    {
-      // Whether the stanza is retransmitted. Only useful in the context of outgoing
-      // stanza handlers. MUST NOT be overwritten.
-      @Default(false) bool retransmitted,
-      StatelessMediaSharingData? sims,
-      StatelessFileSharingData? sfs,
-      OOBData? oob,
-      StableStanzaId? stableId,
-      ReplyData? reply,
-      ChatState? chatState,
-      @Default(false) bool isCarbon,
-      @Default(false) bool deliveryReceiptRequested,
-      @Default(false) bool isMarkable,
-      // File Upload Notifications
-      // A notification
-      FileMetadataData? fun,
-      // The stanza id this replaces
-      String? funReplacement,
-      // The stanza id this cancels
-      String? funCancellation,
-      // Whether the stanza was received encrypted
-      @Default(false) bool encrypted,
-      // If true, forces the encryption manager to encrypt to the JID, even if it
-      // would not normally. In the case of OMEMO: If shouldEncrypt returns false
-      // but forceEncryption is true, then the OMEMO manager will try to encrypt
-      // to the JID anyway.
-      @Default(false) bool forceEncryption,
-      // The stated type of encryption used, if any was used
-      ExplicitEncryptionType? encryptionType,
-      // Delayed Delivery
-      DelayedDelivery? delayedDelivery,
-      // This is for stanza handlers that are not part of the XMPP library but still need
-      // pass data around.
-      @Default(<String, dynamic>{}) Map<String, dynamic> other,
-      // If non-null, then it indicates the origin Id of the message that should be
-      // retracted
-      MessageRetractionData? messageRetraction,
-      // If non-null, then the message is a correction for the specified stanza Id
-      String? lastMessageCorrectionSid,
-      // Reactions data
-      MessageReactions? messageReactions,
-      // The Id of the sticker pack this sticker belongs to
-      String? stickerPackId,
-    }
-  ) = _StanzaHandlerData;
+    Stanza stanza, {
+    // Whether the stanza is retransmitted. Only useful in the context of outgoing
+    // stanza handlers. MUST NOT be overwritten.
+    @Default(false) bool retransmitted,
+    StatelessMediaSharingData? sims,
+    StatelessFileSharingData? sfs,
+    OOBData? oob,
+    StableStanzaId? stableId,
+    ReplyData? reply,
+    ChatState? chatState,
+    @Default(false) bool isCarbon,
+    @Default(false) bool deliveryReceiptRequested,
+    @Default(false) bool isMarkable,
+    // File Upload Notifications
+    // A notification
+    FileMetadataData? fun,
+    // The stanza id this replaces
+    String? funReplacement,
+    // The stanza id this cancels
+    String? funCancellation,
+    // Whether the stanza was received encrypted
+    @Default(false) bool encrypted,
+    // If true, forces the encryption manager to encrypt to the JID, even if it
+    // would not normally. In the case of OMEMO: If shouldEncrypt returns false
+    // but forceEncryption is true, then the OMEMO manager will try to encrypt
+    // to the JID anyway.
+    @Default(false) bool forceEncryption,
+    // The stated type of encryption used, if any was used
+    ExplicitEncryptionType? encryptionType,
+    // Delayed Delivery
+    DelayedDelivery? delayedDelivery,
+    // This is for stanza handlers that are not part of the XMPP library but still need
+    // pass data around.
+    @Default(<String, dynamic>{}) Map<String, dynamic> other,
+    // If non-null, then it indicates the origin Id of the message that should be
+    // retracted
+    MessageRetractionData? messageRetraction,
+    // If non-null, then the message is a correction for the specified stanza Id
+    String? lastMessageCorrectionSid,
+    // Reactions data
+    MessageReactions? messageReactions,
+    // The Id of the sticker pack this sticker belongs to
+    String? stickerPackId,
+  }) = _StanzaHandlerData;
 }

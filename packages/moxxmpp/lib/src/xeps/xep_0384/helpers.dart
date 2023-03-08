@@ -46,7 +46,8 @@ XMLNode bundleToXML(OmemoBundle bundle) {
   for (final pk in bundle.opksEncoded.entries) {
     prekeys.add(
       XMLNode(
-        tag: 'pk', attributes: <String, String>{
+        tag: 'pk',
+        attributes: <String, String>{
           'id': '${pk.key}',
         },
         text: pk.value,

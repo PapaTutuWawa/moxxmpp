@@ -5,7 +5,7 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 abstract class Handler {
-  const Handler(this.matchStanzas, { this.nonzaTag, this.nonzaXmlns });
+  const Handler(this.matchStanzas, {this.nonzaTag, this.nonzaXmlns});
   final String? nonzaTag;
   final String? nonzaXmlns;
   final bool matchStanzas;
@@ -19,11 +19,12 @@ abstract class Handler {
     }
 
     if (nonzaXmlns != null && nonzaTag != null) {
-      matches = (node.attributes['xmlns'] ?? '') == nonzaXmlns! && node.tag == nonzaTag!;
+      matches = (node.attributes['xmlns'] ?? '') == nonzaXmlns! &&
+          node.tag == nonzaTag!;
     }
-    
+
     if (matchStanzas && nonzaTag == null) {
-      matches = [ 'iq', 'presence', 'message' ].contains(node.tag);
+      matches = ['iq', 'presence', 'message'].contains(node.tag);
     }
 
     return matches;
@@ -32,42 +33,42 @@ abstract class Handler {
 
 class NonzaHandler extends Handler {
   NonzaHandler({
-      required this.callback,
-      String? nonzaTag,
-      String? nonzaXmlns,
+    required this.callback,
+    String? nonzaTag,
+    String? nonzaXmlns,
   }) : super(
-    false,
-    nonzaTag: nonzaTag,
-    nonzaXmlns: nonzaXmlns,
-  );
+          false,
+          nonzaTag: nonzaTag,
+          nonzaXmlns: nonzaXmlns,
+        );
   final Future<bool> Function(XMLNode) callback;
 }
 
 class StanzaHandler extends Handler {
   StanzaHandler({
-      required this.callback,
-      this.tagXmlns,
-      this.tagName,     
-      this.priority = 0,
-      String? stanzaTag,
+    required this.callback,
+    this.tagXmlns,
+    this.tagName,
+    this.priority = 0,
+    String? stanzaTag,
   }) : super(
-      true,
-      nonzaTag: stanzaTag,
-      nonzaXmlns: stanzaXmlns,
-    );
+          true,
+          nonzaTag: stanzaTag,
+          nonzaXmlns: stanzaXmlns,
+        );
   final String? tagName;
   final String? tagXmlns;
   final int priority;
   final Future<StanzaHandlerData> Function(Stanza, StanzaHandlerData) callback;
-    
+
   @override
   bool matches(XMLNode node) {
     var matches = super.matches(node);
-    
+
     if (matches == false) {
       return false;
     }
-    
+
     if (tagName != null) {
       final firstTag = node.firstTag(tagName!, xmlns: tagXmlns);
 
@@ -75,16 +76,19 @@ class StanzaHandler extends Handler {
     } else if (tagXmlns != null) {
       return listContains(
         node.children,
-        (XMLNode node_) => node_.attributes.containsKey('xmlns') && node_.attributes['xmlns'] == tagXmlns,
+        (XMLNode node_) =>
+            node_.attributes.containsKey('xmlns') &&
+            node_.attributes['xmlns'] == tagXmlns,
       );
     }
 
     if (tagName == null && tagXmlns == null) {
       matches = true;
     }
-    
+
     return matches;
   }
 }
 
-int stanzaHandlerSortComparator(StanzaHandler a, StanzaHandler b) => b.priority.compareTo(a.priority);
+int stanzaHandlerSortComparator(StanzaHandler a, StanzaHandler b) =>
+    b.priority.compareTo(a.priority);

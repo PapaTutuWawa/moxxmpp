@@ -13,7 +13,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 /// NOTE: [StableStanzaId.stanzaId] must not be confused with the actual id attribute of
 ///       the message stanza.
 class StableStanzaId {
-  const StableStanzaId({ this.originId, this.stanzaId, this.stanzaIdBy });
+  const StableStanzaId({this.originId, this.stanzaId, this.stanzaIdBy});
   final String? originId;
   final String? stanzaId;
   final String? stanzaIdBy;
@@ -23,7 +23,7 @@ XMLNode makeOriginIdElement(String id) {
   return XMLNode.xmlns(
     tag: 'origin-id',
     xmlns: stableIdXmlns,
-    attributes: { 'id': id },
+    attributes: {'id': id},
   );
 }
 
@@ -31,22 +31,25 @@ class StableIdManager extends XmppManagerBase {
   StableIdManager() : super(stableIdManager);
 
   @override
-  List<String> getDiscoFeatures() => [ stableIdXmlns ];
+  List<String> getDiscoFeatures() => [stableIdXmlns];
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      callback: _onMessage,
-      // Before the MessageManager
-      priority: -99,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          callback: _onMessage,
+          // Before the MessageManager
+          priority: -99,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
-  
-  Future<StanzaHandlerData> _onMessage(Stanza message, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessage(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final from = JID.fromString(message.attributes['from']! as String);
     String? originId;
     String? stanzaId;
@@ -74,10 +77,14 @@ class StableIdManager extends XmppManagerBase {
           stanzaId = stanzaIdTag.attributes['id']! as String;
           stanzaIdBy = stanzaIdTag.attributes['by']! as String;
         } else {
-          logger.finest('${from.toString()} does not support $stableIdXmlns. Ignoring stanza id... ');
+          logger.finest(
+            '${from.toString()} does not support $stableIdXmlns. Ignoring stanza id... ',
+          );
         }
       } else {
-        logger.finest('Failed to find out if ${from.toString()} supports $stableIdXmlns. Ignoring... ');
+        logger.finest(
+          'Failed to find out if ${from.toString()} supports $stableIdXmlns. Ignoring... ',
+        );
       }
     }
 

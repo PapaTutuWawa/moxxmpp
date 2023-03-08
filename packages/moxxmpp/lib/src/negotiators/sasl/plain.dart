@@ -10,16 +10,18 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
 class SaslPlainAuthNonza extends SaslAuthNonza {
-  SaslPlainAuthNonza(String username, String password) : super(
-    'PLAIN', base64.encode(utf8.encode('\u0000$username\u0000$password')),
-  );
+  SaslPlainAuthNonza(String username, String password)
+      : super(
+          'PLAIN',
+          base64.encode(utf8.encode('\u0000$username\u0000$password')),
+        );
 }
 
 class SaslPlainNegotiator extends SaslNegotiator {
   SaslPlainNegotiator()
-    : _authSent = false,
-      _log = Logger('SaslPlainNegotiator'),
-      super(0, saslPlainNegotiator, 'PLAIN');
+      : _authSent = false,
+        _log = Logger('SaslPlainNegotiator'),
+        super(0, saslPlainNegotiator, 'PLAIN');
   bool _authSent;
 
   final Logger _log;
@@ -27,10 +29,12 @@ class SaslPlainNegotiator extends SaslNegotiator {
   @override
   bool matchesFeature(List<XMLNode> features) {
     if (!attributes.getConnectionSettings().allowPlainAuth) return false;
-    
+
     if (super.matchesFeature(features)) {
       if (!attributes.getSocket().isSecure()) {
-        _log.warning('Refusing to match SASL feature due to unsecured connection');
+        _log.warning(
+          'Refusing to match SASL feature due to unsecured connection',
+        );
         return false;
       }
 
@@ -41,7 +45,9 @@ class SaslPlainNegotiator extends SaslNegotiator {
   }
 
   @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
     if (!_authSent) {
       final settings = attributes.getConnectionSettings();
       attributes.sendNonza(

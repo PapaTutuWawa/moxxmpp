@@ -24,24 +24,24 @@ class CarbonsManager extends XmppManagerBase {
 
   /// Indicates that we know that [CarbonsManager._supported] is accurate.
   bool _gotSupported = false;
-  
+
   @override
   List<StanzaHandler> getIncomingPreStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'received',
-      tagXmlns: carbonsXmlns,
-      callback: _onMessageReceived,
-      priority: -98,
-    ),
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'sent',
-      tagXmlns: carbonsXmlns,
-      callback: _onMessageSent,
-      priority: -98,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'received',
+          tagXmlns: carbonsXmlns,
+          callback: _onMessageReceived,
+          priority: -98,
+        ),
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'sent',
+          tagXmlns: carbonsXmlns,
+          callback: _onMessageSent,
+          priority: -98,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async {
@@ -68,8 +68,11 @@ class CarbonsManager extends XmppManagerBase {
       }
     }
   }
-  
-  Future<StanzaHandlerData> _onMessageReceived(Stanza message, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessageReceived(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final from = JID.fromString(message.attributes['from']! as String);
     final received = message.firstTag('received', xmlns: carbonsXmlns)!;
     if (!isCarbonValid(from)) return state.copyWith(done: true);
@@ -83,7 +86,10 @@ class CarbonsManager extends XmppManagerBase {
     );
   }
 
-  Future<StanzaHandlerData> _onMessageSent(Stanza message, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onMessageSent(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final from = JID.fromString(message.attributes['from']! as String);
     final sent = message.firstTag('sent', xmlns: carbonsXmlns)!;
     if (!isCarbonValid(from)) return state.copyWith(done: true);
@@ -154,14 +160,14 @@ class CarbonsManager extends XmppManagerBase {
     }
 
     logger.fine('Successfully disabled message carbons');
-    
+
     _isEnabled = false;
     return true;
   }
 
   /// True if Message Carbons are enabled. False, if not.
   bool get isEnabled => _isEnabled;
-  
+
   @visibleForTesting
   void forceEnable() {
     _isEnabled = true;
@@ -172,9 +178,10 @@ class CarbonsManager extends XmppManagerBase {
   ///
   /// Returns true if the carbon is valid. Returns false if not.
   bool isCarbonValid(JID senderJid) {
-    return _isEnabled && getAttributes().getFullJID().bareCompare(
-      senderJid,
-      ensureBare: true,
-    );
+    return _isEnabled &&
+        getAttributes().getFullJID().bareCompare(
+              senderJid,
+              ensureBare: true,
+            );
   }
 }

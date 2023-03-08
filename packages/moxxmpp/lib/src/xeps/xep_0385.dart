@@ -8,13 +8,20 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
 
 class StatelessMediaSharingData {
-  const StatelessMediaSharingData({ required this.mediaType, required this.size, required this.description, required this.hashes, required this.url, required this.thumbnails });
+  const StatelessMediaSharingData({
+    required this.mediaType,
+    required this.size,
+    required this.description,
+    required this.hashes,
+    required this.url,
+    required this.thumbnails,
+  });
   final String mediaType;
   final int size;
   final String description;
   final Map<String, String> hashes; // algo -> hash value
   final List<Thumbnail> thumbnails;
-  
+
   final String url;
 }
 
@@ -29,7 +36,8 @@ StatelessMediaSharingData parseSIMSElement(XMLNode node) {
   }
 
   var url = '';
-  final references = file.firstTag('sources')!.findTags('reference', xmlns: referenceXmlns);
+  final references =
+      file.firstTag('sources')!.findTags('reference', xmlns: referenceXmlns);
   for (final i in references) {
     if (i.attributes['type'] != 'data') continue;
 
@@ -43,14 +51,15 @@ StatelessMediaSharingData parseSIMSElement(XMLNode node) {
   final thumbnails = List<Thumbnail>.empty(growable: true);
   for (final child in file.children) {
     // TODO(Unknown): Handle other thumbnails
-    if (child.tag == 'file-thumbnail' && child.attributes['xmlns'] == fileThumbnailsXmlns) {
+    if (child.tag == 'file-thumbnail' &&
+        child.attributes['xmlns'] == fileThumbnailsXmlns) {
       final thumb = parseFileThumbnailElement(child);
       if (thumb != null) {
         thumbnails.add(thumb);
       }
     }
   }
-  
+
   return StatelessMediaSharingData(
     mediaType: file.firstTag('media-type')!.innerText(),
     size: int.parse(file.firstTag('size')!.innerText()),
@@ -65,24 +74,27 @@ class SIMSManager extends XmppManagerBase {
   SIMSManager() : super(simsManager);
 
   @override
-  List<String> getDiscoFeatures() => [ simsXmlns ];
-  
+  List<String> getDiscoFeatures() => [simsXmlns];
+
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      callback: _onMessage,
-      tagName: 'reference',
-      tagXmlns: referenceXmlns,
-      // Before the message handler
-      priority: -99,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          callback: _onMessage,
+          tagName: 'reference',
+          tagXmlns: referenceXmlns,
+          // Before the message handler
+          priority: -99,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
-  
-  Future<StanzaHandlerData> _onMessage(Stanza message, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessage(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final references = message.findTags('reference', xmlns: referenceXmlns);
     for (final ref in references) {
       final sims = ref.firstTag('media-sharing', xmlns: simsXmlns);

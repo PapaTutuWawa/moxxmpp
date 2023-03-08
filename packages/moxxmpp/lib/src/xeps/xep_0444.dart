@@ -32,32 +32,36 @@ class MessageReactionsManager extends XmppManagerBase {
   MessageReactionsManager() : super(messageReactionsManager);
 
   @override
-  List<String> getDiscoFeatures() => [ messageReactionsXmlns ];
+  List<String> getDiscoFeatures() => [messageReactionsXmlns];
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'reactions',
-      tagXmlns: messageReactionsXmlns,
-      callback: _onReactionsReceived,
-      // Before the message handler
-      priority: -99,
-    ),
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'reactions',
+          tagXmlns: messageReactionsXmlns,
+          callback: _onReactionsReceived,
+          // Before the message handler
+          priority: -99,
+        ),
+      ];
 
   @override
   Future<bool> isSupported() async => true;
- 
-  Future<StanzaHandlerData> _onReactionsReceived(Stanza message, StanzaHandlerData state) async {
-    final reactionsElement = message.firstTag('reactions', xmlns: messageReactionsXmlns)!;
+
+  Future<StanzaHandlerData> _onReactionsReceived(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
+    final reactionsElement =
+        message.firstTag('reactions', xmlns: messageReactionsXmlns)!;
     return state.copyWith(
       messageReactions: MessageReactions(
         reactionsElement.attributes['id']! as String,
         reactionsElement.children
-          .where((c) => c.tag == 'reaction')
-          .map((c) => c.innerText())
-          .toList(),
+            .where((c) => c.tag == 'reaction')
+            .map((c) => c.innerText())
+            .toList(),
       ),
     );
   }

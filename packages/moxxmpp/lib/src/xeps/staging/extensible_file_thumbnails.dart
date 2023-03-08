@@ -8,20 +8,23 @@ const blurhashThumbnailType = '$fileThumbnailsXmlns:blurhash';
 abstract class Thumbnail {}
 
 class BlurhashThumbnail extends Thumbnail {
-
   BlurhashThumbnail(this.hash);
   final String hash;
 }
 
 Thumbnail? parseFileThumbnailElement(XMLNode node) {
-  assert(node.attributes['xmlns'] == fileThumbnailsXmlns, 'Invalid element xmlns');
+  assert(
+    node.attributes['xmlns'] == fileThumbnailsXmlns,
+    'Invalid element xmlns',
+  );
   assert(node.tag == 'file-thumbnail', 'Invalid element name');
 
   switch (node.attributes['type']!) {
-    case blurhashThumbnailType: {
-      final hash = node.firstTag('blurhash')!.innerText();
-      return BlurhashThumbnail(hash);
-    }
+    case blurhashThumbnailType:
+      {
+        final hash = node.firstTag('blurhash')!.innerText();
+        return BlurhashThumbnail(hash);
+      }
   }
 
   return null;
@@ -48,7 +51,7 @@ XMLNode constructFileThumbnailElement(Thumbnail thumbnail) {
   return XMLNode.xmlns(
     tag: 'file-thumbnail',
     xmlns: fileThumbnailsXmlns,
-    attributes: { 'type': type },
-    children: [ node ],
+    attributes: {'type': type},
+    children: [node],
   );
 }

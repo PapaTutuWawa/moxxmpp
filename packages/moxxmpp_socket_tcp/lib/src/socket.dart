@@ -22,7 +22,8 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   final StreamController<String> _dataStream = StreamController.broadcast();
 
   /// The stream of outgoing (TCPSocketWrapper -> XmppConnection) events.
-  final StreamController<XmppSocketEvent> _eventStream = StreamController.broadcast();
+  final StreamController<XmppSocketEvent> _eventStream =
+      StreamController.broadcast();
 
   /// A subscription on the socket's data stream.
   StreamSubscription<dynamic>? _socketSubscription;
@@ -68,7 +69,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   bool onBadCertificate(dynamic certificate, String domain) {
     return false;
   }
-  
+
   Future<bool> _xep368Connect(String domain) async {
     // TODO(Unknown): Maybe do DNSSEC one day
     final results = await srvQuery('_xmpps-client._tcp.$domain', false);
@@ -80,7 +81,9 @@ class TCPSocketWrapper extends BaseSocketWrapper {
     results.sort(srvRecordSortComparator);
     for (final srv in results) {
       try {
-        _log.finest('Attempting secure connection to ${srv.target}:${srv.port}...');
+        _log.finest(
+          'Attempting secure connection to ${srv.target}:${srv.port}...',
+        );
 
         // Workaround: We cannot set the SNI directly when using SecureSocket.connect.
         // instead, we connect using a regular socket and then secure it. This allows
@@ -93,14 +96,14 @@ class TCPSocketWrapper extends BaseSocketWrapper {
         _socket = await SecureSocket.secure(
           sock,
           host: domain,
-          supportedProtocols: const [ xmppClientALPNId ],
+          supportedProtocols: const [xmppClientALPNId],
           onBadCertificate: (cert) => onBadCertificate(cert, domain),
         );
 
         _secure = true;
         _log.finest('Success!');
         return true;
-      } on Exception catch(e) {
+      } on Exception catch (e) {
         _log.finest('Failure! $e');
 
         if (e is HandshakeException) {
@@ -112,10 +115,10 @@ class TCPSocketWrapper extends BaseSocketWrapper {
     if (failedDueToTLS) {
       _eventStream.add(XmppSocketTLSFailedEvent());
     }
-    
+
     return false;
   }
-  
+
   Future<bool> _rfc6120Connect(String domain) async {
     // TODO(Unknown): Maybe do DNSSEC one day
     final results = await srvQuery('_xmpp-client._tcp.$domain', false);
@@ -132,7 +135,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
 
         _log.finest('Success!');
         return true;
-      } on Exception catch(e) {
+      } on Exception catch (e) {
         _log.finest('Failure! $e');
         continue;
       }
@@ -154,7 +157,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       );
       _log.finest('Success!');
       return true;
-    } on Exception catch(e) {
+    } on Exception catch (e) {
       _log.finest('Failure! $e');
       return false;
     }
@@ -180,14 +183,14 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       _log.severe('Failed to secure socket since _socket is null');
       return false;
     }
-    
+
     try {
       // The socket is closed during the entire process
       _expectSocketClosure = true;
 
       _socket = await SecureSocket.secure(
         _socket!,
-        supportedProtocols: const [ xmppClientALPNId ],
+        supportedProtocols: const [xmppClientALPNId],
         onBadCertificate: (cert) => onBadCertificate(cert, domain),
       );
 
@@ -204,7 +207,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       return false;
     }
   }
-  
+
   void _setupStreams() {
     if (_socket == null) {
       _log.severe('Failed to setup streams as _socket is null');
@@ -230,9 +233,9 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       _expectSocketClosure = false;
     });
   }
-  
+
   @override
-  Future<bool> connect(String domain, { String? host, int? port }) async {
+  Future<bool> connect(String domain, {String? host, int? port}) async {
     _expectSocketClosure = false;
     _secure = false;
 
@@ -280,7 +283,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
 
     try {
       _socket!.close();
-    } catch(e) {
+    } catch (e) {
       _log.warning('Closing socket threw exception: $e');
     }
   }
@@ -289,10 +292,11 @@ class TCPSocketWrapper extends BaseSocketWrapper {
   Stream<String> getDataStream() => _dataStream.stream.asBroadcastStream();
 
   @override
-  Stream<XmppSocketEvent> getEventStream() => _eventStream.stream.asBroadcastStream();
+  Stream<XmppSocketEvent> getEventStream() =>
+      _eventStream.stream.asBroadcastStream();
 
   @override
-  void write(Object? data, { String? redact }) {
+  void write(Object? data, {String? redact}) {
     if (_socket == null) {
       _log.severe('Failed to write to socket as _socket is null');
       return;

@@ -13,7 +13,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0363/errors.dart';
 
-const allowedHTTPHeaders = [ 'authorization', 'cookie', 'expires' ];
+const allowedHTTPHeaders = ['authorization', 'cookie', 'expires'];
 
 class HttpFileUploadSlot {
   const HttpFileUploadSlot(this.putUrl, this.getUrl, this.headers);
@@ -32,12 +32,12 @@ String _stripNewlinesFromString(String value) {
 @visibleForTesting
 Map<String, String> prepareHeaders(Map<String, String> headers) {
   return headers.map((key, value) {
-      return MapEntry(
-        _stripNewlinesFromString(key),
-        _stripNewlinesFromString(value),
-      );
+    return MapEntry(
+      _stripNewlinesFromString(key),
+      _stripNewlinesFromString(value),
+    );
   })
-  ..removeWhere((key, _) => !allowedHTTPHeaders.contains(key.toLowerCase()));
+    ..removeWhere((key, _) => !allowedHTTPHeaders.contains(key.toLowerCase()));
 }
 
 class HttpFileUploadManager extends XmppManagerBase {
@@ -58,7 +58,10 @@ class HttpFileUploadManager extends XmppManagerBase {
   /// Returns whether the entity provided an identity that tells us that we can ask it
   /// for an HTTP upload slot.
   bool _containsFileUploadIdentity(DiscoInfo info) {
-    return listContains(info.identities, (Identity id) => id.category == 'store' && id.type == 'file');
+    return listContains(
+      info.identities,
+      (Identity id) => id.category == 'store' && id.type == 'file',
+    );
   }
 
   /// Extract the maximum filesize in octets from the disco response. Returns null
@@ -87,12 +90,14 @@ class HttpFileUploadManager extends XmppManagerBase {
       }
     }
   }
-  
+
   @override
   Future<bool> isSupported() async {
     if (_gotSupported) return _supported;
-    
-    final result = await getAttributes().getManagerById<DiscoManager>(discoManager)!.performDiscoSweep();
+
+    final result = await getAttributes()
+        .getManagerById<DiscoManager>(discoManager)!
+        .performDiscoSweep();
     if (result.isType<DiscoError>()) {
       _gotSupported = false;
       _supported = false;
@@ -102,8 +107,9 @@ class HttpFileUploadManager extends XmppManagerBase {
     final infos = result.get<List<DiscoInfo>>();
     _gotSupported = true;
     for (final info in infos) {
-      if (_containsFileUploadIdentity(info) && info.features.contains(httpFileUploadXmlns)) {
-         logger.info('Discovered HTTP File Upload for ${info.jid}');
+      if (_containsFileUploadIdentity(info) &&
+          info.features.contains(httpFileUploadXmlns)) {
+        logger.info('Discovered HTTP File Upload for ${info.jid}');
 
         _entityJid = info.jid;
         _maxUploadSize = _getMaxFileSize(info);
@@ -119,19 +125,29 @@ class HttpFileUploadManager extends XmppManagerBase {
   /// the file's size in octets. [contentType] is optional and refers to the file's
   /// Mime type.
   /// Returns an [HttpFileUploadSlot] if the request was successful; null otherwise.
-  Future<Result<HttpFileUploadSlot, HttpFileUploadError>> requestUploadSlot(String filename, int filesize, { String? contentType }) async {
-    if (!(await isSupported())) return Result(NoEntityKnownError());
+  Future<Result<HttpFileUploadSlot, HttpFileUploadError>> requestUploadSlot(
+    String filename,
+    int filesize, {
+    String? contentType,
+  }) async {
+    if (!(await isSupported())) {
+      return Result(NoEntityKnownError());
+    }
 
     if (_entityJid == null) {
-      logger.warning('Attempted to request HTTP File Upload slot but no entity is known to send this request to.');
+      logger.warning(
+        'Attempted to request HTTP File Upload slot but no entity is known to send this request to.',
+      );
       return Result(NoEntityKnownError());
     }
 
     if (_maxUploadSize != null && filesize > _maxUploadSize!) {
-      logger.warning('Attempted to request HTTP File Upload slot for a file that exceeds the filesize limit');
+      logger.warning(
+        'Attempted to request HTTP File Upload slot for a file that exceeds the filesize limit',
+      );
       return Result(FileTooBigError());
     }
-    
+
     final attrs = getAttributes();
     final response = await attrs.sendStanza(
       Stanza.iq(
@@ -144,7 +160,7 @@ class HttpFileUploadManager extends XmppManagerBase {
             attributes: {
               'filename': filename,
               'size': filesize.toString(),
-              ...contentType != null ? { 'content-type': contentType } : {}
+              ...contentType != null ? {'content-type': contentType} : {}
             },
           )
         ],

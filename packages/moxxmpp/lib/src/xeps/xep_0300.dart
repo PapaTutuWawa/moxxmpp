@@ -8,7 +8,7 @@ XMLNode constructHashElement(String algo, String base64Hash) {
   return XMLNode.xmlns(
     tag: 'hash',
     xmlns: hashXmlns,
-    attributes: { 'algo': algo },
+    attributes: {'algo': algo},
     text: base64Hash,
   );
 }
@@ -68,15 +68,18 @@ class CryptographicHashManager extends XmppManagerBase {
 
   @override
   List<String> getDiscoFeatures() => [
-    '$hashFunctionNameBaseXmlns:$hashSha256',
-    '$hashFunctionNameBaseXmlns:$hashSha512',
-    //'$hashFunctionNameBaseXmlns:$hashSha3256',
-    //'$hashFunctionNameBaseXmlns:$hashSha3512',
-    //'$hashFunctionNameBaseXmlns:$hashBlake2b256',
-    '$hashFunctionNameBaseXmlns:$hashBlake2b512',
-  ];
+        '$hashFunctionNameBaseXmlns:$hashSha256',
+        '$hashFunctionNameBaseXmlns:$hashSha512',
+        //'$hashFunctionNameBaseXmlns:$hashSha3256',
+        //'$hashFunctionNameBaseXmlns:$hashSha3512',
+        //'$hashFunctionNameBaseXmlns:$hashBlake2b256',
+        '$hashFunctionNameBaseXmlns:$hashBlake2b512',
+      ];
 
-  static Future<List<int>> hashFromData(List<int> data, HashFunction function) async {
+  static Future<List<int>> hashFromData(
+    List<int> data,
+    HashFunction function,
+  ) async {
     // TODO(PapaTutuWawa): Implement the others as well
     HashAlgorithm algo;
     switch (function) {

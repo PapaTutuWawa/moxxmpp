@@ -32,15 +32,15 @@ class DiscoManager extends XmppManagerBase {
   /// [identities] is a list of disco identities that should be added by default
   /// to a disco#info response.
   DiscoManager(List<Identity> identities)
-    : _identities = List<Identity>.from(identities),
-      super(discoManager);
+      : _identities = List<Identity>.from(identities),
+        super(discoManager);
 
   /// Our features
   final List<String> _features = List.empty(growable: true);
 
   /// Disco identities that we advertise
   final List<Identity> _identities;
-  
+
   /// Map full JID to Capability hashes
   final Map<String, CapabilityHashInfo> _capHashCache = {};
 
@@ -51,10 +51,12 @@ class DiscoManager extends XmppManagerBase {
   final Map<DiscoCacheKey, DiscoInfo> _discoInfoCache = {};
 
   /// The tracker for tracking disco#info queries that are in flight.
-  final WaitForTracker<DiscoCacheKey, Result<DiscoError, DiscoInfo>> _discoInfoTracker = WaitForTracker();
+  final WaitForTracker<DiscoCacheKey, Result<DiscoError, DiscoInfo>>
+      _discoInfoTracker = WaitForTracker();
 
   /// The tracker for tracking disco#info queries that are in flight.
-  final WaitForTracker<DiscoCacheKey, Result<DiscoError, List<DiscoItem>>> _discoItemsTracker = WaitForTracker();
+  final WaitForTracker<DiscoCacheKey, Result<DiscoError, List<DiscoItem>>>
+      _discoItemsTracker = WaitForTracker();
 
   /// Cache lock
   final Lock _cacheLock = Lock();
@@ -72,26 +74,27 @@ class DiscoManager extends XmppManagerBase {
   List<String> get features => _features;
 
   @visibleForTesting
-  WaitForTracker<DiscoCacheKey, Result<DiscoError, DiscoInfo>> get infoTracker => _discoInfoTracker;
-  
-  @override
-  List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      tagName: 'query',
-      tagXmlns: discoInfoXmlns,
-      stanzaTag: 'iq',
-      callback: _onDiscoInfoRequest,
-    ),
-    StanzaHandler(
-      tagName: 'query',
-      tagXmlns: discoItemsXmlns,
-      stanzaTag: 'iq',
-      callback: _onDiscoItemsRequest,
-    ),
-  ];
+  WaitForTracker<DiscoCacheKey, Result<DiscoError, DiscoInfo>>
+      get infoTracker => _discoInfoTracker;
 
   @override
-  List<String> getDiscoFeatures() => [ discoInfoXmlns, discoItemsXmlns ];
+  List<StanzaHandler> getIncomingStanzaHandlers() => [
+        StanzaHandler(
+          tagName: 'query',
+          tagXmlns: discoInfoXmlns,
+          stanzaTag: 'iq',
+          callback: _onDiscoInfoRequest,
+        ),
+        StanzaHandler(
+          tagName: 'query',
+          tagXmlns: discoItemsXmlns,
+          stanzaTag: 'iq',
+          callback: _onDiscoItemsRequest,
+        ),
+      ];
+
+  @override
+  List<String> getDiscoFeatures() => [discoInfoXmlns, discoItemsXmlns];
 
   @override
   Future<bool> isSupported() async => true;
@@ -114,7 +117,7 @@ class DiscoManager extends XmppManagerBase {
       await _discoItemsTracker.resolveAll(
         Result<DiscoError, List<DiscoItem>>(UnknownDiscoError()),
       );
-      
+
       await _cacheLock.synchronized(() async {
         // Clear the cache
         _discoInfoCache.clear();
@@ -131,7 +134,7 @@ class DiscoManager extends XmppManagerBase {
   void registerItemsCallback(String node, DiscoItemsRequestCallback callback) {
     _discoItemsCallbacks[node] = callback;
   }
-  
+
   /// Adds a list of features to the possible disco info response.
   /// This function only adds features that are not already present in the disco features.
   void addFeatures(List<String> features) {
@@ -151,7 +154,7 @@ class DiscoManager extends XmppManagerBase {
       }
     }
   }
-  
+
   Future<void> _onPresence(JID from, Stanza presence) async {
     final c = presence.firstTag('c', xmlns: capsXmlns);
     if (c == null) return;
@@ -161,7 +164,7 @@ class DiscoManager extends XmppManagerBase {
       c.attributes['node']! as String,
       c.attributes['hash']! as String,
     );
-    
+
     // Check if we already know of that cache
     var cached = false;
     await _cacheLock.synchronized(() async {
@@ -172,8 +175,11 @@ class DiscoManager extends XmppManagerBase {
     if (cached) return;
 
     // Request the cap hash
-    logger.finest("Received capability hash we don't know about. Requesting it...");
-    final result = await discoInfoQuery(from.toString(), node: '${info.node}#${info.ver}');
+    logger.finest(
+      "Received capability hash we don't know about. Requesting it...",
+    );
+    final result =
+        await discoInfoQuery(from.toString(), node: '${info.node}#${info.ver}');
     if (result.isType<DiscoError>()) return;
 
     await _cacheLock.synchronized(() async {
@@ -181,7 +187,7 @@ class DiscoManager extends XmppManagerBase {
       _capHashInfoCache[info.ver] = result.get<DiscoInfo>();
     });
   }
-  
+
   /// Returns the [DiscoInfo] object that would be used as the response to a disco#info
   /// query against our bare JID with no node. The results node attribute is set
   /// to [node].
@@ -194,8 +200,11 @@ class DiscoManager extends XmppManagerBase {
       null,
     );
   }
-  
-  Future<StanzaHandlerData> _onDiscoInfoRequest(Stanza stanza, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onDiscoInfoRequest(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     if (stanza.type != 'get') return state;
 
     final query = stanza.firstTag('query', xmlns: discoInfoXmlns)!;
@@ -226,7 +235,10 @@ class DiscoManager extends XmppManagerBase {
     return state.copyWith(done: true);
   }
 
-  Future<StanzaHandlerData> _onDiscoItemsRequest(Stanza stanza, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onDiscoItemsRequest(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     if (stanza.type != 'get') return state;
 
     final query = stanza.firstTag('query', xmlns: discoItemsXmlns)!;
@@ -254,7 +266,10 @@ class DiscoManager extends XmppManagerBase {
     return state;
   }
 
-  Future<void> _exitDiscoInfoCriticalSection(DiscoCacheKey key, Result<DiscoError, DiscoInfo> result) async {
+  Future<void> _exitDiscoInfoCriticalSection(
+    DiscoCacheKey key,
+    Result<DiscoError, DiscoInfo> result,
+  ) async {
     await _cacheLock.synchronized(() async {
       // Add to cache if it is a result
       if (result.isType<DiscoInfo>()) {
@@ -264,12 +279,18 @@ class DiscoManager extends XmppManagerBase {
 
     await _discoInfoTracker.resolve(key, result);
   }
-  
+
   /// Sends a disco info query to the (full) jid [entity], optionally with node=[node].
-  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(String entity, { String? node, bool shouldEncrypt = true }) async {
+  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
+    String entity, {
+    String? node,
+    bool shouldEncrypt = true,
+  }) async {
     final cacheKey = DiscoCacheKey(entity, node);
     DiscoInfo? info;
-    final ffuture = await _cacheLock.synchronized<Future<Future<Result<DiscoError, DiscoInfo>>?>?>(() async {
+    final ffuture = await _cacheLock
+        .synchronized<Future<Future<Result<DiscoError, DiscoInfo>>?>?>(
+            () async {
       // Check if we already know what the JID supports
       if (_discoInfoCache.containsKey(cacheKey)) {
         info = _discoInfoCache[cacheKey];
@@ -305,7 +326,7 @@ class DiscoManager extends XmppManagerBase {
       await _exitDiscoInfoCriticalSection(cacheKey, result);
       return result;
     }
-    
+
     final result = Result<DiscoError, DiscoInfo>(
       DiscoInfo.fromQuery(
         query,
@@ -317,22 +338,26 @@ class DiscoManager extends XmppManagerBase {
   }
 
   /// Sends a disco items query to the (full) jid [entity], optionally with node=[node].
-  Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(String entity, { String? node, bool shouldEncrypt = true }) async {
+  Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(
+    String entity, {
+    String? node,
+    bool shouldEncrypt = true,
+  }) async {
     final key = DiscoCacheKey(entity, node);
     final future = await _discoItemsTracker.waitFor(key);
     if (future != null) {
       return future;
     }
 
-    final stanza = await getAttributes()
-      .sendStanza(
-        buildDiscoItemsQueryStanza(entity, node: node),
-        encrypted: !shouldEncrypt,
-      ) as Stanza;
+    final stanza = await getAttributes().sendStanza(
+      buildDiscoItemsQueryStanza(entity, node: node),
+      encrypted: !shouldEncrypt,
+    ) as Stanza;
 
     final query = stanza.firstTag('query');
     if (query == null) {
-      final result = Result<DiscoError, List<DiscoItem>>(InvalidResponseDiscoError());
+      final result =
+          Result<DiscoError, List<DiscoItem>>(InvalidResponseDiscoError());
       await _discoItemsTracker.resolve(key, result);
       return result;
     }
@@ -340,16 +365,22 @@ class DiscoManager extends XmppManagerBase {
     if (stanza.type == 'error') {
       //final error = stanza.firstTag('error');
       //print("Disco Items error: " + error.toXml());
-      final result = Result<DiscoError, List<DiscoItem>>(ErrorResponseDiscoError());
+      final result =
+          Result<DiscoError, List<DiscoItem>>(ErrorResponseDiscoError());
       await _discoItemsTracker.resolve(key, result);
       return result;
     }
 
-    final items = query.findTags('item').map((node) => DiscoItem(
-      jid: node.attributes['jid']! as String,
-      node: node.attributes['node'] as String?,
-      name: node.attributes['name'] as String?,
-    ),).toList();
+    final items = query
+        .findTags('item')
+        .map(
+          (node) => DiscoItem(
+            jid: node.attributes['jid']! as String,
+            node: node.attributes['node'] as String?,
+            name: node.attributes['name'] as String?,
+          ),
+        )
+        .toList();
 
     final result = Result<DiscoError, List<DiscoItem>>(items);
     await _discoItemsTracker.resolve(key, result);
@@ -357,7 +388,11 @@ class DiscoManager extends XmppManagerBase {
   }
 
   /// Queries information about a jid based on its node and capability hash.
-  Future<Result<DiscoError, DiscoInfo>> discoInfoCapHashQuery(String jid, String node, String ver) async {
+  Future<Result<DiscoError, DiscoInfo>> discoInfoCapHashQuery(
+    String jid,
+    String node,
+    String ver,
+  ) async {
     return discoInfoQuery(jid, node: '$node#$ver');
   }
 

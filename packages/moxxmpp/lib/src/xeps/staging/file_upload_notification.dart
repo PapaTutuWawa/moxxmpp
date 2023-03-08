@@ -15,34 +15,38 @@ class FileUploadNotificationManager extends XmppManagerBase {
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'file-upload',
-      tagXmlns: fileUploadNotificationXmlns,
-      callback: _onFileUploadNotificationReceived,
-      priority: -99,
-    ),
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'replaces',
-      tagXmlns: fileUploadNotificationXmlns,
-      callback: _onFileUploadNotificationReplacementReceived,
-      priority: -99,
-    ),
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'cancelled',
-      tagXmlns: fileUploadNotificationXmlns,
-      callback: _onFileUploadNotificationCancellationReceived,
-      priority: -99,
-    ),
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'file-upload',
+          tagXmlns: fileUploadNotificationXmlns,
+          callback: _onFileUploadNotificationReceived,
+          priority: -99,
+        ),
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'replaces',
+          tagXmlns: fileUploadNotificationXmlns,
+          callback: _onFileUploadNotificationReplacementReceived,
+          priority: -99,
+        ),
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'cancelled',
+          tagXmlns: fileUploadNotificationXmlns,
+          callback: _onFileUploadNotificationCancellationReceived,
+          priority: -99,
+        ),
+      ];
 
   @override
   Future<bool> isSupported() async => true;
 
-  Future<StanzaHandlerData> _onFileUploadNotificationReceived(Stanza message, StanzaHandlerData state) async {
-    final funElement = message.firstTag('file-upload', xmlns: fileUploadNotificationXmlns)!;
+  Future<StanzaHandlerData> _onFileUploadNotificationReceived(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
+    final funElement =
+        message.firstTag('file-upload', xmlns: fileUploadNotificationXmlns)!;
     return state.copyWith(
       fun: FileMetadataData.fromXML(
         funElement.firstTag('file', xmlns: fileMetadataXmlns)!,
@@ -50,15 +54,23 @@ class FileUploadNotificationManager extends XmppManagerBase {
     );
   }
 
-  Future<StanzaHandlerData> _onFileUploadNotificationReplacementReceived(Stanza message, StanzaHandlerData state) async {
-    final element = message.firstTag('replaces', xmlns: fileUploadNotificationXmlns)!;
+  Future<StanzaHandlerData> _onFileUploadNotificationReplacementReceived(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
+    final element =
+        message.firstTag('replaces', xmlns: fileUploadNotificationXmlns)!;
     return state.copyWith(
       funReplacement: element.attributes['id']! as String,
     );
   }
 
-  Future<StanzaHandlerData> _onFileUploadNotificationCancellationReceived(Stanza message, StanzaHandlerData state) async {
-    final element = message.firstTag('cancels', xmlns: fileUploadNotificationXmlns)!;
+  Future<StanzaHandlerData> _onFileUploadNotificationCancellationReceived(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
+    final element =
+        message.firstTag('cancels', xmlns: fileUploadNotificationXmlns)!;
     return state.copyWith(
       funCancellation: element.attributes['id']! as String,
     );

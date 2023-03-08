@@ -10,7 +10,8 @@ const pubsubManager = 'org.moxxmpp.pubsubmanager';
 const userAvatarManager = 'org.moxxmpp.useravatarmanager';
 const stableIdManager = 'org.moxxmpp.stableidmanager';
 const simsManager = 'org.moxxmpp.simsmanager';
-const messageDeliveryReceiptManager = 'org.moxxmpp.messagedeliveryreceiptmanager';
+const messageDeliveryReceiptManager =
+    'org.moxxmpp.messagedeliveryreceiptmanager';
 const chatMarkerManager = 'org.moxxmpp.chatmarkermanager';
 const oobManager = 'org.moxxmpp.oobmanager';
 const sfsManager = 'org.moxxmpp.sfsmanager';
@@ -19,7 +20,8 @@ const blockingManager = 'org.moxxmpp.blockingmanager';
 const httpFileUploadManager = 'org.moxxmpp.httpfileuploadmanager';
 const chatStateManager = 'org.moxxmpp.chatstatemanager';
 const pingManager = 'org.moxxmpp.ping';
-const fileUploadNotificationManager = 'org.moxxmpp.fileuploadnotificationmanager';
+const fileUploadNotificationManager =
+    'org.moxxmpp.fileuploadnotificationmanager';
 const omemoManager = 'org.moxxmpp.omemomanager';
 const emeManager = 'org.moxxmpp.ememanager';
 const cryptographicHashManager = 'org.moxxmpp.cryptographichashmanager';

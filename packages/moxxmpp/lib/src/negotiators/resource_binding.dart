@@ -16,7 +16,8 @@ class ResourceBindingFailedError extends NegotiatorError {
 /// A negotiator that implements resource binding against a random server-provided
 /// resource.
 class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
-  ResourceBindingNegotiator() : super(0, false, bindXmlns, resourceBindingNegotiator);
+  ResourceBindingNegotiator()
+      : super(0, false, bindXmlns, resourceBindingNegotiator);
 
   /// Flag indicating the state of the negotiator:
   /// - True: We sent a binding request
@@ -27,14 +28,18 @@ class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
   bool matchesFeature(List<XMLNode> features) {
     final sm = attributes.getManagerById<StreamManagementManager>(smManager);
     if (sm != null) {
-      return super.matchesFeature(features) && !sm.streamResumed && attributes.isAuthenticated();
+      return super.matchesFeature(features) &&
+          !sm.streamResumed &&
+          attributes.isAuthenticated();
     }
 
     return super.matchesFeature(features) && attributes.isAuthenticated();
   }
-  
+
   @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
     if (!_requestSent) {
       final stanza = XMLNode.xmlns(
         tag: 'iq',
@@ -63,11 +68,12 @@ class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
       final jid = bind.firstTag('jid')!;
       final resource = jid.innerText().split('/')[1];
 
-      await attributes.sendEvent(ResourceBindingSuccessEvent(resource: resource));
+      await attributes
+          .sendEvent(ResourceBindingSuccessEvent(resource: resource));
       return const Result(NegotiatorState.done);
     }
   }
-  
+
   @override
   void reset() {
     _requestSent = false;
