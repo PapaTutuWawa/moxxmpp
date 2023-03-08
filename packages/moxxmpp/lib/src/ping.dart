@@ -8,11 +8,13 @@ class PingManager extends XmppManagerBase {
 
   @override
   Future<bool> isSupported() async => true;
-  
+
   void _logWarning() {
-    logger.warning('Cannot send keepalives as SM is not available, the socket disallows whitespace pings and does not manage its own keepalives. Cannot guarantee that the connection survives.');
+    logger.warning(
+      'Cannot send keepalives as SM is not available, the socket disallows whitespace pings and does not manage its own keepalives. Cannot guarantee that the connection survives.',
+    );
   }
-  
+
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
     if (event is SendPingEvent) {
@@ -24,14 +26,18 @@ class PingManager extends XmppManagerBase {
         logger.finest('Not sending ping as the socket manages it.');
         return;
       }
-      
-      final stream = attrs.getManagerById(smManager) as StreamManagementManager?;
+
+      final stream =
+          attrs.getManagerById(smManager) as StreamManagementManager?;
       if (stream != null) {
-        if (stream.isStreamManagementEnabled() /*&& stream.getUnackedStanzaCount() > 0*/) {
+        if (stream
+            .isStreamManagementEnabled() /*&& stream.getUnackedStanzaCount() > 0*/) {
           logger.finest('Sending an ack ping as Stream Management is enabled');
           stream.sendAckRequestPing();
         } else if (attrs.getSocket().whitespacePingAllowed()) {
-          logger.finest('Sending a whitespace ping as Stream Management is not enabled');
+          logger.finest(
+            'Sending a whitespace ping as Stream Management is not enabled',
+          );
           attrs.getConnection().sendWhitespacePing();
         } else {
           _logWarning();

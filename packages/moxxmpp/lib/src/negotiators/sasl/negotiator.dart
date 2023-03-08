@@ -4,11 +4,12 @@ import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 abstract class SaslNegotiator extends XmppFeatureNegotiatorBase {
+  SaslNegotiator(int priority, String id, this.mechanismName)
+      : super(priority, true, saslXmlns, id);
 
-  SaslNegotiator(int priority, String id, this.mechanismName) : super(priority, true, saslXmlns, id);
   /// The name inside the <mechanism /> element
   final String mechanismName;
-  
+
   @override
   bool matchesFeature(List<XMLNode> features) {
     // Is SASL advertised?
@@ -20,8 +21,9 @@ abstract class SaslNegotiator extends XmppFeatureNegotiatorBase {
 
     // Is SASL PLAIN advertised?
     return firstWhereOrNull(
-      mechanisms.children,
-      (XMLNode mechanism) => mechanism.text == mechanismName,
-    ) != null;
+          mechanisms.children,
+          (XMLNode mechanism) => mechanism.text == mechanismName,
+        ) !=
+        null;
   }
 }

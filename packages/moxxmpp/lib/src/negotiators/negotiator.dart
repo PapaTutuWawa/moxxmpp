@@ -35,28 +35,41 @@ class NegotiatorAttributes {
     this.getSocket,
     this.isAuthenticated,
   );
+
   /// Sends the nonza nonza and optionally redacts it in logs if redact is not null.
   final void Function(XMLNode nonza, {String? redact}) sendNonza;
+
   /// Returns the connection settings.
   final ConnectionSettings Function() getConnectionSettings;
+
   /// Send an event event to the connection's event bus
   final Future<void> Function(XmppEvent event) sendEvent;
+
   /// Returns the negotiator with id id of the connection or null.
-  final T? Function<T extends XmppFeatureNegotiatorBase>(String) getNegotiatorById;
+  final T? Function<T extends XmppFeatureNegotiatorBase>(String)
+      getNegotiatorById;
+
   /// Returns the manager with id id of the connection or null.
   final T? Function<T extends XmppManagerBase>(String) getManagerById;
+
   /// Returns the full JID of the current account
   final JID Function() getFullJID;
+
   /// Returns the socket the negotiator is attached to
   final BaseSocketWrapper Function() getSocket;
+
   /// Returns true if the stream is authenticated. Returns false if not.
   final bool Function() isAuthenticated;
 }
 
 abstract class XmppFeatureNegotiatorBase {
+  XmppFeatureNegotiatorBase(
+    this.priority,
+    this.sendStreamHeaderWhenDone,
+    this.negotiatingXmlns,
+    this.id,
+  ) : state = NegotiatorState.ready;
 
-  XmppFeatureNegotiatorBase(this.priority, this.sendStreamHeaderWhenDone, this.negotiatingXmlns, this.id)
-    : state = NegotiatorState.ready;
   /// The priority regarding other negotiators. The higher, the earlier will the
   /// negotiator be used
   final int priority;
@@ -70,24 +83,25 @@ abstract class XmppFeatureNegotiatorBase {
 
   /// The Id of the negotiator
   final String id;
-  
+
   /// The state the negotiator is currently in
   NegotiatorState state;
-  
+
   late NegotiatorAttributes _attributes;
 
   /// Register the negotiator against a connection class by means of [attributes].
   void register(NegotiatorAttributes attributes) {
     _attributes = attributes;
   }
-  
+
   /// Returns true if a feature in [features], which are the children of the
   /// <stream:features /> nonza, can be negotiated. Otherwise, returns false.
   bool matchesFeature(List<XMLNode> features) {
     return firstWhereOrNull(
-      features,
-      (XMLNode feature) => feature.attributes['xmlns'] == negotiatingXmlns,
-    ) != null;
+          features,
+          (XMLNode feature) => feature.attributes['xmlns'] == negotiatingXmlns,
+        ) !=
+        null;
   }
 
   /// Called with the currently received nonza [nonza] when the negotiator is active.
@@ -105,6 +119,6 @@ abstract class XmppFeatureNegotiatorBase {
   void reset() {
     state = NegotiatorState.ready;
   }
-  
+
   NegotiatorAttributes get attributes => _attributes;
 }

@@ -80,12 +80,16 @@ class StreamManagementManager extends XmppManagerBase {
   bool shouldTriggerAckedEvent(Stanza stanza) {
     return false;
   }
-  
+
   @override
   Future<bool> isSupported() async {
-    return getAttributes().getNegotiatorById<StreamManagementNegotiator>(streamManagementNegotiator)!.isSupported;
+    return getAttributes()
+        .getNegotiatorById<StreamManagementNegotiator>(
+          streamManagementNegotiator,
+        )!
+        .isSupported;
   }
-  
+
   /// Returns the amount of stanzas waiting to get acked
   int getUnackedStanzaCount() => _unackedStanzas.length;
 
@@ -117,40 +121,40 @@ class StreamManagementManager extends XmppManagerBase {
       _pendingAcks = 0;
     });
   }
-  
+
   StreamManagementState get state => _state;
 
   bool get streamResumed => _streamResumed;
 
   @override
   List<NonzaHandler> getNonzaHandlers() => [
-    NonzaHandler(
-      nonzaTag: 'r',
-      nonzaXmlns: smXmlns,
-      callback: _handleAckRequest,
-    ),
-    NonzaHandler(
-      nonzaTag: 'a',
-      nonzaXmlns: smXmlns,
-      callback: _handleAckResponse,
-    )
-  ];
+        NonzaHandler(
+          nonzaTag: 'r',
+          nonzaXmlns: smXmlns,
+          callback: _handleAckRequest,
+        ),
+        NonzaHandler(
+          nonzaTag: 'a',
+          nonzaXmlns: smXmlns,
+          callback: _handleAckResponse,
+        )
+      ];
 
   @override
   List<StanzaHandler> getIncomingPreStanzaHandlers() => [
-    StanzaHandler(
-      callback: _onServerStanzaReceived,
-      priority: 9999,
-    )
-  ];
+        StanzaHandler(
+          callback: _onServerStanzaReceived,
+          priority: 9999,
+        )
+      ];
 
   @override
   List<StanzaHandler> getOutgoingPostStanzaHandlers() => [
-    StanzaHandler(
-      callback: _onClientStanzaSent,
-    )
-  ];
-  
+        StanzaHandler(
+          callback: _onClientStanzaSent,
+        )
+      ];
+
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
     if (event is StreamResumedEvent) {
@@ -181,17 +185,17 @@ class StreamManagementManager extends XmppManagerBase {
       _streamResumed = false;
     } else if (event is ConnectionStateChangedEvent) {
       switch (event.state) {
-      case XmppConnectionState.connected:
-        // Push out all pending stanzas
-        await onStreamResumed(0);
-        break;
-      case XmppConnectionState.error:
-      case XmppConnectionState.notConnected:
-        _stopAckTimer();
-        break;
-      case XmppConnectionState.connecting:
-        // NOOP
-        break;
+        case XmppConnectionState.connected:
+          // Push out all pending stanzas
+          await onStreamResumed(0);
+          break;
+        case XmppConnectionState.error:
+        case XmppConnectionState.notConnected:
+          _stopAckTimer();
+          break;
+        case XmppConnectionState.connecting:
+          // NOOP
+          break;
       }
     }
   }
@@ -223,7 +227,8 @@ class StreamManagementManager extends XmppManagerBase {
     _ackLock.synchronized(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
 
-      if (now - _lastAckTimestamp >= ackTimeout.inMilliseconds && _pendingAcks > 0) {
+      if (now - _lastAckTimestamp >= ackTimeout.inMilliseconds &&
+          _pendingAcks > 0) {
         _stopAckTimer();
         await getAttributes().getConnection().reconnectionPolicy.onFailure();
       }
@@ -242,13 +247,13 @@ class StreamManagementManager extends XmppManagerBase {
       _startAckTimer();
 
       logger.fine('_pendingAcks is now at $_pendingAcks');
-      
+
       getAttributes().sendNonza(StreamManagementRequestNonza());
-      
+
       logger.fine('_sendAckRequest: Releasing lock...');
-    }); 
+    });
   }
-  
+
   /// Resets the enablement of stream management, but __NOT__ the internal state.
   /// This is to prevent ack requests being sent before we resume or re-enable
   /// stream management.
@@ -256,13 +261,13 @@ class StreamManagementManager extends XmppManagerBase {
     _streamManagementEnabled = false;
     logger.finest('Stream Management disabled');
   }
-  
+
   /// Enables support for XEP-0198 stream management
   void _enableStreamManagement() {
     _streamManagementEnabled = true;
     logger.finest('Stream Management enabled');
   }
-  
+
   /// Returns whether XEP-0198 stream management is enabled
   bool isStreamManagementEnabled() => _streamManagementEnabled;
 
@@ -295,42 +300,44 @@ class StreamManagementManager extends XmppManagerBase {
         logger.fine('_pendingAcks is now at $_pendingAcks');
       });
     });
-    
+
     // Return early if we acked nothing.
     // Taken from slixmpp's stream management code
     logger.fine('_handleAckResponse: Waiting to aquire lock...');
     await _stateLock.synchronized(() async {
-        logger.fine('_handleAckResponse: Done...');
-        if (h == _state.c2s && _unackedStanzas.isEmpty) {
-          logger.fine('_handleAckResponse: Releasing lock...');
-          return;
-        }
-
-        final attrs = getAttributes();
-        final sequences = _unackedStanzas.keys.toList()..sort();
-        for (final height in sequences) {
-          // Do nothing if the ack does not concern this stanza
-          if (height > h) continue;
-
-          final stanza = _unackedStanzas[height]!;
-          _unackedStanzas.remove(height);
-
-          // Create a StanzaAckedEvent if the stanza is correct
-          if (shouldTriggerAckedEvent(stanza)) {
-            attrs.sendEvent(StanzaAckedEvent(stanza));
-          }
-        }
-
-        if (h > _state.c2s) {
-          logger.info('C2S height jumped from ${_state.c2s} (local) to $h (remote).');
-          // ignore: cascade_invocations
-          logger.info('Proceeding with $h as local C2S counter.');
-
-          _state = _state.copyWith(c2s: h);
-          await commitState();
-        }
-
+      logger.fine('_handleAckResponse: Done...');
+      if (h == _state.c2s && _unackedStanzas.isEmpty) {
         logger.fine('_handleAckResponse: Releasing lock...');
+        return;
+      }
+
+      final attrs = getAttributes();
+      final sequences = _unackedStanzas.keys.toList()..sort();
+      for (final height in sequences) {
+        // Do nothing if the ack does not concern this stanza
+        if (height > h) continue;
+
+        final stanza = _unackedStanzas[height]!;
+        _unackedStanzas.remove(height);
+
+        // Create a StanzaAckedEvent if the stanza is correct
+        if (shouldTriggerAckedEvent(stanza)) {
+          attrs.sendEvent(StanzaAckedEvent(stanza));
+        }
+      }
+
+      if (h > _state.c2s) {
+        logger.info(
+          'C2S height jumped from ${_state.c2s} (local) to $h (remote).',
+        );
+        // ignore: cascade_invocations
+        logger.info('Proceeding with $h as local C2S counter.');
+
+        _state = _state.copyWith(c2s: h);
+        await commitState();
+      }
+
+      logger.fine('_handleAckResponse: Releasing lock...');
     });
 
     return true;
@@ -340,33 +347,40 @@ class StreamManagementManager extends XmppManagerBase {
   Future<void> _incrementC2S() async {
     logger.fine('_incrementC2S: Waiting to aquire lock...');
     await _stateLock.synchronized(() async {
-        logger.fine('_incrementC2S: Done');
-        _state = _state.copyWith(c2s: _state.c2s + 1 % xmlUintMax);
-        await commitState();
-        logger.fine('_incrementC2S: Releasing lock...');
+      logger.fine('_incrementC2S: Done');
+      _state = _state.copyWith(c2s: _state.c2s + 1 % xmlUintMax);
+      await commitState();
+      logger.fine('_incrementC2S: Releasing lock...');
     });
   }
+
   Future<void> _incrementS2C() async {
     logger.fine('_incrementS2C: Waiting to aquire lock...');
     await _stateLock.synchronized(() async {
-        logger.fine('_incrementS2C: Done');
-        _state = _state.copyWith(s2c: _state.s2c + 1 % xmlUintMax);
-        await commitState();
-        logger.fine('_incrementS2C: Releasing lock...');
+      logger.fine('_incrementS2C: Done');
+      _state = _state.copyWith(s2c: _state.s2c + 1 % xmlUintMax);
+      await commitState();
+      logger.fine('_incrementS2C: Releasing lock...');
     });
   }
-  
+
   /// Called whenever we receive a stanza from the server.
-  Future<StanzaHandlerData> _onServerStanzaReceived(Stanza stanza, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onServerStanzaReceived(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     await _incrementS2C();
     return state;
   }
 
   /// Called whenever we send a stanza.
-  Future<StanzaHandlerData> _onClientStanzaSent(Stanza stanza, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onClientStanzaSent(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     await _incrementC2S();
     _unackedStanzas[_state.c2s] = stanza;
-    
+
     if (isStreamManagementEnabled()) {
       await _sendAckRequest();
     }
@@ -382,7 +396,7 @@ class StreamManagementManager extends XmppManagerBase {
 
     final stanzas = _unackedStanzas.values.toList();
     _unackedStanzas.clear();
-    
+
     // Retransmit the rest of the queue
     final attrs = getAttributes();
     for (final stanza in stanzas) {

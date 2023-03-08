@@ -38,10 +38,18 @@ SFSEncryptionType encryptionTypeFromNamespace(String xmlns) {
 }
 
 class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
-
-  StatelessFileSharingEncryptedSource(this.encryption, this.key, this.iv, this.hashes, this.source);
+  StatelessFileSharingEncryptedSource(
+    this.encryption,
+    this.key,
+    this.iv,
+    this.hashes,
+    this.source,
+  );
   factory StatelessFileSharingEncryptedSource.fromXml(XMLNode element) {
-    assert(element.attributes['xmlns'] == sfsEncryptionXmlns, 'Element has invalid xmlns');
+    assert(
+      element.attributes['xmlns'] == sfsEncryptionXmlns,
+      'Element has invalid xmlns',
+    );
 
     final key = base64Decode(element.firstTag('key')!.text!);
     final iv = base64Decode(element.firstTag('iv')!.text!);
@@ -50,7 +58,8 @@ class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
     // Find the first URL source
     final source = firstWhereOrNull(
       sources,
-      (XMLNode child) => child.tag == 'url-data' && child.attributes['xmlns'] == urlDataXmlns,
+      (XMLNode child) =>
+          child.tag == 'url-data' && child.attributes['xmlns'] == urlDataXmlns,
     )!;
 
     // Find hashes
@@ -58,7 +67,7 @@ class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
     for (final hash in element.findTags('hash', xmlns: hashXmlns)) {
       hashes[hash.attributes['algo']! as String] = hash.text!;
     }
-    
+
     return StatelessFileSharingEncryptedSource(
       encryptionTypeFromNamespace(element.attributes['cipher']! as String),
       key,
@@ -67,7 +76,7 @@ class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
       StatelessFileSharingUrlSource.fromXml(source),
     );
   }
-  
+
   final List<int> key;
   final List<int> iv;
   final SFSEncryptionType encryption;
@@ -91,7 +100,8 @@ class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
           tag: 'iv',
           text: base64Encode(iv),
         ),
-        ...hashes.entries.map((hash) => constructHashElement(hash.key, hash.value)),
+        ...hashes.entries
+            .map((hash) => constructHashElement(hash.key, hash.value)),
         XMLNode.xmlns(
           tag: 'sources',
           xmlns: sfsXmlns,

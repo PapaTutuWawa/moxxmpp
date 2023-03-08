@@ -18,7 +18,13 @@ import 'package:moxxmpp/src/types/result.dart';
 
 @immutable
 class XmppRosterItem {
-  const XmppRosterItem({ required this.jid, required this.subscription, this.ask, this.name, this.groups = const [] });
+  const XmppRosterItem({
+    required this.jid,
+    required this.subscription,
+    this.ask,
+    this.name,
+    this.groups = const [],
+  });
   final String jid;
   final String? name;
   final String subscription;
@@ -26,34 +32,35 @@ class XmppRosterItem {
   final List<String> groups;
 
   @override
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     return other is XmppRosterItem &&
-           other.jid == jid &&
-           other.name == name &&
-           other.subscription == subscription &&
-           other.ask == ask &&
-           const ListEquality<String>().equals(other.groups, groups);
+        other.jid == jid &&
+        other.name == name &&
+        other.subscription == subscription &&
+        other.ask == ask &&
+        const ListEquality<String>().equals(other.groups, groups);
   }
 
   @override
-  int get hashCode => jid.hashCode ^ name.hashCode ^ subscription.hashCode ^ ask.hashCode ^ groups.hashCode;
-  
+  int get hashCode =>
+      jid.hashCode ^
+      name.hashCode ^
+      subscription.hashCode ^
+      ask.hashCode ^
+      groups.hashCode;
+
   @override
   String toString() {
     return 'XmppRosterItem('
-           'jid: $jid, '
-           'name: $name, '
-           'subscription: $subscription, '
-           'ask: $ask, '
-           'groups: $groups)';
+        'jid: $jid, '
+        'name: $name, '
+        'subscription: $subscription, '
+        'ask: $ask, '
+        'groups: $groups)';
   }
 }
 
-enum RosterRemovalResult {
-  okay,
-  error,
-  itemNotFound
-}
+enum RosterRemovalResult { okay, error, itemNotFound }
 
 class RosterRequestResult {
   RosterRequestResult(this.items, this.ver);
@@ -69,14 +76,18 @@ class RosterPushResult {
 
 /// A Stub feature negotiator for finding out whether roster versioning is supported.
 class RosterFeatureNegotiator extends XmppFeatureNegotiatorBase {
-  RosterFeatureNegotiator() : _supported = false, super(11, false, rosterVersioningXmlns, rosterNegotiator);
+  RosterFeatureNegotiator()
+      : _supported = false,
+        super(11, false, rosterVersioningXmlns, rosterNegotiator);
 
   /// True if rosterVersioning is supported. False otherwise.
   bool _supported;
   bool get isSupported => _supported;
-  
+
   @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
     // negotiate is only called when the negotiator matched, meaning the server
     // advertises roster versioning.
     _supported = true;
@@ -101,23 +112,26 @@ class RosterManager extends XmppManagerBase {
   @override
   void register(XmppManagerAttributes attributes) {
     super.register(attributes);
-    _stateManager.register(attributes.sendEvent); 
+    _stateManager.register(attributes.sendEvent);
   }
-  
+
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'iq',
-      tagName: 'query',
-      tagXmlns: rosterXmlns,
-      callback: _onRosterPush,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'iq',
+          tagName: 'query',
+          tagXmlns: rosterXmlns,
+          callback: _onRosterPush,
+        )
+      ];
 
   @override
-  Future<bool> isSupported() async => true; 
+  Future<bool> isSupported() async => true;
 
-  Future<StanzaHandlerData> _onRosterPush(Stanza stanza, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onRosterPush(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     final attrs = getAttributes();
     final from = stanza.attributes['from'] as String?;
     final selfJid = attrs.getConnectionSettings().jid;
@@ -128,7 +142,9 @@ class RosterManager extends XmppManagerBase {
     // - empty, i.e. not set
     // - a full JID of our own
     if (from != null && JID.fromString(from).toBare() != selfJid) {
-      logger.warning('Roster push invalid! Unexpected from attribute: ${stanza.toXml()}');
+      logger.warning(
+        'Roster push invalid! Unexpected from attribute: ${stanza.toXml()}',
+      );
       return state.copyWith(done: true);
     }
 
@@ -148,13 +164,13 @@ class RosterManager extends XmppManagerBase {
             jid: item.attributes['jid']! as String,
             subscription: item.attributes['subscription']! as String,
             ask: item.attributes['ask'] as String?,
-            name: item.attributes['name'] as String?, 
+            name: item.attributes['name'] as String?,
           ),
           query.attributes['ver'] as String?,
         ),
       ),
     );
-    
+
     await reply(
       state,
       'result',
@@ -166,23 +182,32 @@ class RosterManager extends XmppManagerBase {
 
   /// Shared code between requesting rosters without and with roster versioning, if
   /// the server deems a regular roster response more efficient than n roster pushes.
-  Future<Result<RosterRequestResult, RosterError>> _handleRosterResponse(XMLNode? query) async {
+  Future<Result<RosterRequestResult, RosterError>> _handleRosterResponse(
+    XMLNode? query,
+  ) async {
     final List<XmppRosterItem> items;
     String? rosterVersion;
     if (query != null) {
-      items = query.children.map(
-        (item) => XmppRosterItem(
-          name: item.attributes['name'] as String?,
-          jid: item.attributes['jid']! as String,
-          subscription: item.attributes['subscription']! as String,
-          ask: item.attributes['ask'] as String?,
-          groups: item.findTags('group').map((groupNode) => groupNode.innerText()).toList(),
-        ),
-      ).toList();
+      items = query.children
+          .map(
+            (item) => XmppRosterItem(
+              name: item.attributes['name'] as String?,
+              jid: item.attributes['jid']! as String,
+              subscription: item.attributes['subscription']! as String,
+              ask: item.attributes['ask'] as String?,
+              groups: item
+                  .findTags('group')
+                  .map((groupNode) => groupNode.innerText())
+                  .toList(),
+            ),
+          )
+          .toList();
 
       rosterVersion = query.attributes['ver'] as String?;
     } else {
-      logger.warning('Server response to roster request without roster versioning does not contain a <query /> element, while the type is not error. This violates RFC6121');
+      logger.warning(
+        'Server response to roster request without roster versioning does not contain a <query /> element, while the type is not error. This violates RFC6121',
+      );
       return Result(NoQueryError());
     }
 
@@ -197,7 +222,7 @@ class RosterManager extends XmppManagerBase {
 
     return Result(result);
   }
-  
+
   /// Requests the roster following RFC 6121.
   Future<Result<RosterRequestResult, RosterError>> requestRoster() async {
     final attrs = getAttributes();
@@ -230,7 +255,8 @@ class RosterManager extends XmppManagerBase {
 
   /// Requests a series of roster pushes according to RFC6121. Requires that the server
   /// advertises urn:xmpp:features:rosterver in the stream features.
-  Future<Result<RosterRequestResult?, RosterError>> requestRosterPushes() async {
+  Future<Result<RosterRequestResult?, RosterError>>
+      requestRosterPushes() async {
     final attrs = getAttributes();
     final result = await attrs.sendStanza(
       Stanza.iq(
@@ -257,12 +283,18 @@ class RosterManager extends XmppManagerBase {
   }
 
   bool rosterVersioningAvailable() {
-    return getAttributes().getNegotiatorById<RosterFeatureNegotiator>(rosterNegotiator)!.isSupported;
+    return getAttributes()
+        .getNegotiatorById<RosterFeatureNegotiator>(rosterNegotiator)!
+        .isSupported;
   }
-  
+
   /// Attempts to add [jid] with a title of [title] and groups [groups] to the roster.
   /// Returns true if the process was successful, false otherwise.
-  Future<bool> addToRoster(String jid, String title, { List<String>? groups }) async {
+  Future<bool> addToRoster(
+    String jid,
+    String title, {
+    List<String>? groups,
+  }) async {
     final attrs = getAttributes();
     final response = await attrs.sendStanza(
       Stanza.iq(
@@ -276,9 +308,13 @@ class RosterManager extends XmppManagerBase {
                 tag: 'item',
                 attributes: <String, String>{
                   'jid': jid,
-                  ...title == jid.split('@')[0] ? <String, String>{} : <String, String>{ 'name': title }
+                  ...title == jid.split('@')[0]
+                      ? <String, String>{}
+                      : <String, String>{'name': title}
                 },
-                children: (groups ?? []).map((group) => XMLNode(tag: 'group', text: group)).toList(),
+                children: (groups ?? [])
+                    .map((group) => XMLNode(tag: 'group', text: group))
+                    .toList(),
               )
             ],
           )

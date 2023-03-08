@@ -3,14 +3,16 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 class DataFormOption {
-  const DataFormOption({ required this.value, this.label });
+  const DataFormOption({required this.value, this.label});
   final String? label;
   final String value;
 
   XMLNode toXml() {
     return XMLNode(
       tag: 'option',
-      attributes: label != null ? <String, dynamic>{ 'label': label } : <String, dynamic>{},
+      attributes: label != null
+          ? <String, dynamic>{'label': label}
+          : <String, dynamic>{},
       children: [
         XMLNode(
           tag: 'value',
@@ -23,13 +25,13 @@ class DataFormOption {
 
 class DataFormField {
   const DataFormField({
-      required this.options,
-      required this.values,
-      required this.isRequired,
-      this.varAttr,
-      this.type,
-      this.description,
-      this.label,
+    required this.options,
+    required this.values,
+    required this.isRequired,
+    this.varAttr,
+    this.type,
+    this.description,
+    this.label,
   });
   final String? description;
   final bool isRequired;
@@ -43,9 +45,13 @@ class DataFormField {
     return XMLNode(
       tag: 'field',
       attributes: <String, dynamic>{
-        ...varAttr != null ? <String, dynamic>{ 'var': varAttr } : <String, dynamic>{},
-        ...type != null ? <String, dynamic>{ 'type': type } : <String, dynamic>{},
-        ...label != null ? <String, dynamic>{ 'label': label } : <String, dynamic>{}
+        ...varAttr != null
+            ? <String, dynamic>{'var': varAttr}
+            : <String, dynamic>{},
+        ...type != null ? <String, dynamic>{'type': type} : <String, dynamic>{},
+        ...label != null
+            ? <String, dynamic>{'label': label}
+            : <String, dynamic>{}
       },
       children: [
         ...description != null ? [XMLNode(tag: 'desc', text: description)] : [],
@@ -59,12 +65,12 @@ class DataFormField {
 
 class DataForm {
   const DataForm({
-      required this.type,
-      required this.instructions,
-      required this.fields,
-      required this.reported,
-      required this.items,
-      this.title,
+    required this.type,
+    required this.instructions,
+    required this.fields,
+    required this.reported,
+    required this.items,
+    this.title,
   });
   final String type;
   final String? title;
@@ -76,23 +82,23 @@ class DataForm {
   DataFormField? getFieldByVar(String varAttr) {
     return firstWhereOrNull(fields, (field) => field.varAttr == varAttr);
   }
-  
+
   XMLNode toXml() {
     return XMLNode.xmlns(
       tag: 'x',
       xmlns: dataFormsXmlns,
-      attributes: {
-        'type': type
-      },
+      attributes: {'type': type},
       children: [
         ...instructions.map((i) => XMLNode(tag: 'instruction', text: i)),
         ...title != null ? [XMLNode(tag: 'title', text: title)] : [],
         ...fields.map((field) => field.toXml()),
         ...reported.map((report) => report.toXml()),
-        ...items.map((item) => XMLNode(
-              tag: 'item',
-              children: item.map((i) => i.toXml()).toList(),
-          ),),
+        ...items.map(
+          (item) => XMLNode(
+            tag: 'item',
+            children: item.map((i) => i.toXml()).toList(),
+          ),
+        ),
       ],
     );
   }
@@ -128,10 +134,19 @@ DataForm parseDataForm(XMLNode x) {
 
   final type = x.attributes['type']! as String;
   final title = x.firstTag('title')?.innerText();
-  final instructions = x.findTags('instructions').map((i) => i.innerText()).toList();
+  final instructions =
+      x.findTags('instructions').map((i) => i.innerText()).toList();
   final fields = x.findTags('field').map(_parseDataFormField).toList();
-  final reported = x.firstTag('reported')?.findTags('field').map((i) => _parseDataFormField(i.firstTag('field')!)).toList() ?? [];
-  final items = x.findTags('item').map((i) => i.findTags('field').map(_parseDataFormField).toList()).toList();
+  final reported = x
+          .firstTag('reported')
+          ?.findTags('field')
+          .map((i) => _parseDataFormField(i.firstTag('field')!))
+          .toList() ??
+      [];
+  final items = x
+      .findTags('item')
+      .map((i) => i.findTags('field').map(_parseDataFormField).toList())
+      .toList();
 
   return DataForm(
     type: type,

@@ -1,6 +1,1 @@
-enum RoutingState {
-  error,
-  preConnection,
-  negotiating,
-  handleStanzas
-}
+enum RoutingState { error, preConnection, negotiating, handleStanzas }

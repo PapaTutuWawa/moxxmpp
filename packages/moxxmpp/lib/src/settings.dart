@@ -1,8 +1,12 @@
 import 'package:moxxmpp/src/jid.dart';
 
 class ConnectionSettings {
-
-  ConnectionSettings({ required this.jid, required this.password, required this.useDirectTLS, required this.allowPlainAuth });
+  ConnectionSettings({
+    required this.jid,
+    required this.password,
+    required this.useDirectTLS,
+    required this.allowPlainAuth,
+  });
   final JID jid;
   final String password;
   final bool useDirectTLS;

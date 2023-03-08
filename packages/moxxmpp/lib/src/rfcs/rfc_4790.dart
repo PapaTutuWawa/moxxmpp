@@ -21,7 +21,7 @@ int ioctetSortComparator(String a, String b) {
   if (a.codeUnitAt(0) < b.codeUnitAt(0)) {
     return -1;
   }
-  
+
   return 1;
 }
 
@@ -46,6 +46,6 @@ int ioctetSortComparatorRaw(List<int> a, List<int> b) {
   if (a[0] < b[0]) {
     return -1;
   }
-  
+
   return 1;
 }

@@ -15,7 +15,7 @@ abstract class AvatarError {}
 class UnknownAvatarError extends AvatarError {}
 
 class UserAvatar {
-  const UserAvatar({ required this.base64, required this.hash });
+  const UserAvatar({required this.base64, required this.hash});
   final String base64;
   final String hash;
 }
@@ -47,8 +47,9 @@ class UserAvatarMetadata {
 class UserAvatarManager extends XmppManagerBase {
   UserAvatarManager() : super(userAvatarManager);
 
-  PubSubManager _getPubSubManager() => getAttributes().getManagerById(pubsubManager)! as PubSubManager;
-  
+  PubSubManager _getPubSubManager() =>
+      getAttributes().getManagerById(pubsubManager)! as PubSubManager;
+
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
     if (event is PubSubNotificationEvent) {
@@ -56,7 +57,9 @@ class UserAvatarManager extends XmppManagerBase {
 
       if (event.item.payload.tag != 'data' ||
           event.item.payload.attributes['xmlns'] != userAvatarDataXmlns) {
-        logger.warning('Received avatar update from ${event.from} but the payload is invalid. Ignoring...');
+        logger.warning(
+          'Received avatar update from ${event.from} but the payload is invalid. Ignoring...',
+        );
         return;
       }
 
@@ -96,7 +99,11 @@ class UserAvatarManager extends XmppManagerBase {
   /// Publish the avatar data, [base64], on the pubsub node using [hash] as
   /// the item id. [hash] must be the SHA-1 hash of the image data, while
   /// [base64] must be the base64-encoded version of the image data.
-  Future<Result<AvatarError, bool>> publishUserAvatar(String base64, String hash, bool public) async {
+  Future<Result<AvatarError, bool>> publishUserAvatar(
+    String base64,
+    String hash,
+    bool public,
+  ) async {
     final pubsub = _getPubSubManager();
     final result = await pubsub.publish(
       getAttributes().getFullJID().toBare().toString(),
@@ -113,14 +120,17 @@ class UserAvatarManager extends XmppManagerBase {
     );
 
     if (result.isType<PubSubError>()) return Result(UnknownAvatarError());
-    
+
     return const Result(true);
   }
 
   /// Publish avatar metadata [metadata] to the User Avatar's metadata node. If [public]
   /// is true, then the node will be set to an 'open' access model. If [public] is false,
   /// then the node will be set to an 'roster' access model.
-  Future<Result<AvatarError, bool>> publishUserAvatarMetadata(UserAvatarMetadata metadata, bool public) async {
+  Future<Result<AvatarError, bool>> publishUserAvatarMetadata(
+    UserAvatarMetadata metadata,
+    bool public,
+  ) async {
     final pubsub = _getPubSubManager();
     final result = await pubsub.publish(
       getAttributes().getFullJID().toBare().toString(),
@@ -150,7 +160,7 @@ class UserAvatarManager extends XmppManagerBase {
     if (result.isType<PubSubError>()) return Result(UnknownAvatarError());
     return const Result(true);
   }
-  
+
   /// Subscribe the data and metadata node of [jid].
   Future<Result<AvatarError, bool>> subscribe(String jid) async {
     await _getPubSubManager().subscribe(jid, userAvatarDataXmlns);
@@ -172,7 +182,11 @@ class UserAvatarManager extends XmppManagerBase {
   /// the node.
   Future<Result<AvatarError, String>> getAvatarId(String jid) async {
     final disco = getAttributes().getManagerById(discoManager)! as DiscoManager;
-    final response = await disco.discoItemsQuery(jid, node: userAvatarDataXmlns, shouldEncrypt: false);
+    final response = await disco.discoItemsQuery(
+      jid,
+      node: userAvatarDataXmlns,
+      shouldEncrypt: false,
+    );
     if (response.isType<DiscoError>()) return Result(UnknownAvatarError());
 
     final items = response.get<List<DiscoItem>>();

@@ -80,54 +80,58 @@ class MessageManager extends XmppManagerBase {
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      callback: _onMessage,
-      priority: -100,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          callback: _onMessage,
+          priority: -100,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
-  
-  Future<StanzaHandlerData> _onMessage(Stanza _, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessage(
+    Stanza _,
+    StanzaHandlerData state,
+  ) async {
     final message = state.stanza;
     final body = message.firstTag('body');
 
     final hints = List<MessageProcessingHint>.empty(growable: true);
-    for (final element in message.findTagsByXmlns(messageProcessingHintsXmlns)) {
-      hints.add(messageProcessingHintFromXml(element)); 
+    for (final element
+        in message.findTagsByXmlns(messageProcessingHintsXmlns)) {
+      hints.add(messageProcessingHintFromXml(element));
     }
-    
-    getAttributes().sendEvent(MessageEvent(
-      body: body != null ? body.innerText() : '',
-      fromJid: JID.fromString(message.attributes['from']! as String),
-      toJid: JID.fromString(message.attributes['to']! as String),
-      sid: message.attributes['id']! as String,
-      stanzaId: state.stableId ?? const StableStanzaId(),
-      isCarbon: state.isCarbon,
-      deliveryReceiptRequested: state.deliveryReceiptRequested,
-      isMarkable: state.isMarkable,
-      type: message.attributes['type'] as String?,
-      oob: state.oob,
-      sfs: state.sfs,
-      sims: state.sims,
-      reply: state.reply,
-      chatState: state.chatState,
-      fun: state.fun,
-      funReplacement: state.funReplacement,
-      funCancellation: state.funCancellation,
-      encrypted: state.encrypted,
-      messageRetraction: state.messageRetraction,
-      messageCorrectionId: state.lastMessageCorrectionSid,
-      messageReactions: state.messageReactions,
-      messageProcessingHints: hints.isEmpty ?
-        null :
-        hints,
-      stickerPackId: state.stickerPackId,
-      other: state.other,
-      error: StanzaError.fromStanza(message),
-    ),);
+
+    getAttributes().sendEvent(
+      MessageEvent(
+        body: body != null ? body.innerText() : '',
+        fromJid: JID.fromString(message.attributes['from']! as String),
+        toJid: JID.fromString(message.attributes['to']! as String),
+        sid: message.attributes['id']! as String,
+        stanzaId: state.stableId ?? const StableStanzaId(),
+        isCarbon: state.isCarbon,
+        deliveryReceiptRequested: state.deliveryReceiptRequested,
+        isMarkable: state.isMarkable,
+        type: message.attributes['type'] as String?,
+        oob: state.oob,
+        sfs: state.sfs,
+        sims: state.sims,
+        reply: state.reply,
+        chatState: state.chatState,
+        fun: state.fun,
+        funReplacement: state.funReplacement,
+        funCancellation: state.funCancellation,
+        encrypted: state.encrypted,
+        messageRetraction: state.messageRetraction,
+        messageCorrectionId: state.lastMessageCorrectionSid,
+        messageReactions: state.messageReactions,
+        messageProcessingHints: hints.isEmpty ? null : hints,
+        stickerPackId: state.stickerPackId,
+        other: state.other,
+        error: StanzaError.fromStanza(message),
+      ),
+    );
 
     return state.copyWith(done: true);
   }
@@ -139,7 +143,10 @@ class MessageManager extends XmppManagerBase {
   /// child in the message stanza and set its id to originId.
   void sendMessage(MessageDetails details) {
     assert(
-      implies(details.quoteBody != null, details.quoteFrom != null && details.quoteId != null),
+      implies(
+        details.quoteBody != null,
+        details.quoteFrom != null && details.quoteId != null,
+      ),
       'When quoting a message, then quoteFrom and quoteId must also be non-null',
     );
 
@@ -152,7 +159,7 @@ class MessageManager extends XmppManagerBase {
 
     if (details.quoteBody != null) {
       final quote = QuoteData.fromBodies(details.quoteBody!, details.body!);
-        
+
       stanza
         ..addChild(
           XMLNode(tag: 'body', text: quote.body),
@@ -161,19 +168,14 @@ class MessageManager extends XmppManagerBase {
           XMLNode.xmlns(
             tag: 'reply',
             xmlns: replyXmlns,
-            attributes: {
-              'to': details.quoteFrom!,
-              'id': details.quoteId!
-            },
+            attributes: {'to': details.quoteFrom!, 'id': details.quoteId!},
           ),
         )
         ..addChild(
           XMLNode.xmlns(
             tag: 'fallback',
             xmlns: fallbackXmlns,
-            attributes: {
-              'for': replyXmlns
-            },
+            attributes: {'for': replyXmlns},
             children: [
               XMLNode(
                 tag: 'body',
@@ -220,16 +222,20 @@ class MessageManager extends XmppManagerBase {
       stanza.addChild(details.sfs!.toXML());
 
       final source = details.sfs!.sources.first;
-      if (source is StatelessFileSharingUrlSource && details.setOOBFallbackBody) {
+      if (source is StatelessFileSharingUrlSource &&
+          details.setOOBFallbackBody) {
         // SFS recommends OOB as a fallback
         stanza.addChild(constructOOBNode(OOBData(url: source.url)));
       }
     }
-    
+
     if (details.chatState != null) {
       stanza.addChild(
         // TODO(Unknown): Move this into xep_0085.dart
-        XMLNode.xmlns(tag: chatStateToString(details.chatState!), xmlns: chatStateXmlns),
+        XMLNode.xmlns(
+          tag: chatStateToString(details.chatState!),
+          xmlns: chatStateXmlns,
+        ),
       );
     }
 
@@ -295,7 +301,7 @@ class MessageManager extends XmppManagerBase {
     if (details.messageReactions != null) {
       stanza.addChild(details.messageReactions!.toXml());
     }
-    
+
     if (details.messageProcessingHints != null) {
       for (final hint in details.messageProcessingHints!) {
         stanza.addChild(hint.toXml());
@@ -313,7 +319,7 @@ class MessageManager extends XmppManagerBase {
         ),
       );
     }
-    
+
     getAttributes().sendStanza(stanza, awaitable: false);
   }
 }

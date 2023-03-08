@@ -8,7 +8,7 @@ import 'package:moxxmpp/src/stringxml.dart';
 
 /// A data class representing the jabber:x:oob tag.
 class OOBData {
-  const OOBData({ this.url, this.desc });
+  const OOBData({this.url, this.desc});
   final String? url;
   final String? desc;
 }
@@ -22,7 +22,7 @@ XMLNode constructOOBNode(OOBData data) {
   if (data.desc != null) {
     children.add(XMLNode(tag: 'desc', text: data.desc));
   }
-  
+
   return XMLNode.xmlns(
     tag: 'x',
     xmlns: oobDataXmlns,
@@ -34,24 +34,27 @@ class OOBManager extends XmppManagerBase {
   OOBManager() : super(oobManager);
 
   @override
-  List<String> getDiscoFeatures() => [ oobDataXmlns ];
+  List<String> getDiscoFeatures() => [oobDataXmlns];
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      tagName: 'x',
-      tagXmlns: oobDataXmlns,
-      callback: _onMessage,
-      // Before the message manager
-      priority: -99,
-    )
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagName: 'x',
+          tagXmlns: oobDataXmlns,
+          callback: _onMessage,
+          // Before the message manager
+          priority: -99,
+        )
+      ];
 
   @override
   Future<bool> isSupported() async => true;
-  
-  Future<StanzaHandlerData> _onMessage(Stanza message, StanzaHandlerData state) async {
+
+  Future<StanzaHandlerData> _onMessage(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final x = message.firstTag('x', xmlns: oobDataXmlns)!;
     final url = x.firstTag('url');
     final desc = x.firstTag('desc');

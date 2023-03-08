@@ -35,15 +35,18 @@ abstract class ReconnectionPolicy {
   /// The lock for accessing [_shouldAttemptReconnection]
   @protected
   final Lock shouldReconnectLock = Lock();
-  
+
   /// Called by XmppConnection to register the policy.
-  void register(PerformReconnectFunction performReconnect, ConnectionLostCallback triggerConnectionLost) {
+  void register(
+    PerformReconnectFunction performReconnect,
+    ConnectionLostCallback triggerConnectionLost,
+  ) {
     this.performReconnect = performReconnect;
     this.triggerConnectionLost = triggerConnectionLost;
 
     unawaited(reset());
   }
-  
+
   /// In case the policy depends on some internal state, this state must be reset
   /// to an initial state when reset is called. In case timers run, they must be
   /// terminated.
@@ -61,7 +64,8 @@ abstract class ReconnectionPolicy {
 
   /// Set whether a reconnection attempt should be made.
   Future<void> setShouldReconnect(bool value) async {
-    return shouldReconnectLock.synchronized(() => _shouldAttemptReconnection = value);
+    return shouldReconnectLock
+        .synchronized(() => _shouldAttemptReconnection = value);
   }
 
   /// Returns true if the manager is currently triggering a reconnection. If not, returns
@@ -77,7 +81,6 @@ abstract class ReconnectionPolicy {
       isReconnecting = value;
     });
   }
-
 }
 
 /// A simple reconnection strategy: Make the reconnection delays exponentially longer
@@ -87,8 +90,11 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
   RandomBackoffReconnectionPolicy(
     this._minBackoffTime,
     this._maxBackoffTime,
-  ) : assert(_minBackoffTime < _maxBackoffTime, '_minBackoffTime must be smaller than _maxBackoffTime'),
-      super();
+  )   : assert(
+          _minBackoffTime < _maxBackoffTime,
+          '_minBackoffTime must be smaller than _maxBackoffTime',
+        ),
+        super();
 
   /// The maximum time in seconds that a backoff should be.
   final int _maxBackoffTime;
@@ -113,12 +119,16 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
     await lock.synchronized(() async {
       _log.fine('Lock aquired');
       if (!(await getShouldReconnect())) {
-        _log.fine('Backoff timer expired but getShouldReconnect() returned false');
+        _log.fine(
+          'Backoff timer expired but getShouldReconnect() returned false',
+        );
         return;
       }
 
       if (isReconnecting) {
-        _log.fine('Backoff timer expired but a reconnection is running, so doing nothing.');
+        _log.fine(
+          'Backoff timer expired but a reconnection is running, so doing nothing.',
+        );
         return;
       }
 
@@ -143,7 +153,7 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
 
     await setIsReconnecting(false);
   }
-  
+
   @override
   Future<void> reset() async {
     // ignore: unnecessary_lambdas
@@ -155,17 +165,20 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
       return _timer == null;
     });
     if (!shouldContinue) {
-      _log.finest('_onFailure: Not backing off since _timer is already running');
+      _log.finest(
+        '_onFailure: Not backing off since _timer is already running',
+      );
       return;
     }
 
-    final seconds = Random().nextInt(_maxBackoffTime - _minBackoffTime) + _minBackoffTime;
+    final seconds =
+        Random().nextInt(_maxBackoffTime - _minBackoffTime) + _minBackoffTime;
     _log.finest('Failure occured. Starting random backoff with ${seconds}s');
     _timer?.cancel();
 
     _timer = Timer(Duration(seconds: seconds), _onTimerElapsed);
   }
-  
+
   @override
   Future<void> onFailure() async {
     // ignore: unnecessary_lambdas
@@ -199,7 +212,7 @@ class TestingReconnectionPolicy extends ReconnectionPolicy {
 class TestingSleepReconnectionPolicy extends ReconnectionPolicy {
   TestingSleepReconnectionPolicy(this._sleepAmount) : super();
   final int _sleepAmount;
-  
+
   @override
   Future<void> onSuccess() async {}
 

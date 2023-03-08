@@ -21,14 +21,17 @@ class DelayedDeliveryManager extends XmppManagerBase {
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      stanzaTag: 'message',
-      callback: _onIncomingMessage,
-      priority: 200,
-    ),
-  ];
+        StanzaHandler(
+          stanzaTag: 'message',
+          callback: _onIncomingMessage,
+          priority: 200,
+        ),
+      ];
 
-  Future<StanzaHandlerData> _onIncomingMessage(Stanza stanza, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onIncomingMessage(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
     final delay = stanza.firstTag('delay', xmlns: delayedDeliveryXmlns);
     if (delay == null) return state;
 

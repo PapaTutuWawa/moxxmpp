@@ -18,25 +18,39 @@ enum ExplicitEncryptionType {
 
 String _explicitEncryptionTypeToString(ExplicitEncryptionType type) {
   switch (type) {
-    case ExplicitEncryptionType.otr: return emeOtr;
-    case ExplicitEncryptionType.legacyOpenPGP: return emeLegacyOpenPGP;
-    case ExplicitEncryptionType.openPGP: return emeOpenPGP;
-    case ExplicitEncryptionType.omemo: return emeOmemo;
-    case ExplicitEncryptionType.omemo1: return emeOmemo1;
-    case ExplicitEncryptionType.omemo2: return emeOmemo2;
-    case ExplicitEncryptionType.unknown: return '';
+    case ExplicitEncryptionType.otr:
+      return emeOtr;
+    case ExplicitEncryptionType.legacyOpenPGP:
+      return emeLegacyOpenPGP;
+    case ExplicitEncryptionType.openPGP:
+      return emeOpenPGP;
+    case ExplicitEncryptionType.omemo:
+      return emeOmemo;
+    case ExplicitEncryptionType.omemo1:
+      return emeOmemo1;
+    case ExplicitEncryptionType.omemo2:
+      return emeOmemo2;
+    case ExplicitEncryptionType.unknown:
+      return '';
   }
 }
 
 ExplicitEncryptionType _explicitEncryptionTypeFromString(String str) {
   switch (str) {
-    case emeOtr: return ExplicitEncryptionType.otr;
-    case emeLegacyOpenPGP: return ExplicitEncryptionType.legacyOpenPGP;
-    case emeOpenPGP: return ExplicitEncryptionType.openPGP;
-    case emeOmemo: return ExplicitEncryptionType.omemo;
-    case emeOmemo1: return ExplicitEncryptionType.omemo1;
-    case emeOmemo2: return ExplicitEncryptionType.omemo2;
-    default: return ExplicitEncryptionType.unknown;
+    case emeOtr:
+      return ExplicitEncryptionType.otr;
+    case emeLegacyOpenPGP:
+      return ExplicitEncryptionType.legacyOpenPGP;
+    case emeOpenPGP:
+      return ExplicitEncryptionType.openPGP;
+    case emeOmemo:
+      return ExplicitEncryptionType.omemo;
+    case emeOmemo1:
+      return ExplicitEncryptionType.omemo1;
+    case emeOmemo2:
+      return ExplicitEncryptionType.omemo2;
+    default:
+      return ExplicitEncryptionType.unknown;
   }
 }
 
@@ -58,20 +72,23 @@ class EmeManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   @override
-  List<String> getDiscoFeatures() => [ emeXmlns ];
-  
+  List<String> getDiscoFeatures() => [emeXmlns];
+
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
-    StanzaHandler(
-      tagName: 'encryption',
-      tagXmlns: emeXmlns,
-      callback: _onStanzaReceived,
-      // Before the message handler
-      priority: -99,
-    ),
-  ];
+        StanzaHandler(
+          tagName: 'encryption',
+          tagXmlns: emeXmlns,
+          callback: _onStanzaReceived,
+          // Before the message handler
+          priority: -99,
+        ),
+      ];
 
-  Future<StanzaHandlerData> _onStanzaReceived(Stanza message, StanzaHandlerData state) async {
+  Future<StanzaHandlerData> _onStanzaReceived(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
     final encryption = message.firstTag('encryption', xmlns: emeXmlns)!;
 
     return state.copyWith(

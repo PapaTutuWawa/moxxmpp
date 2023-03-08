@@ -7,21 +7,19 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
 class CSIActiveNonza extends XMLNode {
-  CSIActiveNonza() : super(
-    tag: 'active',
-    attributes: <String, String>{
-      'xmlns': csiXmlns
-    },
-  );
+  CSIActiveNonza()
+      : super(
+          tag: 'active',
+          attributes: <String, String>{'xmlns': csiXmlns},
+        );
 }
 
 class CSIInactiveNonza extends XMLNode {
-  CSIInactiveNonza() : super(
-    tag: 'inactive',
-    attributes: <String, String>{
-      'xmlns': csiXmlns
-    },
-  );
+  CSIInactiveNonza()
+      : super(
+          tag: 'inactive',
+          attributes: <String, String>{'xmlns': csiXmlns},
+        );
 }
 
 /// A Stub negotiator that is just for "intercepting" the stream feature.
@@ -31,9 +29,11 @@ class CSINegotiator extends XmppFeatureNegotiatorBase {
   /// True if CSI is supported. False otherwise.
   bool _supported = false;
   bool get isSupported => _supported;
-  
+
   @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
     // negotiate is only called when the negotiator matched, meaning the server
     // advertises CSI.
     _supported = true;
@@ -56,9 +56,11 @@ class CSIManager extends XmppManagerBase {
 
   @override
   Future<bool> isSupported() async {
-    return getAttributes().getNegotiatorById<CSINegotiator>(csiNegotiator)!.isSupported;
+    return getAttributes()
+        .getNegotiatorById<CSINegotiator>(csiNegotiator)!
+        .isSupported;
   }
-  
+
   /// To be called after a stream has been resumed as CSI does not
   /// survive a stream resumption.
   void restoreCSIState() {
@@ -68,7 +70,7 @@ class CSIManager extends XmppManagerBase {
       setInactive();
     }
   }
-  
+
   /// Tells the server to top optimizing traffic
   Future<void> setActive() async {
     _isActive = true;

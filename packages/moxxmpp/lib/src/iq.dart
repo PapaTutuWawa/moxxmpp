@@ -5,7 +5,10 @@ import 'package:moxxmpp/src/stanza.dart';
 /// Bounce a stanza if it was not handled by any manager. [conn] is the connection object
 /// to use for sending the stanza. [data] is the StanzaHandlerData of the unhandled
 /// stanza.
-Future<void> handleUnhandledStanza(XmppConnection conn, StanzaHandlerData data) async {
+Future<void> handleUnhandledStanza(
+  XmppConnection conn,
+  StanzaHandlerData data,
+) async {
   if (data.stanza.type != 'error' && data.stanza.type != 'result') {
     final stanza = data.stanza.copyWith(
       to: data.stanza.from,

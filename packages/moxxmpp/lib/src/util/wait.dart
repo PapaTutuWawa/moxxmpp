@@ -53,7 +53,7 @@ class WaitForTracker<K, V> {
       }
     });
   }
-  
+
   /// Remove all tasks from the tracker.
   Future<void> clear() async {
     await _lock.synchronized(_tracker.clear);

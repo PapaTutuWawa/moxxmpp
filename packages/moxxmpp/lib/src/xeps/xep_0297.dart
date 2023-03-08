@@ -4,7 +4,10 @@ import 'package:moxxmpp/src/stringxml.dart';
 
 /// Extracts the message stanza from the <forwarded /> node.
 Stanza unpackForwarded(XMLNode forwarded) {
-  assert(forwarded.attributes['xmlns'] == forwardedXmlns, 'Invalid element xmlns');
+  assert(
+    forwarded.attributes['xmlns'] == forwardedXmlns,
+    'Invalid element xmlns',
+  );
   assert(forwarded.tag == 'forwarded', 'Invalid element name');
 
   // NOTE: We only use this XEP (for now) in the context of Message Carbons

@@ -10,12 +10,16 @@ enum MessageProcessingHint {
 
 MessageProcessingHint messageProcessingHintFromXml(XMLNode element) {
   switch (element.tag) {
-    case 'no-permanent-store': return MessageProcessingHint.noPermanentStore;
-    case 'no-store': return MessageProcessingHint.noStore;
-    case 'no-copy': return MessageProcessingHint.noCopies;
-    case 'store': return MessageProcessingHint.store;
+    case 'no-permanent-store':
+      return MessageProcessingHint.noPermanentStore;
+    case 'no-store':
+      return MessageProcessingHint.noStore;
+    case 'no-copy':
+      return MessageProcessingHint.noCopies;
+    case 'store':
+      return MessageProcessingHint.store;
   }
-    
+
   assert(false, 'Invalid Message Processing Hint: ${element.tag}');
   return MessageProcessingHint.noStore;
 }

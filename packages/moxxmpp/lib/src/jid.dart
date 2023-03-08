@@ -18,7 +18,10 @@ class JID {
     } else {
       resourcePart = slashParts.sublist(1).join('/');
 
-      assert(resourcePart.isNotEmpty, 'Resource part cannot be there and empty');
+      assert(
+        resourcePart.isNotEmpty,
+        'Resource part cannot be there and empty',
+      );
     }
 
     final atParts = slashParts.first.split('@');
@@ -34,9 +37,9 @@ class JID {
 
     return JID(
       localPart,
-      domainPart.endsWith('.') ?
-        domainPart.substring(0, domainPart.length - 1) :
-        domainPart,
+      domainPart.endsWith('.')
+          ? domainPart.substring(0, domainPart.length - 1)
+          : domainPart,
       resourcePart,
     );
   }
@@ -53,7 +56,7 @@ class JID {
   /// Converts the JID into a bare JID.
   JID toBare() {
     if (isBare()) return this;
-    
+
     return JID(local, domain, '');
   }
 
@@ -63,12 +66,12 @@ class JID {
   /// Compares the JID with [other]. This function assumes that JID and [other]
   /// are bare, i.e. only the domain- and localparts are compared. If [ensureBare]
   /// is optionally set to true, then [other] MUST be bare. Otherwise, false is returned.
-  bool bareCompare(JID other, { bool ensureBare = false }) {
+  bool bareCompare(JID other, {bool ensureBare = false}) {
     if (ensureBare && !other.isBare()) return false;
 
     return local == other.local && domain == other.domain;
   }
-  
+
   /// Converts to JID instance into its string representation of
   /// localpart@domainpart/resource.
   @override
@@ -90,7 +93,9 @@ class JID {
   @override
   bool operator ==(Object other) {
     if (other is JID) {
-      return other.local == local && other.domain == domain && other.resource == resource;
+      return other.local == local &&
+          other.domain == domain &&
+          other.resource == resource;
     }
 
     return false;
