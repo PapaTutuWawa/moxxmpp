@@ -1,7 +1,7 @@
 {
   description = "moxxmpp";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:AtaraxiaSjel/nixpkgs/update/flutter";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
