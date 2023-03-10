@@ -11,19 +11,22 @@ class ExampleTcpSocketWrapper extends TCPSocketWrapper {
   Future<List<MoxSrvRecord>> srvQuery(String domain, bool dnssec) async {
     final records = await MoxdnsPlugin.srvQuery(domain, false);
     return records
-      .map((record) => MoxSrvRecord(
-        record.priority,
-        record.weight,
-        record.target,
-        record.port,
-      ),)
-      .toList();
+        .map(
+          (record) => MoxSrvRecord(
+            record.priority,
+            record.weight,
+            record.target,
+            record.port,
+          ),
+        )
+        .toList();
   }
 }
 
 void main() {
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
+    // ignore: avoid_print
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
 
@@ -54,22 +57,29 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final logger = Logger('MyHomePage');
   final XmppConnection connection = XmppConnection(
-    ExponentialBackoffReconnectionPolicy(),
-    ExampleTcpSocketWrapper(),
+    RandomBackoffReconnectionPolicy(1, 60),
+    AlwaysConnectedConnectivityManager(),
+    // The below causes the app to crash.
+    //ExampleTcpSocketWrapper(),
+    // In a production app, the below should be false.
+    TCPSocketWrapper(true),
   );
   TextEditingController jidController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
+  bool connected = false;
+  bool loading = false;
 
   _MyHomePageState() : super() {
     connection
       ..registerManagers([
         StreamManagementManager(),
-        DiscoManager(),
-        RosterManager(),
+        DiscoManager([]),
+        RosterManager(TestingRosterStateManager("", [])),
         PingManager(),
         MessageManager(),
-        PresenceManager('http://moxxmpp.example'),
+        PresenceManager(),
       ])
       ..registerFeatureNegotiators([
         ResourceBindingNegotiator(),
@@ -83,17 +93,47 @@ class _MyHomePageState extends State<MyHomePage> {
         SaslScramNegotiator(8, '', '', ScramHashType.sha1),
       ]);
   }
-  
+
   Future<void> _buttonPressed() async {
+    if (connected) {
+      await connection.disconnect();
+      setState(() {
+        connected = false;
+      });
+      return;
+    }
+    setState(() {
+      loading = true;
+    });
     connection.setConnectionSettings(
       ConnectionSettings(
         jid: JID.fromString(jidController.text),
         password: passwordController.text,
         useDirectTLS: true,
-        allowPlainAuth: false,
+        // If `allowPlainAuth` is `false`, connecting to some
+        // servers will cause apps to hang, and never connect.
+        // The hang is a bug that will be fixed, so when it is,
+        // allowPlainAuth should be set to false.
+        allowPlainAuth: true,
       ),
     );
-    await connection.connect();
+    final result = await connection.connectAwaitable();
+    setState(() {
+      connected = result.success;
+      loading = false;
+    });
+    if (result.error != null) {
+      logger.severe(result.error);
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(result.error.toString()),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -101,20 +141,24 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        backgroundColor: connected ? Colors.green : Colors.deepPurple[800],
+        foregroundColor: connected ? Colors.black : Colors.white,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             TextField(
+              enabled: !loading,
               controller: jidController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'JID',
               ),
             ),
             TextField(
+              enabled: !loading,
               controller: passwordController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Password',
               ),
               obscureText: true,
@@ -122,10 +166,13 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _buttonPressed,
+        label: Text(connected ? 'Disconnect' : 'Connect'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
         tooltip: 'Connect',
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.power),
       ),
     );
   }
