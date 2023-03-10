@@ -61,9 +61,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final XmppConnection connection = XmppConnection(
     RandomBackoffReconnectionPolicy(1, 60),
     AlwaysConnectedConnectivityManager(),
-    //ExampleTcpSocketWrapper(), // this causes the app to crash
-    TCPSocketWrapper(
-        true), // Note: you probably want this to be false in a real app
+    // The below causes the app to crash.
+    //ExampleTcpSocketWrapper(),
+    // In a production app, the below should be false.
+    TCPSocketWrapper(true),
   );
   TextEditingController jidController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -109,9 +110,11 @@ class _MyHomePageState extends State<MyHomePage> {
         jid: JID.fromString(jidController.text),
         password: passwordController.text,
         useDirectTLS: true,
+        // If `allowPlainAuth` is `false`, connecting to some
+        // servers will cause apps to hang, and never connect.
+        // The hang is a bug that will be fixed, so when it is,
+        // allowPlainAuth should be set to false.
         allowPlainAuth: true,
-        // otherwise, connecting to some servers will
-        // cause an app to hang
       ),
     );
     final result = await connection.connectAwaitable();
@@ -123,11 +126,12 @@ class _MyHomePageState extends State<MyHomePage> {
       logger.severe(result.error);
       if (context.mounted) {
         showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-                  title: const Text('Error'),
-                  content: Text(result.error.toString()),
-                ));
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(result.error.toString()),
+          ),
+        );
       }
     }
   }
