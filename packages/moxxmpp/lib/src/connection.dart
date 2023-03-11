@@ -1241,7 +1241,7 @@ class XmppConnection {
   /// If [waitUntilLogin] is set to true, the future will resolve when either
   /// the connection has been successfully established (authentication included) or
   /// a failure occured. If set to false, then the future will immediately resolve
-  /// to false.
+  /// to true.
   ///
   /// [enableReconnectOnSuccess] indicates that automatic reconnection is to be
   /// enabled once the connection has been successfully established.
@@ -1276,7 +1276,7 @@ class XmppConnection {
     } else {
       return Future.value(
         const Result(
-          false,
+          true,
         ),
       );
     }
