@@ -458,7 +458,14 @@ class XmppConnection {
 
     // The error is recoverable
     await _setConnectionState(XmppConnectionState.notConnected);
-    await _reconnectionPolicy.onFailure();
+
+    if (await _reconnectionPolicy.getShouldReconnect()) {
+      await _reconnectionPolicy.onFailure();
+    } else {
+      _log.info(
+        'Not passing connection failure to reconnection policy as it indicates that we should not reconnect',
+      );
+    }
   }
 
   /// Called whenever the socket creates an event
@@ -1170,6 +1177,8 @@ class XmppConnection {
     _enableReconnectOnSuccess = enableReconnectOnSuccess;
     if (shouldReconnect) {
       await _reconnectionPolicy.setShouldReconnect(true);
+    } else {
+      await _reconnectionPolicy.setShouldReconnect(false);
     }
 
     await _reconnectionPolicy.reset();
@@ -1259,6 +1268,7 @@ class XmppConnection {
       lastResource: lastResource,
       shouldReconnect: shouldReconnect ?? !waitUntilLogin,
       waitForConnection: waitForConnection,
+      waitUntilLogin: waitUntilLogin,
       enableReconnectOnSuccess: enableReconnectOnSuccess,
     );
     if (waitUntilLogin) {
