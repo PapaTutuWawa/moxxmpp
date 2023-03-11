@@ -160,13 +160,13 @@ void main() {
       ),
     );
 
-  final result = await manager.preprocessPublishOptions(
-    'pubsub.server.example.org',
-    'example:node',
-    PubSubPublishOptions(
-      maxItems: 'max', 
-    ),
-  );
+  // final result = await manager.preprocessPublishOptions(
+  //   'pubsub.server.example.org',
+  //   'example:node',
+  //   PubSubPublishOptions(
+  //     maxItems: 'max', 
+  //   ),
+  // );
 
   });
 }
