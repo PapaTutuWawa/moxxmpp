@@ -1,4 +1,4 @@
-## 0.2.1
+## 0.3.0
 
 - **BREAKING**: Removed `connectAwaitable` and merged it with `connect`.
 
