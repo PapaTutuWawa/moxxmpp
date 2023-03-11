@@ -77,21 +77,6 @@ class StreamHeaderNonza extends XMLNode {
         );
 }
 
-/// The result of an awaited connection.
-class XmppConnectionResult {
-  const XmppConnectionResult(
-    this.success, {
-    this.error,
-  });
-
-  /// True if the connection was successful. False if it failed for any reason.
-  final bool success;
-
-  // If a connection attempt fails, i.e. success is false, then this indicates the
-  // reason the connection failed.
-  final XmppError? error;
-}
-
 /// This class is a connection to the server.
 class XmppConnection {
   XmppConnection(
