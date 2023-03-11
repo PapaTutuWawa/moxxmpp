@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/awaiter.dart';
 import 'package:moxxmpp/src/buffer.dart';
+import 'package:moxxmpp/src/connection_errors.dart';
 import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
@@ -90,32 +91,6 @@ class XmppConnectionResult {
   // reason the connection failed.
   final XmppError? error;
 }
-
-/// The reason a call to [XmppConnection.connect] failed.
-abstract class XmppConnectionError {}
-
-/// Returned by [XmppConnection.connect] when a connection is already active.
-class ConnectionAlreadyRunningError extends XmppConnectionError {}
-
-/// Returned by [XmppConnection.connect] when a negotiator returned an unrecoverable
-/// error. Only returned when waitUntilLogin is true.
-class NegotiatorReturnedError extends XmppConnectionError {
-  NegotiatorReturnedError(this.error);
-
-  /// The error returned by the negotiator.
-  final NegotiatorError error;
-}
-
-class StreamFailureError extends XmppConnectionError {
-  StreamFailureError(this.error);
-
-  /// The error that causes a connection failure.
-  final XmppError error;
-}
-
-/// Returned by [XmppConnection.connect] when no connection could
-/// be established.
-class NoConnectionPossibleError extends XmppConnectionError {}
 
 /// This class is a connection to the server.
 class XmppConnection {
