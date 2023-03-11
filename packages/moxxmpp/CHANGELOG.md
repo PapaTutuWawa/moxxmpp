@@ -1,3 +1,7 @@
+## 0.2.1
+
+- **BREAKING**: Removed `connectAwaitable` and merged it with `connect`.
+
 ## 0.1.6+1
 
  - **FIX**: Fix LMC not working.
