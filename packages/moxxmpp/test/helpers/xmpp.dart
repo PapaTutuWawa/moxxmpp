@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
 
@@ -13,8 +14,8 @@ T? getManagerNullStub<T extends XmppManagerBase>(String id) {
 }
 
 abstract class ExpectationBase {
-
   ExpectationBase(this.expectation, this.response);
+
   final String expectation;
   final String response;
 
@@ -33,27 +34,84 @@ class StringExpectation extends ExpectationBase {
 /// 
 class StanzaExpectation extends ExpectationBase {
   StanzaExpectation(String expectation, String response, {this.ignoreId = false, this.adjustId = false }) : super(expectation, response);
+
   final bool ignoreId;
   final bool adjustId;
   
   @override
   bool matches(String input) {
     final ex = XMLNode.fromString(expectation);
-    final recv = XMLNode.fromString(expectation);
+    final recv = XMLNode.fromString(input);
 
     return compareXMLNodes(recv, ex, ignoreId: ignoreId);
   }
 }
 
-class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
+/// Use [settings] to build the beginning of a play that can be used with StubTCPSocket. [settings]'s allowPlainAuth must
+/// be set to true.
+List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
+  assert(settings.allowPlainAuth, 'SASL PLAIN must be allowed');
 
-  StubTCPSocket({ required List<ExpectationBase> play })
-    : _play = play,
-      _dataStream = StreamController<String>.broadcast(),
-      _eventStream = StreamController<XmppSocketEvent>.broadcast();
+  final plain = base64.encode(utf8.encode('\u0000${settings.jid.local}\u0000${settings.password}'));
+  return [
+    StringExpectation(
+      "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' xml:lang='en'>",
+      '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="${settings.jid.domain}"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+  </stream:features>''',
+      ),
+      StringExpectation(
+        "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>$plain</auth>",
+        '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />'
+      ),
+      StringExpectation(
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' xml:lang='en'>",
+        '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+  </stream:features>
+''',
+      ),
+      StanzaExpectation(
+        '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+        '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>${settings.jid.toBare()}/MU29eEZn</jid></bind></iq>',
+        ignoreId: true,
+      ),
+      StanzaExpectation(
+        "<presence xmlns='jabber:client' from='${settings.jid.toBare()}/MU29eEZn'><show>chat</show></presence>",
+        '',
+      ),
+  ];
+}
+
+class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
+  StubTCPSocket(this._play);
+
+  StubTCPSocket.authenticated(ConnectionSettings settings, List<ExpectationBase> play) : _play = [
+    ...buildAuthenticatedPlay(settings),
+    ...play,
+  ];
+
   int _state = 0;
-  final StreamController<String> _dataStream;
-  final StreamController<XmppSocketEvent> _eventStream;
+  final StreamController<String> _dataStream = StreamController<String>.broadcast();
+  final StreamController<XmppSocketEvent> _eventStream = StreamController<XmppSocketEvent>.broadcast();
   final List<ExpectationBase> _play;
   String? lastId;
 
@@ -99,9 +157,11 @@ class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
       str = str.substring(0, str.length - 16);
     }
 
-    if (!expectation.matches(str)) {
-      expect(true, false, reason: 'Expected ${expectation.expectation}, got $str');
-    }
+    expect(
+      expectation.matches(str),
+      true,
+      reason: 'Expected ${expectation.expectation}, got $str',
+    );
 
     // Make sure to only progress if everything passed so far
     _state++;
@@ -109,7 +169,7 @@ class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
     var response = expectation.response;
     if (expectation is StanzaExpectation) {
       final inputNode = XMLNode.fromString(str);
-      lastId = inputNode.attributes['id'];
+      lastId = inputNode.attributes['id'] as String?;
 
       if (expectation.adjustId) {
         final outputNode = XMLNode.fromString(response);

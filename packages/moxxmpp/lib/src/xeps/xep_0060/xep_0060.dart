@@ -1,3 +1,5 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -130,7 +132,10 @@ class PubSubManager extends XmppManagerBase {
     return count;
   }
 
-  Future<PubSubPublishOptions> _preprocessPublishOptions(
+  // TODO(PapaTutuWawa): This should return a Result<T> in case we cannot proceed
+  //                     with the requested configuration.
+  @visibleForTesting
+  Future<PubSubPublishOptions> preprocessPublishOptions(
     String jid,
     String node,
     PubSubPublishOptions options,
@@ -285,7 +290,7 @@ class PubSubManager extends XmppManagerBase {
   }) async {
     PubSubPublishOptions? pubOptions;
     if (options != null) {
-      pubOptions = await _preprocessPublishOptions(jid, node, options);
+      pubOptions = await preprocessPublishOptions(jid, node, options);
     }
 
     final result = await getAttributes().sendStanza(
@@ -310,14 +315,11 @@ class PubSubManager extends XmppManagerBase {
                   )
                 ],
               ),
-              ...options != null
-                  ? [
-                      XMLNode(
-                        tag: 'publish-options',
-                        children: [options.toXml()],
-                      ),
-                    ]
-                  : [],
+              if (pubOptions != null)
+                XMLNode(
+                  tag: 'publish-options',
+                  children: [pubOptions.toXml()],
+                ),
             ],
           )
         ],
