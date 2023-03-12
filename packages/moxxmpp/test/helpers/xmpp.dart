@@ -25,19 +25,23 @@ abstract class ExpectationBase {
 
 /// Literally compare the input with the expectation
 class StringExpectation extends ExpectationBase {
-  StringExpectation(String expectation, String response) : super(expectation, response);
+  StringExpectation(super.expectation, super.response);
 
   @override
   bool matches(String input) => input == expectation;
 }
 
-/// 
+///
 class StanzaExpectation extends ExpectationBase {
-  StanzaExpectation(String expectation, String response, {this.ignoreId = false, this.adjustId = false }) : super(expectation, response);
-
+  StanzaExpectation(
+    super.expectation,
+    super.response, {
+    this.ignoreId = false,
+    this.adjustId = false,
+  });
   final bool ignoreId;
   final bool adjustId;
-  
+
   @override
   bool matches(String input) {
     final ex = XMLNode.fromString(expectation);
@@ -52,7 +56,9 @@ class StanzaExpectation extends ExpectationBase {
 List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
   assert(settings.allowPlainAuth, 'SASL PLAIN must be allowed');
 
-  final plain = base64.encode(utf8.encode('\u0000${settings.jid.local}\u0000${settings.password}'));
+  final plain = base64.encode(
+    utf8.encode('\u0000${settings.jid.local}\u0000${settings.password}'),
+  );
   return [
     StringExpectation(
       "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' xml:lang='en'>",
@@ -68,14 +74,14 @@ List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
       <mechanism>PLAIN</mechanism>
     </mechanisms>
   </stream:features>''',
-      ),
-      StringExpectation(
-        "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>$plain</auth>",
-        '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />'
-      ),
-      StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' xml:lang='en'>",
-        '''
+    ),
+    StringExpectation(
+      "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>$plain</auth>",
+      '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
+    ),
+    StringExpectation(
+      "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' xml:lang='en'>",
+      '''
 <stream:stream
     xmlns="jabber:client"
     version="1.0"
@@ -88,30 +94,36 @@ List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
     </bind>
   </stream:features>
 ''',
-      ),
-      StanzaExpectation(
-        '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
-        '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>${settings.jid.toBare()}/MU29eEZn</jid></bind></iq>',
-        ignoreId: true,
-      ),
-      StanzaExpectation(
-        "<presence xmlns='jabber:client' from='${settings.jid.toBare()}/MU29eEZn'><show>chat</show></presence>",
-        '',
-      ),
+    ),
+    StanzaExpectation(
+      '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+      '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>${settings.jid.toBare()}/MU29eEZn</jid></bind></iq>',
+      ignoreId: true,
+    ),
+    StanzaExpectation(
+      "<presence xmlns='jabber:client' from='${settings.jid.toBare()}/MU29eEZn'><show>chat</show></presence>",
+      '',
+    ),
   ];
 }
 
-class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
+class StubTCPSocket extends BaseSocketWrapper {
+  // Request -> Response(s)
   StubTCPSocket(this._play);
 
-  StubTCPSocket.authenticated(ConnectionSettings settings, List<ExpectationBase> play) : _play = [
-    ...buildAuthenticatedPlay(settings),
-    ...play,
-  ];
+  StubTCPSocket.authenticated(
+    ConnectionSettings settings,
+    List<ExpectationBase> play,
+  ) : _play = [
+          ...buildAuthenticatedPlay(settings),
+          ...play,
+        ];
 
   int _state = 0;
-  final StreamController<String> _dataStream = StreamController<String>.broadcast();
-  final StreamController<XmppSocketEvent> _eventStream = StreamController<XmppSocketEvent>.broadcast();
+  final StreamController<String> _dataStream =
+      StreamController<String>.broadcast();
+  final StreamController<XmppSocketEvent> _eventStream =
+      StreamController<XmppSocketEvent>.broadcast();
   final List<ExpectationBase> _play;
   String? lastId;
 
@@ -120,24 +132,26 @@ class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
 
   @override
   Future<bool> secure(String domain) async => true;
-  
+
   @override
-  Future<bool> connect(String domain, { String? host, int? port }) async => true;
+  Future<bool> connect(String domain, {String? host, int? port}) async => true;
 
   @override
   Stream<String> getDataStream() => _dataStream.stream.asBroadcastStream();
   @override
-  Stream<XmppSocketEvent> getEventStream() => _eventStream.stream.asBroadcastStream();
+  Stream<XmppSocketEvent> getEventStream() =>
+      _eventStream.stream.asBroadcastStream();
 
   /// Let the "connection" receive [data].
   void injectRawXml(String data) {
+    // ignore: avoid_print
     print('<== $data');
     _dataStream.add(data);
   }
-  
+
   @override
-  void write(Object? object, { String? redact }) {
-    var str = object as String;
+  void write(Object? object, {String? redact}) {
+    var str = object! as String;
     // ignore: avoid_print
     print('==> $str');
 
@@ -148,7 +162,7 @@ class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
 
     final expectation = _play[_state];
 
-    // TODO: Implement an XML matcher
+    // TODO(Unknown): Implement an XML matcher
     if (str.startsWith("<?xml version='1.0'?>")) {
       str = str.substring(21);
     }
@@ -174,18 +188,19 @@ class StubTCPSocket extends BaseSocketWrapper { // Request -> Response(s)
       if (expectation.adjustId) {
         final outputNode = XMLNode.fromString(response);
 
-        outputNode.attributes['id'] = inputNode.attributes['id']!;
+        outputNode.attributes['id'] = inputNode.attributes['id'];
         response = outputNode.toXml();
       }
     }
-    
-    print("<== $response");
+
+    // ignore: avoid_print
+    print('<== $response');
     _dataStream.add(response);
   }
 
   @override
   void close() {}
-  
+
   int getState() => _state;
   void resetState() => _state = 0;
 

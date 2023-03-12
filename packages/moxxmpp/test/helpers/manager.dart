@@ -29,7 +29,14 @@ class TestingManagerHolder {
     allowPlainAuth: true,
   );
 
-  Future<XMLNode> _sendStanza(stanza, { StanzaFromType addFrom = StanzaFromType.full, bool addId = true, bool awaitable = true, bool encrypted = false, bool forceEncryption = false, }) async {
+  Future<XMLNode> _sendStanza(
+    stanza, {
+    StanzaFromType addFrom = StanzaFromType.full,
+    bool addId = true,
+    bool awaitable = true,
+    bool encrypted = false,
+    bool forceEncryption = false,
+  }) async {
     return XMLNode.fromString('<iq />');
   }
 
