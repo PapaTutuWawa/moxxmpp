@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/awaiter.dart';
 import 'package:moxxmpp/src/buffer.dart';
+import 'package:moxxmpp/src/connection_errors.dart';
 import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
@@ -24,6 +25,7 @@ import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
@@ -73,21 +75,6 @@ class StreamHeaderNonza extends XMLNode {
           },
           closeTag: false,
         );
-}
-
-/// The result of an awaited connection.
-class XmppConnectionResult {
-  const XmppConnectionResult(
-    this.success, {
-    this.error,
-  });
-
-  /// True if the connection was successful. False if it failed for any reason.
-  final bool success;
-
-  // If a connection attempt fails, i.e. success is false, then this indicates the
-  // reason the connection failed.
-  final XmppError? error;
 }
 
 /// This class is a connection to the server.
@@ -180,7 +167,7 @@ class XmppConnection {
 
   /// Completers for certain actions
   // ignore: use_late_for_private_fields_and_variables
-  Completer<XmppConnectionResult>? _connectionCompleter;
+  Completer<Result<bool, XmppConnectionError>>? _connectionCompleter;
 
   /// Negotiators
   final Map<String, XmppFeatureNegotiatorBase> _featureNegotiators = {};
@@ -197,6 +184,9 @@ class XmppConnection {
   /// A value indicating whether a connection attempt is currently running or not
   bool _isConnectionRunning = false;
   final Lock _connectionRunningLock = Lock();
+
+  /// Flag indicating whether reconnection should be enabled after a successful connection.
+  bool _enableReconnectOnSuccess = false;
 
   /// Enters the critical section for accessing [XmppConnection._isConnectionRunning]
   /// and does the following:
@@ -404,9 +394,10 @@ class XmppConnection {
         state: XmppConnectionState.error,
       );
       _connectionCompleter?.complete(
-        XmppConnectionResult(
-          false,
-          error: error,
+        Result(
+          StreamFailureError(
+            error,
+          ),
         ),
       );
       _connectionCompleter = null;
@@ -427,7 +418,14 @@ class XmppConnection {
 
     // The error is recoverable
     await _setConnectionState(XmppConnectionState.notConnected);
-    await _reconnectionPolicy.onFailure();
+
+    if (await _reconnectionPolicy.getShouldReconnect()) {
+      await _reconnectionPolicy.onFailure();
+    } else {
+      _log.info(
+        'Not passing connection failure to reconnection policy as it indicates that we should not reconnect',
+      );
+    }
   }
 
   /// Called whenever the socket creates an event
@@ -859,8 +857,13 @@ class XmppConnection {
     await _resetIsConnectionRunning();
     await _setConnectionState(XmppConnectionState.connected);
 
+    // Enable reconnections
+    if (_enableReconnectOnSuccess) {
+      await _reconnectionPolicy.setShouldReconnect(true);
+    }
+
     // Resolve the connection completion future
-    _connectionCompleter?.complete(const XmppConnectionResult(true));
+    _connectionCompleter?.complete(const Result(true));
     _connectionCompleter = null;
 
     // Tell consumers of the event stream that we're done with stream feature
@@ -1112,47 +1115,30 @@ class XmppConnection {
     );
   }
 
-  /// Like [connect] but the Future resolves when the resource binding is either done or
-  /// SASL has failed.
-  Future<XmppConnectionResult> connectAwaitable({
-    String? lastResource,
-    bool waitForConnection = false,
-  }) async {
-    _runPreConnectionAssertions();
-    await _resetIsConnectionRunning();
-    _connectionCompleter = Completer();
-    _log.finest('Calling connect() from connectAwaitable');
-    await connect(
-      lastResource: lastResource,
-      waitForConnection: waitForConnection,
-      shouldReconnect: false,
-    );
-    return _connectionCompleter!.future;
-  }
-
-  /// Start the connection process using the provided connection settings.
-  Future<void> connect({
+  Future<Result<bool, XmppConnectionError>> _connectImpl({
     String? lastResource,
     bool waitForConnection = false,
     bool shouldReconnect = true,
+    bool waitUntilLogin = false,
+    bool enableReconnectOnSuccess = true,
   }) async {
-    if (_connectionState != XmppConnectionState.notConnected &&
-        _connectionState != XmppConnectionState.error) {
-      _log.fine(
-        'Cancelling this connection attempt as one appears to be already running.',
-      );
-      return;
-    }
-
     _runPreConnectionAssertions();
     await _resetIsConnectionRunning();
+
+    if (waitUntilLogin) {
+      _log.finest('Setting up completer for awaiting completed login');
+      _connectionCompleter = Completer();
+    }
 
     if (lastResource != null) {
       setResource(lastResource);
     }
 
+    _enableReconnectOnSuccess = enableReconnectOnSuccess;
     if (shouldReconnect) {
       await _reconnectionPolicy.setShouldReconnect(true);
+    } else {
+      await _reconnectionPolicy.setShouldReconnect(false);
     }
 
     await _reconnectionPolicy.reset();
@@ -1182,6 +1168,8 @@ class XmppConnection {
     );
     if (!result) {
       await handleError(NoConnectionError());
+
+      return Result(NoConnectionPossibleError());
     } else {
       await _reconnectionPolicy.onSuccess();
       _log.fine('Preparing the internal state for a connection attempt');
@@ -1190,6 +1178,67 @@ class XmppConnection {
       _updateRoutingState(RoutingState.negotiating);
       _isAuthenticated = false;
       _sendStreamHeader();
+
+      if (waitUntilLogin) {
+        return _connectionCompleter!.future;
+      } else {
+        return const Result(true);
+      }
+    }
+  }
+
+  /// Start the connection process using the provided connection settings.
+  ///
+  /// If [lastResource] is set, then its value is used as the connection's resource.
+  /// Useful for stream resumption.
+  ///
+  /// [shouldReconnect] indicates whether the reconnection attempts should be
+  /// automatically performed after a fatal failure of any kind occurs.
+  ///
+  /// [waitForConnection] indicates whether the connection should wait for the "go"
+  /// signal from a registered connectivity manager.
+  ///
+  /// If [waitUntilLogin] is set to true, the future will resolve when either
+  /// the connection has been successfully established (authentication included) or
+  /// a failure occured. If set to false, then the future will immediately resolve
+  /// to true.
+  ///
+  /// [enableReconnectOnSuccess] indicates that automatic reconnection is to be
+  /// enabled once the connection has been successfully established.
+  Future<Result<bool, XmppConnectionError>> connect({
+    String? lastResource,
+    bool? shouldReconnect,
+    bool waitForConnection = false,
+    bool waitUntilLogin = false,
+    bool enableReconnectOnSuccess = true,
+  }) async {
+    if (_connectionState != XmppConnectionState.notConnected &&
+        _connectionState != XmppConnectionState.error) {
+      _log.fine(
+        'Cancelling this connection attempt as one appears to be already running.',
+      );
+      return Future.value(
+        Result(
+          ConnectionAlreadyRunningError(),
+        ),
+      );
+    }
+
+    final result = _connectImpl(
+      lastResource: lastResource,
+      shouldReconnect: shouldReconnect ?? !waitUntilLogin,
+      waitForConnection: waitForConnection,
+      waitUntilLogin: waitUntilLogin,
+      enableReconnectOnSuccess: enableReconnectOnSuccess,
+    );
+    if (waitUntilLogin) {
+      return result;
+    } else {
+      return Future.value(
+        const Result(
+          true,
+        ),
+      );
     }
   }
 }

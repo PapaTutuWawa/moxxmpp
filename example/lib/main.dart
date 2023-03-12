@@ -117,19 +117,19 @@ class _MyHomePageState extends State<MyHomePage> {
         allowPlainAuth: true,
       ),
     );
-    final result = await connection.connectAwaitable();
+    final result = await connection.connect(waitUntilLogin: true);
     setState(() {
-      connected = result.success;
+      connected = result.isType<bool>() && result.get<bool>();
       loading = false;
     });
-    if (result.error != null) {
-      logger.severe(result.error);
+    if (result.isType<XmppConnectionError>()) {
+      logger.severe(result.get<XmppConnectionError>());
       if (context.mounted) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Error'),
-            content: Text(result.error.toString()),
+            content: Text(result.get<XmppConnectionError>().toString()),
           ),
         );
       }

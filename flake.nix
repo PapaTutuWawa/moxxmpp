@@ -29,7 +29,7 @@
       useGoogleAPIs = false;
       useGoogleTVAddOns = false;
     };
-    pinnedJDK = pkgs.jdk;
+    pinnedJDK = pkgs.jdk17;
 
     pythonEnv = pkgs.python3.withPackages (ps: with ps; [
       pyyaml
