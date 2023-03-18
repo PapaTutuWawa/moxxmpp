@@ -167,7 +167,7 @@ class XmppConnection {
 
   /// Completers for certain actions
   // ignore: use_late_for_private_fields_and_variables
-  Completer<Result<bool, XmppConnectionError>>? _connectionCompleter;
+  Completer<Result<bool, XmppError>>? _connectionCompleter;
 
   /// Negotiators
   final Map<String, XmppFeatureNegotiatorBase> _featureNegotiators = {};
@@ -896,7 +896,8 @@ class XmppConnection {
         return;
       } else {
         _log.severe(
-            'No negotiator could be picked while negotiations are not done');
+          'No negotiator could be picked while negotiations are not done',
+        );
         await _resetIsConnectionRunning();
         await handleError(NoAuthenticatorAvailableError());
         return;
@@ -1132,7 +1133,7 @@ class XmppConnection {
     );
   }
 
-  Future<Result<bool, XmppConnectionError>> _connectImpl({
+  Future<Result<bool, XmppError>> _connectImpl({
     String? lastResource,
     bool waitForConnection = false,
     bool shouldReconnect = true,
@@ -1222,7 +1223,7 @@ class XmppConnection {
   ///
   /// [enableReconnectOnSuccess] indicates that automatic reconnection is to be
   /// enabled once the connection has been successfully established.
-  Future<Result<bool, XmppConnectionError>> connect({
+  Future<Result<bool, XmppError>> connect({
     String? lastResource,
     bool? shouldReconnect,
     bool waitForConnection = false,

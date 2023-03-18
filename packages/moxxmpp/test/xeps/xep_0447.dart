@@ -27,7 +27,13 @@ void main() {
       '''),
     );
 
-    expect(sfs.metadata.hashes['sha3-256'], '2XarmwTlNxDAMkvymloX3S5+VbylNrJt/l5QyPa+YoU=');
-    expect(sfs.metadata.hashes['id-blake2b256'], '2AfMGH8O7UNPTvUVAM9aK13mpCY=');
+    expect(
+      sfs.metadata.hashes['sha3-256'],
+      '2XarmwTlNxDAMkvymloX3S5+VbylNrJt/l5QyPa+YoU=',
+    );
+    expect(
+      sfs.metadata.hashes['id-blake2b256'],
+      '2AfMGH8O7UNPTvUVAM9aK13mpCY=',
+    );
   });
 }

@@ -3,12 +3,11 @@ import 'package:test/test.dart';
 
 void main() {
   test('Test receiving a roster push', () async {
-    final rs = TestingRosterStateManager(null, []);
-    rs.register((_) {});
+    final rs = TestingRosterStateManager(null, [])..register((_) {});
 
     await rs.handleRosterPush(
       RosterPushResult(
-        XmppRosterItem(
+        const XmppRosterItem(
           jid: 'testuser@server.example',
           subscription: 'both',
         ),
@@ -17,7 +16,10 @@ void main() {
     );
 
     expect(
-      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser@server.example') != -1,
+      rs
+              .getRosterItems()
+              .indexWhere((item) => item.jid == 'testuser@server.example') !=
+          -1,
       true,
     );
     expect(rs.loadCount, 1);
@@ -26,7 +28,7 @@ void main() {
     // Receive another roster push
     await rs.handleRosterPush(
       RosterPushResult(
-        XmppRosterItem(
+        const XmppRosterItem(
           jid: 'testuser2@server2.example',
           subscription: 'to',
         ),
@@ -35,16 +37,19 @@ void main() {
     );
 
     expect(
-      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser2@server2.example') != -1,
+      rs
+              .getRosterItems()
+              .indexWhere((item) => item.jid == 'testuser2@server2.example') !=
+          -1,
       true,
     );
     expect(rs.loadCount, 1);
     expect(rs.getRosterItems().length, 2);
 
     // Remove one of the items
-     await rs.handleRosterPush(
+    await rs.handleRosterPush(
       RosterPushResult(
-        XmppRosterItem(
+        const XmppRosterItem(
           jid: 'testuser2@server2.example',
           subscription: 'remove',
         ),
@@ -53,34 +58,39 @@ void main() {
     );
 
     expect(
-      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser2@server2.example') == -1,
+      rs
+              .getRosterItems()
+              .indexWhere((item) => item.jid == 'testuser2@server2.example') ==
+          -1,
       true,
     );
     expect(
-      rs.getRosterItems().indexWhere((item) => item.jid == 'testuser@server.example') != 1,
+      rs
+              .getRosterItems()
+              .indexWhere((item) => item.jid == 'testuser@server.example') !=
+          1,
       true,
     );
     expect(rs.loadCount, 1);
-    expect(rs.getRosterItems().length, 1);   
+    expect(rs.getRosterItems().length, 1);
   });
 
   test('Test a roster fetch', () async {
-    final rs = TestingRosterStateManager(null, []);
-    rs.register((_) {});
+    final rs = TestingRosterStateManager(null, [])..register((_) {});
 
     // Fetch the roster
     await rs.handleRosterFetch(
       RosterRequestResult(
         [
-          XmppRosterItem(
+          const XmppRosterItem(
             jid: 'testuser@server.example',
             subscription: 'both',
           ),
-          XmppRosterItem(
+          const XmppRosterItem(
             jid: 'testuser2@server2.example',
             subscription: 'to',
           ),
-          XmppRosterItem(
+          const XmppRosterItem(
             jid: 'testuser3@server3.example',
             subscription: 'from',
           ),
@@ -91,48 +101,66 @@ void main() {
 
     expect(rs.loadCount, 1);
     expect(rs.getRosterItems().length, 3);
-    expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser@server.example') != -1, true);
-    expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser2@server2.example') != -1, true);
-    expect(rs.getRosterItems().indexWhere((item) => item.jid == 'testuser3@server3.example') != -1, true);
+    expect(
+      rs
+              .getRosterItems()
+              .indexWhere((item) => item.jid == 'testuser@server.example') !=
+          -1,
+      true,
+    );
+    expect(
+      rs
+              .getRosterItems()
+              .indexWhere((item) => item.jid == 'testuser2@server2.example') !=
+          -1,
+      true,
+    );
+    expect(
+      rs
+              .getRosterItems()
+              .indexWhere((item) => item.jid == 'testuser3@server3.example') !=
+          -1,
+      true,
+    );
   });
 
   test('Test a roster fetch if we already have a roster', () async {
     XmppEvent? event;
     final rs = TestingRosterStateManager('aaaaa', [
-      XmppRosterItem(
+      const XmppRosterItem(
         jid: 'testuser@server.example',
         subscription: 'both',
       ),
-      XmppRosterItem(
+      const XmppRosterItem(
         jid: 'testuser2@server2.example',
         subscription: 'to',
       ),
-      XmppRosterItem(
+      const XmppRosterItem(
         jid: 'testuser3@server3.example',
         subscription: 'from',
       ),
-    ]);
-    rs.register((_event) {
-      event = _event;
-    });
+    ])
+      ..register((e) {
+        event = e;
+      });
 
     // Fetch the roster
     await rs.handleRosterFetch(
       RosterRequestResult(
         [
-          XmppRosterItem(
+          const XmppRosterItem(
             jid: 'testuser@server.example',
             subscription: 'both',
           ),
-          XmppRosterItem(
+          const XmppRosterItem(
             jid: 'testuser2@server2.example',
             subscription: 'to',
           ),
-          XmppRosterItem(
+          const XmppRosterItem(
             jid: 'testuser3@server3.example',
             subscription: 'both',
           ),
-          XmppRosterItem(
+          const XmppRosterItem(
             jid: 'testuser4@server4.example',
             subscription: 'both',
           ),
@@ -142,7 +170,7 @@ void main() {
     );
 
     expect(event is RosterUpdatedEvent, true);
-    final updateEvent = event as RosterUpdatedEvent;
+    final updateEvent = event! as RosterUpdatedEvent;
 
     expect(updateEvent.added.length, 1);
     expect(updateEvent.added.first.jid, 'testuser4@server4.example');

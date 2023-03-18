@@ -9,24 +9,32 @@ const exampleXmlns2 = 'im:moxxmpp:example2';
 const exampleNamespace2 = 'im.moxxmpp.test.example2';
 
 class StubNegotiator1 extends XmppFeatureNegotiatorBase {
-  StubNegotiator1() : called = false, super(1, false, exampleXmlns1, exampleNamespace1);
+  StubNegotiator1()
+      : called = false,
+        super(1, false, exampleXmlns1, exampleNamespace1);
 
   bool called;
-  
+
   @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
     called = true;
     return const Result(NegotiatorState.done);
   }
 }
 
 class StubNegotiator2 extends XmppFeatureNegotiatorBase {
-  StubNegotiator2() : called = false, super(10, false, exampleXmlns2, exampleNamespace2);
+  StubNegotiator2()
+      : called = false,
+        super(10, false, exampleXmlns2, exampleNamespace2);
 
   bool called;
-  
+
   @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(XMLNode nonza) async {
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
     called = true;
     return const Result(NegotiatorState.done);
   }
@@ -53,12 +61,13 @@ void main() {
       ),
     ],
   );
-  
+
   final connection = XmppConnection(
     TestingReconnectionPolicy(),
     AlwaysConnectedConnectivityManager(),
     stubSocket,
-  )..registerFeatureNegotiators([
+  )
+    ..registerFeatureNegotiators([
       StubNegotiator1(),
       StubNegotiator2(),
     ])
@@ -85,11 +94,13 @@ void main() {
     expect(connection.getNextNegotiator(features)?.id, exampleNamespace2);
   });
 
-  test('Test negotiating features with no stream restarts', () async {    
+  test('Test negotiating features with no stream restarts', () async {
     await connection.connect();
     await Future.delayed(const Duration(seconds: 3), () {
-      final negotiator1 = connection.getNegotiatorById<StubNegotiator1>(exampleNamespace1);
-      final negotiator2 = connection.getNegotiatorById<StubNegotiator2>(exampleNamespace2);
+      final negotiator1 =
+          connection.getNegotiatorById<StubNegotiator1>(exampleNamespace1);
+      final negotiator2 =
+          connection.getNegotiatorById<StubNegotiator2>(exampleNamespace2);
       expect(negotiator1?.called, true);
       expect(negotiator2?.called, true);
     });

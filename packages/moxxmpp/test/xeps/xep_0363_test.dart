@@ -29,26 +29,20 @@ void main() {
         'Cookie': 'foo=bar; user=romeo',
         'X-Tracking': 'Base64String=='
       };
-      expect(
-        prepareHeaders(headers),
-        {
-          'Authorization': 'Basic Base64String==',
-          'Cookie': 'foo=bar; user=romeo',
-        }
-      );
+      expect(prepareHeaders(headers), {
+        'Authorization': 'Basic Base64String==',
+        'Cookie': 'foo=bar; user=romeo',
+      });
     });
     test('remove newlines', () {
       final headers = {
         'Authorization': '\n\nBasic Base64String==\n\n',
         '\nCookie\r\n': 'foo=bar; user=romeo',
       };
-      expect(
-        prepareHeaders(headers),
-        {
-          'Authorization': 'Basic Base64String==',
-          'Cookie': 'foo=bar; user=romeo',
-        }
-      );
+      expect(prepareHeaders(headers), {
+        'Authorization': 'Basic Base64String==',
+        'Cookie': 'foo=bar; user=romeo',
+      });
     });
   });
 }

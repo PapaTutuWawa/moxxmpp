@@ -4,13 +4,28 @@ import 'package:test/test.dart';
 void main() {
   test('Test the async queue', () async {
     final queue = AsyncQueue();
-    int future1Finish = 0;
-    int future2Finish = 0;
-    int future3Finish = 0;
+    var future1Finish = 0;
+    var future2Finish = 0;
+    var future3Finish = 0;
 
-    await queue.addJob(() => Future<void>.delayed(const Duration(seconds: 3), () => future1Finish = DateTime.now().millisecondsSinceEpoch));
-    await queue.addJob(() => Future<void>.delayed(const Duration(seconds: 3), () => future2Finish = DateTime.now().millisecondsSinceEpoch));
-    await queue.addJob(() => Future<void>.delayed(const Duration(seconds: 3), () => future3Finish = DateTime.now().millisecondsSinceEpoch));
+    await queue.addJob(
+      () => Future<void>.delayed(
+        const Duration(seconds: 3),
+        () => future1Finish = DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    await queue.addJob(
+      () => Future<void>.delayed(
+        const Duration(seconds: 3),
+        () => future2Finish = DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    await queue.addJob(
+      () => Future<void>.delayed(
+        const Duration(seconds: 3),
+        () => future3Finish = DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
 
     await Future<void>.delayed(const Duration(seconds: 12));
 

@@ -11,5 +11,3 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
-    - "test/"
-    - "integration_test/"

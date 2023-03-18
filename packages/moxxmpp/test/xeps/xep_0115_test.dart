@@ -5,20 +5,20 @@ import 'package:test/test.dart';
 void main() {
   test('Test XEP example', () async {
     final data = DiscoInfo(
-      [
+      const [
         'http://jabber.org/protocol/caps',
         'http://jabber.org/protocol/disco#info',
         'http://jabber.org/protocol/disco#items',
         'http://jabber.org/protocol/muc'
       ],
-      [
+      const [
         Identity(
           category: 'client',
           type: 'pc',
           name: 'Exodus 0.9.1',
         )
       ],
-      [],
+      const [],
       null,
       JID.fromString('some@user.local/test'),
     );
@@ -28,29 +28,30 @@ void main() {
   });
 
   test('Test complex generation example', () async {
-    const extDiscoDataString = "<x xmlns='jabber:x:data' type='result'><field var='FORM_TYPE' type='hidden'><value>urn:xmpp:dataforms:softwareinfo</value></field><field var='ip_version' type='text-multi' ><value>ipv4</value><value>ipv6</value></field><field var='os'><value>Mac</value></field><field var='os_version'><value>10.5.1</value></field><field var='software'><value>Psi</value></field><field var='software_version'><value>0.11</value></field></x>";
+    const extDiscoDataString =
+        "<x xmlns='jabber:x:data' type='result'><field var='FORM_TYPE' type='hidden'><value>urn:xmpp:dataforms:softwareinfo</value></field><field var='ip_version' type='text-multi' ><value>ipv4</value><value>ipv6</value></field><field var='os'><value>Mac</value></field><field var='os_version'><value>10.5.1</value></field><field var='software'><value>Psi</value></field><field var='software_version'><value>0.11</value></field></x>";
     final data = DiscoInfo(
-      [
+      const [
         'http://jabber.org/protocol/caps',
         'http://jabber.org/protocol/disco#info',
         'http://jabber.org/protocol/disco#items',
         'http://jabber.org/protocol/muc'
       ],
-      [
-        const Identity(
+      const [
+        Identity(
           category: 'client',
           type: 'pc',
           name: 'Psi 0.11',
           lang: 'en',
         ),
-        const Identity(
+        Identity(
           category: 'client',
           type: 'pc',
           name: 'Ψ 0.11',
           lang: 'el',
         ),
       ],
-      [ parseDataForm(XMLNode.fromString(extDiscoDataString)) ],
+      [parseDataForm(XMLNode.fromString(extDiscoDataString))],
       null,
       JID.fromString('some@user.local/test'),
     );
@@ -58,9 +59,9 @@ void main() {
     final hash = await calculateCapabilityHash(data, Sha1());
     expect(hash, 'q07IKJEyjvHSyhy//CH0CxmKi8w=');
   });
-  
+
   test('Test Gajim capability hash computation', () async {
-    // TODO: This one fails
+    // TODO(Unknown): This one fails
     /*
     final data = DiscoInfo(
       features: [
@@ -120,7 +121,7 @@ void main() {
 
   test('Test Conversations hash computation', () async {
     final data = DiscoInfo(
-      [
+      const [
         'eu.siacs.conversations.axolotl.devicelist+notify',
         'http://jabber.org/protocol/caps',
         'http://jabber.org/protocol/chatstates',
@@ -152,14 +153,14 @@ void main() {
         'urn:xmpp:receipts',
         'urn:xmpp:time'
       ],
-      [
+      const [
         Identity(
           category: 'client',
           type: 'phone',
           name: 'Conversations',
         )
       ],
-      [],
+      const [],
       null,
       JID.fromString('user@server.local/test'),
     );

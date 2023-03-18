@@ -11,16 +11,18 @@ class StubbedDiscoManager extends DiscoManager {
   final bool _itemError;
 
   @override
-  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(String entity, { String? node, bool shouldEncrypt = true }) async {
+  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
+    String entity, {
+    String? node,
+    bool shouldEncrypt = true,
+  }) async {
     final result = DiscoInfo.fromQuery(
-      XMLNode.fromString(
-        '''
+      XMLNode.fromString('''
 <query xmlns='http://jabber.org/protocol/disco#info'>
   <identity category='pubsub' type='service' />
   <feature var="http://jabber.org/protocol/pubsub" />
   <feature var="http://jabber.org/protocol/pubsub#multi-items" />
-</query>'''
-      ),
+</query>'''),
       JID.fromString('pubsub.server.example.org'),
     );
 
@@ -28,7 +30,11 @@ class StubbedDiscoManager extends DiscoManager {
   }
 
   @override
-  Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(String entity, {String? node, bool shouldEncrypt = true}) async {
+  Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(
+    String entity, {
+    String? node,
+    bool shouldEncrypt = true,
+  }) async {
     if (_itemError) {
       return Result(
         UnknownDiscoError(),
@@ -39,13 +45,15 @@ class StubbedDiscoManager extends DiscoManager {
     );
   }
 }
-  
+
 void main() {
   initLogger();
 
-  test('Test pre-processing with pubsub#max_items when the server does not support it (1/2)', () async {
+  test(
+      'Test pre-processing with pubsub#max_items when the server does not support it (1/2)',
+      () async {
     final manager = PubSubManager();
-    final TestingManagerHolder tm = TestingManagerHolder();
+    final tm = TestingManagerHolder();
     await tm.register(StubbedDiscoManager(false));
     await tm.register(manager);
 
@@ -58,9 +66,11 @@ void main() {
     expect(result.maxItems, '1');
   });
 
-  test('Test pre-processing with pubsub#max_items when the server does not support it (2/2)', () async {
+  test(
+      'Test pre-processing with pubsub#max_items when the server does not support it (2/2)',
+      () async {
     final manager = PubSubManager();
-    final TestingManagerHolder tm = TestingManagerHolder();
+    final tm = TestingManagerHolder();
     await tm.register(StubbedDiscoManager(true));
     await tm.register(manager);
 
@@ -73,7 +83,9 @@ void main() {
     expect(result.maxItems, '1');
   });
 
-  test('Test publishing with pubsub#max_items when the server does not support it', () async {
+  test(
+      'Test publishing with pubsub#max_items when the server does not support it',
+      () async {
     final socket = StubTCPSocket.authenticated(
       TestingManagerHolder.settings,
       [
@@ -158,23 +170,25 @@ void main() {
       RosterManager(TestingRosterStateManager(null, [])),
       PingManager(),
     ]);
-    connection..registerFeatureNegotiators([
-      SaslPlainNegotiator(),
-      ResourceBindingNegotiator(),
-    ])
-    ..setConnectionSettings(TestingManagerHolder.settings);
+    connection
+      ..registerFeatureNegotiators([
+        SaslPlainNegotiator(),
+        ResourceBindingNegotiator(),
+      ])
+      ..setConnectionSettings(TestingManagerHolder.settings);
     await connection.connect(
       waitUntilLogin: true,
     );
 
-    final item = XMLNode(tag: "test-item");
-    final result = await connection.getManagerById<PubSubManager>(pubsubManager)!.publish(
-      'pubsub.server.example.org',
-      'princely_musings',
-      item,
-      id: 'current',
-      options: const PubSubPublishOptions(maxItems: 'max'),
-    );
+    final item = XMLNode(tag: 'test-item');
+    final result =
+        await connection.getManagerById<PubSubManager>(pubsubManager)!.publish(
+              'pubsub.server.example.org',
+              'princely_musings',
+              item,
+              id: 'current',
+              options: const PubSubPublishOptions(maxItems: 'max'),
+            );
 
     expect(result.isType<bool>(), true);
   });

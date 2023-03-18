@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Test parsing a large sticker pack', () {

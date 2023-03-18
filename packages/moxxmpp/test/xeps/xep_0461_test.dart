@@ -10,15 +10,18 @@ void main() {
   });
 
   test('Test building a multiline quote', () {
-    final quote = QuoteData.fromBodies('Hallo Welt\nHallo Erde', 'How are you?');
+    final quote = QuoteData.fromBodies(
+      'Hallo Welt\nHallo Erde',
+      'How are you?',
+    );
 
     expect(quote.body, '> Hallo Welt\n> Hallo Erde\nHow are you?');
     expect(quote.fallbackLength, 26);
   });
 
   test('Applying a singleline quote', () {
-    final body = '> Hallo Welt\nHello right back!';
-    final reply = ReplyData(
+    const body = '> Hallo Welt\nHello right back!';
+    const reply = ReplyData(
       to: '',
       id: '',
       start: 0,
@@ -30,8 +33,8 @@ void main() {
   });
 
   test('Applying a multiline quote', () {
-    final body = "> Hallo Welt\n> How are you?\nI'm fine.\nThank you!";
-    final reply = ReplyData(
+    const body = "> Hallo Welt\n> How are you?\nI'm fine.\nThank you!";
+    const reply = ReplyData(
       to: '',
       id: '',
       start: 0,

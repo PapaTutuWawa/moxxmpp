@@ -3,28 +3,38 @@ import 'package:moxxmpp/src/awaiter.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final bareJid = JID('moxxmpp', 'server3.example', '');
+  const bareJid = JID('moxxmpp', 'server3.example', '');
 
   test('Test awaiting an awaited stanza with a from attribute', () async {
     final awaiter = StanzaAwaiter();
 
     // "Send" a stanza
-    final future = await awaiter.addPending('user1@server.example', 'abc123', 'iq');
+    final future = await awaiter.addPending(
+      'user1@server.example',
+      'abc123',
+      'iq',
+    );
 
     // Receive the wrong answer
     final result1 = await awaiter.onData(
-      XMLNode.fromString('<iq from="user3@server.example" id="abc123" type="result" />'),
+      XMLNode.fromString(
+        '<iq from="user3@server.example" id="abc123" type="result" />',
+      ),
       bareJid,
     );
     expect(result1, false);
     final result2 = await awaiter.onData(
-      XMLNode.fromString('<iq from="user1@server.example" id="lol" type="result" />'),
+      XMLNode.fromString(
+        '<iq from="user1@server.example" id="lol" type="result" />',
+      ),
       bareJid,
     );
     expect(result2, false);
 
     // Receive the correct answer
-    final stanza = XMLNode.fromString('<iq from="user1@server.example" id="abc123" type="result" />');
+    final stanza = XMLNode.fromString(
+      '<iq from="user1@server.example" id="abc123" type="result" />',
+    );
     final result3 = await awaiter.onData(
       stanza,
       bareJid,
@@ -45,7 +55,7 @@ void main() {
       bareJid,
     );
     expect(result1, false);
-   
+
     // Receive the correct answer
     final stanza = XMLNode.fromString('<iq id="abc123" type="result" />');
     final result2 = await awaiter.onData(
