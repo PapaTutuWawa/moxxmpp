@@ -1140,7 +1140,17 @@ class XmppConnection {
     bool waitUntilLogin = false,
     bool enableReconnectOnSuccess = true,
   }) async {
-    _runPreConnectionAssertions();
+    if (await _testAndSetIsConnectionRunning()) {
+      _log.fine(
+        'Cancelling this connection attempt as one appears to be already running.',
+      );
+      return Future.value(
+        Result(
+          ConnectionAlreadyRunningError(),
+        ),
+      );
+    }
+
     await _resetIsConnectionRunning();
 
     if (waitUntilLogin) {
@@ -1230,17 +1240,7 @@ class XmppConnection {
     bool waitUntilLogin = false,
     bool enableReconnectOnSuccess = true,
   }) async {
-    if (_connectionState != XmppConnectionState.notConnected &&
-        _connectionState != XmppConnectionState.error) {
-      _log.fine(
-        'Cancelling this connection attempt as one appears to be already running.',
-      );
-      return Future.value(
-        Result(
-          ConnectionAlreadyRunningError(),
-        ),
-      );
-    }
+    _runPreConnectionAssertions();
 
     final result = _connectImpl(
       lastResource: lastResource,
