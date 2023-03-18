@@ -110,11 +110,6 @@ class _MyHomePageState extends State<MyHomePage> {
         jid: JID.fromString(jidController.text),
         password: passwordController.text,
         useDirectTLS: true,
-        // If `allowPlainAuth` is `false`, connecting to some
-        // servers will cause apps to hang, and never connect.
-        // The hang is a bug that will be fixed, so when it is,
-        // allowPlainAuth should be set to false.
-        allowPlainAuth: true,
       ),
     );
     final result = await connection.connect(waitUntilLogin: true);
@@ -122,14 +117,14 @@ class _MyHomePageState extends State<MyHomePage> {
       connected = result.isType<bool>() && result.get<bool>();
       loading = false;
     });
-    if (result.isType<XmppConnectionError>()) {
-      logger.severe(result.get<XmppConnectionError>());
+    if (result.isType<XmppError>()) {
+      logger.severe(result.get<XmppError>());
       if (context.mounted) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Error'),
-            content: Text(result.get<XmppConnectionError>().toString()),
+            content: Text(result.get<XmppError>().toString()),
           ),
         );
       }
