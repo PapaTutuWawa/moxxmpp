@@ -18,14 +18,13 @@ Future<bool> testRosterManager(String bareJid, String resource, String stanzaStr
         jid: JID.fromString(bareJid),
         password: 'password',
         useDirectTLS: true,
-        allowPlainAuth: false,
       ),
       getManagerById: getManagerNullStub,
       getNegotiatorById: getNegotiatorNullStub,
       isFeatureSupported: (_) => false,
       getFullJID: () => JID.fromString('$bareJid/$resource'),
-      getSocket: () => StubTCPSocket(play: []),
-      getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
+      getSocket: () => StubTCPSocket([]),
+      getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket([])),
   ),);
 
   final stanza = Stanza.fromXMLNode(XMLNode.fromString(stanzaString));
@@ -41,7 +40,7 @@ void main() {
 
   test('Test a successful login attempt with no SM', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -121,12 +120,12 @@ void main() {
       final XmppConnection conn = XmppConnection(
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
-        fakeSocket);
+        fakeSocket,
+      );
       conn.setConnectionSettings(ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
           useDirectTLS: true,
-          allowPlainAuth: true,
       ),);
       conn.registerManagers([
         PresenceManager(),
@@ -153,7 +152,7 @@ void main() {
 
   test('Test a failed SASL auth', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -185,7 +184,6 @@ void main() {
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
         useDirectTLS: true,
-        allowPlainAuth: true,
       ),);
       conn.registerManagers([
         PresenceManager(),
@@ -212,7 +210,7 @@ void main() {
 
   test('Test another failed SASL auth', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -244,7 +242,6 @@ void main() {
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
           useDirectTLS: true,
-          allowPlainAuth: true,
       ),);
       conn.registerManagers([
         PresenceManager(),
@@ -300,7 +297,6 @@ void main() {
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
         useDirectTLS: true,
-        allowPlainAuth: false,
       ),);
       conn.registerManagers([
         PresenceManager('http://moxxmpp.example'),
@@ -333,14 +329,13 @@ void main() {
                 jid: JID.fromString('some.user@example.server'),
                 password: 'password',
                 useDirectTLS: true,
-                allowPlainAuth: false,
               ),
               getManagerById: getManagerNullStub,
               getNegotiatorById: getNegotiatorNullStub,
               isFeatureSupported: (_) => false,
               getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
-              getSocket: () => StubTCPSocket(play: []),
-              getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
+              getSocket: () => StubTCPSocket([]),
+              getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket([])),
           ),);
 
           // NOTE: Based on https://gultsch.de/gajim_roster_push_and_message_interception.html
@@ -364,5 +359,58 @@ void main() {
           final result2 = await testRosterManager('test.user@server.example', 'aaaaa', "<iq from='test.user@server.example/bbbbb' type='result' id='82c2aa1e-cac3-4f62-9e1f-bbe6b057daf3' to='test.user@server.example/aaaaa' xmlns='jabber:client'><query ver='64' xmlns='jabber:iq:roster'><item jid='some.other.user@server.example' subscription='to' /></query></iq>");
           expect(result2, true, reason: 'Roster pushes should be accepted if the bare JIDs are the same');
       });
+  });
+
+  test('Test failing due to the server only allowing SASL PLAIN', () async {
+      final fakeSocket = StubTCPSocket(
+        [
+          StringExpectation(
+            "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' xml:lang='en'>",
+            '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+  </stream:features>''',
+          ),
+        ],
+      );
+
+      final conn = XmppConnection(
+        TestingReconnectionPolicy(),
+        AlwaysConnectedConnectivityManager(),
+        fakeSocket,
+      );
+      conn.registerManagers([
+        PresenceManager(),
+        RosterManager(TestingRosterStateManager('', [])),
+        DiscoManager([]),
+        PingManager(),
+      ]);
+      conn.registerFeatureNegotiators(
+        [
+          // SaslPlainNegotiator(),
+          ResourceBindingNegotiator(),
+        ]
+      );
+      conn.setConnectionSettings(
+        ConnectionSettings(
+          jid: JID.fromString('testuser@example.org'),
+          password: 'abc123',
+          useDirectTLS: false,
+        ),
+      );
+
+      final result = await conn.connect(
+        waitUntilLogin: true,
+      );
+
+      expect(result.isType<NoMatchingAuthenticationMechanismAvailableError>(), true);
   });
 }

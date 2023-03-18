@@ -36,7 +36,7 @@ void main() {
   initLogger();
 
   final stubSocket = StubTCPSocket(
-    play: [
+    [
       StringExpectation(
         "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
         '''
@@ -74,7 +74,6 @@ void main() {
         jid: JID.fromString('user@test.server'),
         password: 'abc123',
         useDirectTLS: true,
-        allowPlainAuth: false,
       ),
     );
   final features = [

@@ -43,14 +43,13 @@ void main() {
             jid: JID.fromString('some.user@example.server'),
             password: 'password',
             useDirectTLS: true,
-            allowPlainAuth: false,
           ),
           getManagerById: getManagerNullStub,
           getNegotiatorById: getUnsupportedCSINegotiator,
           isFeatureSupported: (_) => false,
           getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
-          getSocket: () => StubTCPSocket(play: []),
-          getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
+          getSocket: () => StubTCPSocket([]),
+          getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket([])),
         ),
       );
 
@@ -72,14 +71,13 @@ void main() {
             jid: JID.fromString('some.user@example.server'),
             password: 'password',
             useDirectTLS: true,
-            allowPlainAuth: false,
           ),
           getManagerById: getManagerNullStub,
           getNegotiatorById: getSupportedCSINegotiator,
           isFeatureSupported: (_) => false,
           getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
-          getSocket: () => StubTCPSocket(play: []),
-          getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
+          getSocket: () => StubTCPSocket([]),
+          getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket([])),
         ),
       );
 

@@ -51,11 +51,8 @@ class StanzaExpectation extends ExpectationBase {
   }
 }
 
-/// Use [settings] to build the beginning of a play that can be used with StubTCPSocket. [settings]'s allowPlainAuth must
 /// be set to true.
 List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
-  assert(settings.allowPlainAuth, 'SASL PLAIN must be allowed');
-
   final plain = base64.encode(
     utf8.encode('\u0000${settings.jid.local}\u0000${settings.password}'),
   );

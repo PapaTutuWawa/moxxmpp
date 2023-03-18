@@ -29,12 +29,11 @@ XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
       jid: JID.fromString('hallo@example.server'),
       password: 'password',
       useDirectTLS: true,
-      allowPlainAuth: false,
     ),
     isFeatureSupported: (_) => false,
     getFullJID: () => JID.fromString('hallo@example.server/uwu'),
-    getSocket: () => StubTCPSocket(play: []),
-    getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
+    getSocket: () => StubTCPSocket([]),
+    getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket([])),
     getNegotiatorById: getNegotiatorNullStub,
   );
 }
@@ -180,7 +179,7 @@ void main() {
 
     test('Test counting incoming stanzas for which handlers end early', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -242,7 +241,6 @@ void main() {
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
           useDirectTLS: true,
-          allowPlainAuth: true,
       ),);
       final sm = StreamManagementManager();
       conn.registerManagers([
@@ -297,7 +295,7 @@ void main() {
 
     test('Test counting incoming stanzas that are awaited', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -369,7 +367,6 @@ void main() {
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
           useDirectTLS: true,
-          allowPlainAuth: true,
       ),);
       final sm = StreamManagementManager();
       conn.registerManagers([
@@ -467,7 +464,7 @@ void main() {
   group('Test the negotiator', () {
     test('Test successful stream enablement', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -529,7 +526,6 @@ void main() {
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
           useDirectTLS: true,
-          allowPlainAuth: true,
       ),);
       conn.registerManagers([
           PresenceManager(),
@@ -559,7 +555,7 @@ void main() {
 
     test('Test a failed stream resumption', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -625,7 +621,6 @@ void main() {
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
           useDirectTLS: true,
-          allowPlainAuth: true,
       ),);
       conn.registerManagers([
           PresenceManager(),
@@ -664,7 +659,7 @@ void main() {
 
     test('Test a successful stream resumption', () async {
       final fakeSocket = StubTCPSocket(
-        play: [
+        [
           StringExpectation(
             "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
             '''
@@ -721,7 +716,6 @@ void main() {
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
           useDirectTLS: true,
-          allowPlainAuth: true,
       ),);
       conn.registerManagers([
           PresenceManager(),

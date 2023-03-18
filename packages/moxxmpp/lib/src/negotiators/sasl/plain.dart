@@ -28,8 +28,6 @@ class SaslPlainNegotiator extends SaslNegotiator {
 
   @override
   bool matchesFeature(List<XMLNode> features) {
-    if (!attributes.getConnectionSettings().allowPlainAuth) return false;
-
     if (super.matchesFeature(features)) {
       if (!attributes.getSocket().isSecure()) {
         _log.warning(

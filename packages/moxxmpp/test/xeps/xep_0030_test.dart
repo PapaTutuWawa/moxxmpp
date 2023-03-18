@@ -10,7 +10,7 @@ void main() {
 
   test('Test having multiple disco requests for the same JID', () async {
     final fakeSocket = StubTCPSocket(
-      play: [
+      [
         StringExpectation(
           "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
           '''
@@ -78,7 +78,6 @@ void main() {
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
         useDirectTLS: true,
-        allowPlainAuth: true,
     ),);
     conn.registerManagers([
       PresenceManager(),

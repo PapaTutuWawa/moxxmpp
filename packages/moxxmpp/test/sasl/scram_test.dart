@@ -36,13 +36,13 @@ final scramSha256StreamFeatures = XMLNode(
 );
 
 void main() {
-  final fakeSocket = StubTCPSocket(play: []);
+  final fakeSocket = StubTCPSocket([]);
   test('Test SASL SCRAM-SHA-1', () async {
       final negotiator = SaslScramNegotiator(0, 'n=user,r=fyko+d2lbbFgONRv9qkxdawL', 'fyko+d2lbbFgONRv9qkxdawL', ScramHashType.sha1);
       negotiator.register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
-          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true, allowPlainAuth: true),
+          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true),
           (_) async {},
           getNegotiatorNullStub,
           getManagerNullStub,
@@ -106,7 +106,7 @@ void main() {
       negotiator.register(
         NegotiatorAttributes(
           (XMLNode n, {String? redact}) => lastMessage = n.innerText(),
-          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true, allowPlainAuth: true),
+          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true),
           (_) async {},
           getNegotiatorNullStub,
           getManagerNullStub,
@@ -138,7 +138,7 @@ void main() {
       negotiator.register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
-          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true, allowPlainAuth: true),
+          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true),
           (_) async {},
           getNegotiatorNullStub,
           getManagerNullStub,
@@ -160,7 +160,7 @@ void main() {
       negotiator.register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
-          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true, allowPlainAuth: true),
+          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true),
           (_) async {},
           getNegotiatorNullStub,
           getManagerNullStub,
@@ -186,7 +186,7 @@ void main() {
       negotiator.register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
-          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true, allowPlainAuth: true),
+          () => ConnectionSettings(jid: JID.fromString('user@server'), password: 'pencil', useDirectTLS: true),
           (_) async {},
           getNegotiatorNullStub,
           getManagerNullStub,

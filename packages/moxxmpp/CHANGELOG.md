@@ -1,6 +1,7 @@
 ## 0.3.0
 
 - **BREAKING**: Removed `connectAwaitable` and merged it with `connect`.
+- **BREAKING**: Removed `allowPlainAuth` from `ConnectionSettings`. If you don't want to use SASL PLAIN, don't register the negotiator. If you want to only conditionally use SASL PLAIN, extend the `SaslPlainNegotiator` and override its `matchesFeature` method to only call the super method when SASL PLAIN should be used.
 
 ## 0.1.6+1
 

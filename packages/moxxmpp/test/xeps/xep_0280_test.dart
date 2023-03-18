@@ -17,12 +17,11 @@ void main() {
         jid: JID.fromString('bob@xmpp.example'),
         password: 'password',
         useDirectTLS: true,
-        allowPlainAuth: false,
       ),
       isFeatureSupported: (_) => false,
       getFullJID: () => JID.fromString('bob@xmpp.example/uwu'),
-      getSocket: () => StubTCPSocket(play: []),
-      getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket(play: [])),
+      getSocket: () => StubTCPSocket([]),
+      getConnection: () => XmppConnection(TestingReconnectionPolicy(), AlwaysConnectedConnectivityManager(), StubTCPSocket([])),
       getNegotiatorById: getNegotiatorNullStub,
     );
     final manager = CarbonsManager();

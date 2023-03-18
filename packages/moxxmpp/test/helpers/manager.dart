@@ -26,7 +26,6 @@ class TestingManagerHolder {
     jid: jid,
     password: 'abc123',
     useDirectTLS: true,
-    allowPlainAuth: true,
   );
 
   Future<XMLNode> _sendStanza(

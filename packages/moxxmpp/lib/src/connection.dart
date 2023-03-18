@@ -395,9 +395,7 @@ class XmppConnection {
       );
       _connectionCompleter?.complete(
         Result(
-          StreamFailureError(
-            error,
-          ),
+          error,
         ),
       );
       _connectionCompleter = null;
@@ -875,7 +873,7 @@ class XmppConnection {
   }
 
   Future<void> _executeCurrentNegotiator(XMLNode nonza) async {
-    // If we don't have a negotiator get one
+    // If we don't have a negotiator, get one
     _currentNegotiator ??= getNextNegotiator(_streamFeatures);
     if (_currentNegotiator == null &&
         _isMandatoryNegotiationDone(_streamFeatures) &&
@@ -884,6 +882,25 @@ class XmppConnection {
       _updateRoutingState(RoutingState.handleStanzas);
       await _onNegotiationsDone();
       return;
+    }
+
+    // If we don't have a next negotiator, we have to bail
+    if (_currentNegotiator == null &&
+        !_isMandatoryNegotiationDone(_streamFeatures) &&
+        !_isNegotiationPossible(_streamFeatures)) {
+      // We failed before authenticating
+      if (!_isAuthenticated) {
+        _log.severe('No negotiator could be picked while unauthenticated');
+        await _resetIsConnectionRunning();
+        await handleError(NoMatchingAuthenticationMechanismAvailableError());
+        return;
+      } else {
+        _log.severe(
+            'No negotiator could be picked while negotiations are not done');
+        await _resetIsConnectionRunning();
+        await handleError(NoAuthenticatorAvailableError());
+        return;
+      }
     }
 
     final result = await _currentNegotiator!.negotiate(nonza);
