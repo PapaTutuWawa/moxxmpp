@@ -374,8 +374,11 @@ class XmppConnection {
 
     // Connect again
     // ignore: cascade_invocations
-    _log.finest('Calling connect() from _attemptReconnection');
-    await connect(waitForConnection: true);
+    _log.finest('Calling _connectImpl() from _attemptReconnection');
+    await _connectImpl(
+      waitForConnection: true,
+      ignoreLock: true,
+    );
   }
 
   /// Called when a stream ending error has occurred
@@ -1133,25 +1136,36 @@ class XmppConnection {
     );
   }
 
+  /// The private implementation for [XmppConnection.connect]. The parameters have
+  /// the same meaning as with [XmppConnection.connect].
+  ///
+  /// [ignoreLock] is a flag that, if true, causes the method to not try to aquire
+  /// a connection lock. This is useful when we already aquired the connection lock,
+  /// for example, in _attemptReconnection.
   Future<Result<bool, XmppError>> _connectImpl({
     String? lastResource,
     bool waitForConnection = false,
     bool shouldReconnect = true,
     bool waitUntilLogin = false,
     bool enableReconnectOnSuccess = true,
+    bool ignoreLock = false,
   }) async {
-    if (await _testAndSetIsConnectionRunning()) {
-      _log.fine(
-        'Cancelling this connection attempt as one appears to be already running.',
-      );
-      return Future.value(
-        Result(
-          ConnectionAlreadyRunningError(),
-        ),
-      );
-    }
+    if (!ignoreLock) {
+      if (await _testAndSetIsConnectionRunning()) {
+        _log.fine(
+          'Cancelling this connection attempt as one appears to be already running.',
+        );
+        return Future.value(
+          Result(
+            ConnectionAlreadyRunningError(),
+          ),
+        );
+      }
 
-    await _resetIsConnectionRunning();
+      await _resetIsConnectionRunning();
+    } else {
+      _log.fine('Ignoring connection lock as ignoreLock = true');
+    }
 
     if (waitUntilLogin) {
       _log.finest('Setting up completer for awaiting completed login');
