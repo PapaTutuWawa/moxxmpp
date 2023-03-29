@@ -168,7 +168,6 @@ void main() {
       PresenceManager(),
       MessageManager(),
       RosterManager(TestingRosterStateManager(null, [])),
-      PingManager(),
     ]);
     connection
       ..registerFeatureNegotiators([

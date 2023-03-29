@@ -294,7 +294,6 @@ void main() {
         PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
         DiscoManager([]),
-        PingManager(),
         sm,
         CarbonsManager()..forceEnable(),
         EntityCapabilitiesManager('http://moxxmpp.example'),
@@ -420,7 +419,6 @@ void main() {
         PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
         DiscoManager([]),
-        PingManager(),
         sm,
         CarbonsManager()..forceEnable(),
         //EntityCapabilitiesManager('http://moxxmpp.example'),
@@ -580,7 +578,6 @@ void main() {
         PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
         DiscoManager([]),
-        PingManager(),
         StreamManagementManager(),
       ]);
       conn.registerFeatureNegotiators([
@@ -675,7 +672,6 @@ void main() {
         PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
         DiscoManager([]),
-        PingManager(),
         StreamManagementManager(),
       ]);
       conn.registerFeatureNegotiators([
@@ -767,7 +763,6 @@ void main() {
         PresenceManager(),
         RosterManager(TestingRosterStateManager('', [])),
         DiscoManager([]),
-        PingManager(),
         StreamManagementManager(),
       ]);
       conn.registerFeatureNegotiators([

@@ -77,7 +77,9 @@ class _MyHomePageState extends State<MyHomePage> {
         StreamManagementManager(),
         DiscoManager([]),
         RosterManager(TestingRosterStateManager("", [])),
-        PingManager(),
+        PingManager(
+          const Duration(minutes: 3),
+        ),
         MessageManager(),
         PresenceManager(),
       ])

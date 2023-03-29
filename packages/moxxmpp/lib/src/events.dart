@@ -26,6 +26,12 @@ class ConnectionStateChangedEvent extends XmppEvent {
   final XmppConnectionState before;
   final XmppConnectionState state;
   final bool resumed;
+
+  /// Indicates whether the connection state switched from a not connected state to a
+  /// connected state.
+  bool get connectionEstablished =>
+      before != XmppConnectionState.connected &&
+      state == XmppConnectionState.connected;
 }
 
 /// Triggered when we encounter a stream error.

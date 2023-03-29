@@ -82,7 +82,6 @@ void main() {
       PresenceManager(),
       RosterManager(TestingRosterStateManager(null, [])),
       DiscoManager([]),
-      PingManager(),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
     conn.registerFeatureNegotiators([

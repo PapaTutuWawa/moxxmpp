@@ -83,7 +83,6 @@ class XmppConnection {
     ReconnectionPolicy reconnectionPolicy,
     ConnectivityManager connectivityManager,
     this._socket, {
-    this.connectionPingDuration = const Duration(minutes: 3),
     this.connectingTimeout = const Duration(minutes: 2),
   })  : _reconnectionPolicy = reconnectionPolicy,
         _connectivityManager = connectivityManager {
@@ -143,10 +142,6 @@ class XmppConnection {
   /// UUID object to generate stanza and origin IDs
   final Uuid _uuid = const Uuid();
 
-  /// The time between sending a ping to keep the connection open
-  // TODO(Unknown): Only start the timer if we did not send a stanza after n seconds
-  final Duration connectionPingDuration;
-
   /// The time that we may spent in the "connecting" state
   final Duration connectingTimeout;
 
@@ -158,9 +153,6 @@ class XmppConnection {
 
   /// True if we are authenticated. False if not.
   bool _isAuthenticated = false;
-
-  /// Timer for the keep-alive ping.
-  Timer? _connectionPingTimer;
 
   /// Timer for the connecting timeout
   Timer? _connectingTimeoutTimer;
@@ -627,22 +619,7 @@ class XmppConnection {
     final oldState = _connectionState;
     _connectionState = state;
 
-    final sm = getNegotiatorById<StreamManagementNegotiator>(
-      streamManagementNegotiator,
-    );
-    await _sendEvent(
-      ConnectionStateChangedEvent(
-        state,
-        oldState,
-        sm?.isResumed ?? false,
-      ),
-    );
-
     if (state == XmppConnectionState.connected) {
-      _log.finest('Starting _pingConnectionTimer');
-      _connectionPingTimer =
-          Timer.periodic(connectionPingDuration, _pingConnectionOpen);
-
       // We are connected, so the timer can stop.
       _destroyConnectingTimer();
     } else if (state == XmppConnectionState.connecting) {
@@ -655,14 +632,18 @@ class XmppConnection {
     } else {
       // Just make sure the connecting timeout timer is not running
       _destroyConnectingTimer();
-
-      // The ping timer makes no sense if we are not connected
-      if (_connectionPingTimer != null) {
-        _log.finest('Destroying _pingConnectionTimer');
-        _connectionPingTimer!.cancel();
-        _connectionPingTimer = null;
-      }
     }
+
+    final sm = getNegotiatorById<StreamManagementNegotiator>(
+      streamManagementNegotiator,
+    );
+    await _sendEvent(
+      ConnectionStateChangedEvent(
+        state,
+        oldState,
+        sm?.isResumed ?? false,
+      ),
+    );
   }
 
   /// Sets the routing state and logs the change
@@ -680,22 +661,6 @@ class XmppConnection {
   /// Returns the connection's events as a stream.
   Stream<XmppEvent> asBroadcastStream() {
     return _eventStreamController.stream.asBroadcastStream();
-  }
-
-  /// Timer callback to prevent the connection from timing out.
-  Future<void> _pingConnectionOpen(Timer timer) async {
-    // Follow the recommendation of XEP-0198 and just request an ack. If SM is not enabled,
-    // send a whitespace ping
-    _log.finest('_pingConnectionTimer: Callback called.');
-
-    if (_connectionState == XmppConnectionState.connected) {
-      _log.finest('_pingConnectionTimer: Connected. Triggering a ping event.');
-      unawaited(_sendEvent(SendPingEvent()));
-    } else {
-      _log.finest(
-        '_pingConnectionTimer: Not connected. Not triggering an event.',
-      );
-    }
   }
 
   /// Iterate over [handlers] and check if the handler matches [stanza]. If it does,
@@ -1129,10 +1094,6 @@ class XmppConnection {
     assert(
       _xmppManagers.containsKey(discoManager),
       'A DiscoManager is mandatory',
-    );
-    assert(
-      _xmppManagers.containsKey(pingManager),
-      'A PingManager is mandatory',
     );
   }
 

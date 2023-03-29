@@ -75,7 +75,6 @@ void main() {
       PresenceManager(),
       RosterManager(TestingRosterStateManager('', [])),
       DiscoManager([]),
-      PingManager(),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ])
     ..setConnectionSettings(
