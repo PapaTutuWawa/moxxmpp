@@ -49,9 +49,6 @@ class AuthenticationFailedEvent extends XmppEvent {
 /// Triggered after the SASL authentication has succeeded.
 class AuthenticationSuccessEvent extends XmppEvent {}
 
-/// Triggered when we want to ping the connection open
-class SendPingEvent extends XmppEvent {}
-
 /// Triggered when the stream resumption was successful
 class StreamResumedEvent extends XmppEvent {
   StreamResumedEvent({required this.h});
