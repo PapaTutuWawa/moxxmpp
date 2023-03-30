@@ -397,6 +397,9 @@ class XmppConnection {
       return;
     }
 
+    // Close the socket
+    _socket.close();
+    
     if (!error.isRecoverable()) {
       // We cannot recover this error
       _log.severe(
