@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 Future<void> _runTest(String domain) async {
   var gotTLSException = false;
-  final socket = TCPSocketWrapper(false);
+  final socket = TCPSocketWrapper();
   final log = Logger('TestLogger');
   socket.getEventStream().listen((event) {
     if (event is XmppSocketTLSFailedEvent) {
@@ -15,18 +15,17 @@ Future<void> _runTest(String domain) async {
   });
 
   final connection = XmppConnection(
-    ExponentialBackoffReconnectionPolicy(),
+    TestingReconnectionPolicy(),
+    AlwaysConnectedConnectivityManager(),
     socket,
-  );
-  connection.registerFeatureNegotiators([
-    StartTlsNegotiator(),
-  ]);
-  connection.registerManagers([
-    DiscoManager(),
-    RosterManager(),
-    PingManager(),
+  )..registerFeatureNegotiators([
+      StartTlsNegotiator(),
+    ]);
+  await connection.registerManagers([
+    DiscoManager([]),
+    RosterManager(TestingRosterStateManager('', [])),
     MessageManager(),
-    PresenceManager('http://moxxmpp.example'),
+    PresenceManager(),
   ]);
 
   connection.setConnectionSettings(
@@ -34,18 +33,22 @@ Future<void> _runTest(String domain) async {
       jid: JID.fromString('testuser@$domain'),
       password: 'abc123',
       useDirectTLS: true,
-      allowPlainAuth: true,
     ),
   );
 
-  final result = await connection.connectAwaitable();
-  expect(result.success, false);
+  final result = await connection.connect(
+    shouldReconnect: false,
+    waitUntilLogin: true,
+    enableReconnectOnSuccess: false,
+  );
+  expect(result.isType<XmppError>(), false);
   expect(gotTLSException, true);
 }
 
 void main() {
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
+    // ignore: avoid_print
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
 
