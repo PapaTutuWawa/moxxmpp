@@ -10,8 +10,6 @@ import 'package:moxxmpp_socket_tcp/src/rfc_2782.dart';
 
 /// TCP socket implementation for XmppConnection
 class TCPSocketWrapper extends BaseSocketWrapper {
-  TCPSocketWrapper(this._logData);
-
   /// The underlying Socket/SecureSocket instance.
   Socket? _socket;
 
@@ -30,9 +28,6 @@ class TCPSocketWrapper extends BaseSocketWrapper {
 
   /// Logger
   final Logger _log = Logger('TCPSocketWrapper');
-
-  /// Flag to indicate if incoming and outgoing data should get logged.
-  final bool _logData;
 
   /// Indiacted whether the connection is secure.
   bool _secure = false;
@@ -217,9 +212,7 @@ class TCPSocketWrapper extends BaseSocketWrapper {
     _socketSubscription = _socket!.listen(
       (List<int> event) {
         final data = utf8.decode(event);
-        if (_logData) {
-          _log.finest('<== $data');
-        }
+        _log.finest('<== $data');
         _dataStream.add(data);
       },
       onError: (Object error) {
@@ -296,18 +289,16 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       _eventStream.stream.asBroadcastStream();
 
   @override
-  void write(Object? data, {String? redact}) {
+  void write(String data, {String? redact}) {
     if (_socket == null) {
       _log.severe('Failed to write to socket as _socket is null');
       return;
     }
 
-    if (data != null && data is String && _logData) {
-      if (redact != null) {
-        _log.finest('**> $redact');
-      } else {
-        _log.finest('==> $data');
-      }
+    if (redact != null) {
+      _log.finest('**> $redact');
+    } else {
+      _log.finest('==> $data');
     }
 
     try {
