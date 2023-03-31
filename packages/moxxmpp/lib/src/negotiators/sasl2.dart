@@ -1,9 +1,22 @@
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+
+bool isInliningPossible(XMLNode nonza, String xmlns) {
+  assert(nonza.tag == 'authentication', 'Ensure we use the correct nonza');
+  assert(nonza.xmlns == sasl2Xmlns, 'Ensure we use the correct nonza');
+  final inline = nonza.firstTag('inline');
+  if (inline == null) {
+    return false;
+  }
+
+  return inline.children.firstWhereOrNull((child) => child.xmlns == xmlns) !=
+      null;
+}
 
 /// A special type of [XmppFeatureNegotiatorBase] that is aware of SASL2.
 abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
@@ -117,6 +130,11 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
   /// The SASL negotiator that will negotiate authentication.
   Sasl2AuthenticationNegotiator? _currentSaslNegotiator;
 
+  /// The SASL2 <authentication /> element we received with the stream features.
+  XMLNode? _sasl2Data;
+
+  /// Register a SASL negotiator so that we can use that SASL implementation during
+  /// SASL2.
   void registerSaslNegotiator(Sasl2AuthenticationNegotiator negotiator) {
     _featureNegotiators.add(negotiator);
     _saslNegotiators
@@ -124,8 +142,16 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
       ..sort((a, b) => b.priority.compareTo(a.priority));
   }
 
+  /// Register a feature negotiator so that we can negotitate that feature inline with
+  /// the SASL authentication.
   void registerNegotiator(Sasl2FeatureNegotiator negotiator) {
     _featureNegotiators.add(negotiator);
+  }
+
+  @override
+  bool matchesFeature(List<XMLNode> features) {
+    // Only do SASL2 when the socket is secure
+    return attributes.getSocket().isSecure() && super.matchesFeature(features);
   }
 
   @override
@@ -134,11 +160,12 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
   ) async {
     switch (_sasl2State) {
       case Sasl2State.idle:
-        final sasl2 = nonza.firstTag('authentication', xmlns: sasl2Xmlns)!;
+        _sasl2Data = nonza.firstTag('authentication', xmlns: sasl2Xmlns);
         final mechanisms = XMLNode.xmlns(
           tag: 'mechanisms',
           xmlns: saslXmlns,
-          children: sasl2.children.where((c) => c.tag == 'mechanism').toList(),
+          children:
+              _sasl2Data!.children.where((c) => c.tag == 'mechanism').toList(),
         );
         for (final negotiator in _saslNegotiators) {
           if (negotiator.matchesFeature([mechanisms])) {
@@ -155,9 +182,11 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
         // Collect additional data by interested negotiators
         final children = List<XMLNode>.empty(growable: true);
         for (final negotiator in _featureNegotiators) {
-          children.addAll(
-            await negotiator.onSasl2FeaturesReceived(sasl2),
-          );
+          if (isInliningPossible(_sasl2Data!, negotiator.negotiatingXmlns)) {
+            children.addAll(
+              await negotiator.onSasl2FeaturesReceived(_sasl2Data!),
+            );
+          }
         }
 
         // Build the authenticate nonza
@@ -183,11 +212,18 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
       case Sasl2State.authenticateSent:
         if (nonza.tag == 'success') {
           // Tell the dependent negotiators about the result
+          // TODO(Unknown): This can be written in a better way
           for (final negotiator in _featureNegotiators) {
-            final result = await negotiator.onSasl2Success(nonza);
-            if (!result.isType<bool>()) {
-              return Result(result.get<NegotiatorError>());
+            if (isInliningPossible(_sasl2Data!, negotiator.negotiatingXmlns)) {
+              final result = await negotiator.onSasl2Success(nonza);
+              if (!result.isType<bool>()) {
+                return Result(result.get<NegotiatorError>());
+              }
             }
+          }
+          final result = await _currentSaslNegotiator!.onSasl2Success(nonza);
+          if (!result.isType<bool>()) {
+            return Result(result.get<NegotiatorError>());
           }
 
           // We're done
@@ -213,6 +249,7 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
   void reset() {
     _currentSaslNegotiator = null;
     _sasl2State = Sasl2State.idle;
+    _sasl2Data = null;
 
     super.reset();
   }

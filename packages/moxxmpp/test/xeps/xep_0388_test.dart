@@ -3,6 +3,53 @@ import 'package:test/test.dart';
 import '../helpers/logging.dart';
 import '../helpers/xmpp.dart';
 
+class ExampleNegotiator extends Sasl2FeatureNegotiator {
+  ExampleNegotiator()
+      : super(0, false, 'invalid:example:dont:use', 'testNegotiator');
+
+  String? value;
+
+  @override
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
+    return const Result(NegotiatorState.done);
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    attributes
+        .getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)!
+        .registerNegotiator(this);
+  }
+
+  @override
+  Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode nonza) async {
+    if (!isInliningPossible(nonza, 'invalid:example:dont:use')) {
+      return [];
+    }
+
+    return [
+      XMLNode.xmlns(
+        tag: 'test-data-request',
+        xmlns: 'invalid:example:dont:use',
+      ),
+    ];
+  }
+
+  @override
+  Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode nonza) async {
+    final child =
+        nonza.firstTag('test-data', xmlns: 'invalid:example:dont:use');
+    if (child == null) {
+      return const Result(true);
+    }
+
+    value = child.innerText();
+    return const Result(true);
+  }
+}
+
 void main() {
   initLogger();
 
@@ -246,5 +293,176 @@ void main() {
     );
     expect(result.isType<NegotiatorError>(), true);
     expect(result.get<NegotiatorError>() is InvalidServerSignatureError, true);
+  });
+
+  test('Test simple SASL2 inlining', () async {
+    final fakeSocket = StubTCPSocket([
+      StringExpectation(
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+    <authentication xmlns='urn:xmpp:sasl:2'>
+      <mechanism>PLAIN</mechanism>
+      <inline>
+        <test-feature xmlns="invalid:example:dont:use" />
+      </inline>
+    </authentication>
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+  </stream:features>''',
+      ),
+      StanzaExpectation(
+        "<authenticate xmlns='urn:xmpp:sasl:2' mechanism='PLAIN'><user-agent id='d4565fa7-4d72-4749-b3d3-740edbf87770'><software>moxxmpp</software><device>PapaTutuWawa's awesome device</device></user-agent><initial-response>AHBvbHlub21kaXZpc2lvbgBhYWFh</initial-response><test-data-request xmlns='invalid:example:dont:use' /></authenticate>",
+        '''
+<success xmlns='urn:xmpp:sasl:2'>
+  <authorization-identifier>polynomdivision@test.server</authorization-identifier>
+  <test-data xmlns='invalid:example:dont:use'>Hello World</test-data>
+</success>
+        ''',
+      ),
+      StanzaExpectation(
+        "<iq xmlns='jabber:client' type='set' id='aaaa'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind' /></iq>",
+        '''
+'<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+        ''',
+        adjustId: true,
+        ignoreId: true,
+      ),
+    ]);
+    final conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      AlwaysConnectedConnectivityManager(),
+      fakeSocket,
+    )..setConnectionSettings(
+        ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
+        ),
+      );
+    await conn.registerManagers([
+      PresenceManager(),
+      RosterManager(TestingRosterStateManager('', [])),
+      DiscoManager([]),
+    ]);
+    await conn.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+      ExampleNegotiator(),
+      Sasl2Negotiator(
+        userAgent: const UserAgent(
+          id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
+          software: 'moxxmpp',
+          device: "PapaTutuWawa's awesome device",
+        ),
+      ),
+    ]);
+
+    final result = await conn.connect(
+      waitUntilLogin: true,
+      shouldReconnect: false,
+      enableReconnectOnSuccess: false,
+    );
+    expect(result.isType<NegotiatorError>(), false);
+
+    expect(
+      conn.getNegotiatorById<ExampleNegotiator>('testNegotiator')!.value,
+      'Hello World',
+    );
+  });
+
+  test('Test simple SASL2 inlining 2', () async {
+    final fakeSocket = StubTCPSocket([
+      StringExpectation(
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+    <authentication xmlns='urn:xmpp:sasl:2'>
+      <mechanism>PLAIN</mechanism>
+      <inline>
+        <resume xmlns="urn:xmpp:sm:3" />
+      </inline>
+    </authentication>
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+  </stream:features>''',
+      ),
+      StanzaExpectation(
+        "<authenticate xmlns='urn:xmpp:sasl:2' mechanism='PLAIN'><user-agent id='d4565fa7-4d72-4749-b3d3-740edbf87770'><software>moxxmpp</software><device>PapaTutuWawa's awesome device</device></user-agent><initial-response>AHBvbHlub21kaXZpc2lvbgBhYWFh</initial-response></authenticate>",
+        '''
+<success xmlns='urn:xmpp:sasl:2'>
+  <authorization-identifier>polynomdivision@test.server</authorization-identifier>
+</success>
+        ''',
+      ),
+      StanzaExpectation(
+        "<iq xmlns='jabber:client' type='set' id='aaaa'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind' /></iq>",
+        '''
+'<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+        ''',
+        adjustId: true,
+        ignoreId: true,
+      ),
+    ]);
+    final conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      AlwaysConnectedConnectivityManager(),
+      fakeSocket,
+    )..setConnectionSettings(
+        ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
+        ),
+      );
+    await conn.registerManagers([
+      PresenceManager(),
+      RosterManager(TestingRosterStateManager('', [])),
+      DiscoManager([]),
+    ]);
+    await conn.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+      ExampleNegotiator(),
+      Sasl2Negotiator(
+        userAgent: const UserAgent(
+          id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
+          software: 'moxxmpp',
+          device: "PapaTutuWawa's awesome device",
+        ),
+      ),
+    ]);
+
+    final result = await conn.connect(
+      waitUntilLogin: true,
+      shouldReconnect: false,
+      enableReconnectOnSuccess: false,
+    );
+    expect(result.isType<NegotiatorError>(), false);
+
+    expect(
+      conn.getNegotiatorById<ExampleNegotiator>('testNegotiator')!.value,
+      null,
+    );
   });
 }
