@@ -253,6 +253,19 @@ class XmppConnection {
     }
   }
 
+  // Mark the current connection as authenticated.
+  void _setAuthenticated() {
+    _sendEvent(AuthenticationSuccessEvent());
+    _isAuthenticated = true;
+  }
+
+  /// Remove [feature] from the stream features we are currently negotiating.
+  void _removeNegotiatingFeature(String feature) {
+    _streamFeatures.removeWhere((node) {
+      return node.attributes['xmlns'] == feature;
+    });
+  }
+
   /// Register a list of negotiator with the connection.
   Future<void> registerFeatureNegotiators(
       List<XmppFeatureNegotiatorBase> negotiators) async {
@@ -268,6 +281,8 @@ class XmppConnection {
           () => _connectionSettings.jid.withResource(_resource),
           () => _socket,
           () => _isAuthenticated,
+          _setAuthenticated,
+          _removeNegotiatingFeature,
         ),
       );
       _featureNegotiators[negotiator.id] = negotiator;
@@ -900,10 +915,7 @@ class XmppConnection {
           _streamFeatures.clear();
           _sendStreamHeader();
         } else {
-          _streamFeatures.removeWhere((node) {
-            return node.attributes['xmlns'] ==
-                _currentNegotiator!.negotiatingXmlns;
-          });
+          _removeNegotiatingFeature(_currentNegotiator!.negotiatingXmlns);
           _currentNegotiator = null;
 
           if (_isMandatoryNegotiationDone(_streamFeatures) &&
@@ -1024,11 +1036,6 @@ class XmppConnection {
 
       _log.finest('Resetting _serverFeatures');
       _serverFeatures.clear();
-    } else if (event is AuthenticationSuccessEvent) {
-      _log.finest(
-        'Received AuthenticationSuccessEvent. Setting _isAuthenticated to true',
-      );
-      _isAuthenticated = true;
     }
 
     for (final manager in _xmppManagers.values) {

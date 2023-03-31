@@ -1,3 +1,4 @@
+import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
@@ -6,6 +7,34 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
 typedef Sasl2FeaturesReceivedCallback = Future<List<XMLNode>> Function(XMLNode);
+
+abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
+  Sasl2FeatureNegotiator(
+    int priority,
+    bool sendStreamHeaderWhenDone,
+    String negotiatingXmlns,
+    String id,
+  ) : super(priority, sendStreamHeaderWhenDone, negotiatingXmlns, id);
+
+  /// Called by the SASL2 negotiator when we received the SASL2 stream features
+  /// [sasl2Features]. The return value is a list of XML elements that should be
+  /// added to the SASL2 <authenticate /> nonza.
+  Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features);
+
+  /// Called by the SASL2 negotiator when the SASL2 negotiations are done. [response]
+  /// is the entire response nonza.
+  Future<void> onSasl2Success(XMLNode response);
+}
+
+abstract class Sasl2AuthenticationNegotiator extends SaslNegotiator
+    implements Sasl2FeatureNegotiator {
+  Sasl2AuthenticationNegotiator(int priority, String id, String mechanismName)
+      : super(priority, id, mechanismName);
+
+  /// Perform a SASL step with [input] as the already parsed input data. Returns
+  /// the base64-encoded response data.
+  Future<String> getRawStep(String input);
+}
 
 class NoSASLMechanismSelectedError extends NegotiatorError {
   @override
@@ -58,6 +87,8 @@ class UserAgent {
 enum Sasl2State {
   // No request has been sent yet.
   idle,
+  // We have sent the <authenticate /> nonza.
+  authenticateSent,
 }
 
 /// A negotiator that implements XEP-0388 SASL2. Alone, it does nothing. Has to be
@@ -72,28 +103,29 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
 
   /// List of callbacks that are registered against us. Will be called once we get
   /// SASL2 features.
-  final List<Sasl2FeaturesReceivedCallback> _featureCallbacks =
-      List<Sasl2FeaturesReceivedCallback>.empty(growable: true);
+  final List<Sasl2FeatureNegotiator> _featureNegotiators =
+      List<Sasl2FeatureNegotiator>.empty(growable: true);
 
   /// List of SASL negotiators, sorted by their priority. The higher the priority, the
   /// lower its index.
-  final List<SaslNegotiator> _saslNegotiators =
-      List<SaslNegotiator>.empty(growable: true);
+  final List<Sasl2AuthenticationNegotiator> _saslNegotiators =
+      List<Sasl2AuthenticationNegotiator>.empty(growable: true);
 
   /// The state the SASL2 negotiator is currently in.
   Sasl2State _sasl2State = Sasl2State.idle;
 
   /// The SASL negotiator that will negotiate authentication.
-  SaslNegotiator? _currentSaslNegotiator;
+  Sasl2AuthenticationNegotiator? _currentSaslNegotiator;
 
-  void registerSaslNegotiator(SaslNegotiator negotiator) {
+  void registerSaslNegotiator(Sasl2AuthenticationNegotiator negotiator) {
+    _featureNegotiators.add(negotiator);
     _saslNegotiators
       ..add(negotiator)
       ..sort((a, b) => b.priority.compareTo(a.priority));
   }
 
-  void registerFeaturesCallback(Sasl2FeaturesReceivedCallback callback) {
-    _featureCallbacks.add(callback);
+  void registerNegotiator(Sasl2FeatureNegotiator negotiator) {
+    _featureNegotiators.add(negotiator);
   }
 
   @override
@@ -121,9 +153,9 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
 
         // Collect additional data by interested negotiators
         final children = List<XMLNode>.empty(growable: true);
-        for (final callback in _featureCallbacks) {
+        for (final negotiator in _featureNegotiators) {
           children.addAll(
-            await callback(sasl2),
+            await negotiator.onSasl2FeaturesReceived(sasl2),
           );
         }
 
@@ -136,16 +168,29 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
           },
           children: [
             if (userAgent != null) userAgent!.toXml(),
-
-            // TODO: Get the initial response
             XMLNode(
               tag: 'initial-response',
+              text: await _currentSaslNegotiator!.getRawStep(''),
             ),
             ...children,
           ],
         );
+
+        _sasl2State = Sasl2State.authenticateSent;
         attributes.sendNonza(authenticate);
         return const Result(NegotiatorState.ready);
+      case Sasl2State.authenticateSent:
+        if (nonza.tag == 'success') {
+          // Tell the dependent negotiators about the result
+          for (final negotiator in _featureNegotiators) {
+            await negotiator.onSasl2Success(nonza);
+          }
+
+          // We're done
+          attributes.setAuthenticated();
+          attributes.removeNegotiatingFeature(saslXmlns);
+          return const Result(NegotiatorState.done);
+        }
     }
 
     return const Result(NegotiatorState.ready);

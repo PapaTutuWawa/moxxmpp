@@ -35,6 +35,8 @@ class NegotiatorAttributes {
     this.getFullJID,
     this.getSocket,
     this.isAuthenticated,
+    this.setAuthenticated,
+    this.removeNegotiatingFeature,
   );
 
   /// Sends the nonza nonza and optionally redacts it in logs if redact is not null.
@@ -61,6 +63,13 @@ class NegotiatorAttributes {
 
   /// Returns true if the stream is authenticated. Returns false if not.
   final bool Function() isAuthenticated;
+
+  /// Sets the authentication state of the connection to true.
+  final void Function() setAuthenticated;
+
+  /// Remove a stream feature from our internal cache. This is useful for when you
+  /// negotiated a feature for another negotiator, like SASL2.
+  final void Function(String) removeNegotiatingFeature;
 }
 
 abstract class XmppFeatureNegotiatorBase {

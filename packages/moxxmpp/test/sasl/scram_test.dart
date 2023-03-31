@@ -57,6 +57,8 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_) {},
         ),
       );
 
@@ -150,6 +152,8 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_) {},
         ),
       );
 
@@ -198,6 +202,8 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_) {},
         ),
       );
 
@@ -236,6 +242,8 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_) {},
         ),
       );
 
@@ -277,6 +285,8 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_) {},
         ),
       );
 

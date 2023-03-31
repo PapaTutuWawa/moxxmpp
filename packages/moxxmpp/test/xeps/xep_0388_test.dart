@@ -24,11 +24,26 @@ void main() {
     <authentication xmlns='urn:xmpp:sasl:2'>
       <mechanism>PLAIN</mechanism>
     </authentication>
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
   </stream:features>''',
       ),
       StanzaExpectation(
         "<authenticate xmlns='urn:xmpp:sasl:2' mechanism='PLAIN'><user-agent id='d4565fa7-4d72-4749-b3d3-740edbf87770'><software>moxxmpp</software><device>PapaTutuWawa's awesome device</device></user-agent><initial-response>AHBvbHlub21kaXZpc2lvbgBhYWFh</initial-response></authenticate>",
-        '',
+        '''
+<success xmlns='urn:xmpp:sasl:2'>
+  <authorization-identifier>polynomdivision@test.server</authorization-identifier>
+</success>
+        ''',
+      ),
+      StanzaExpectation(
+        "<iq xmlns='jabber:client' type='set' id='aaaa'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind' /></iq>",
+        '''
+'<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+        ''',
+        adjustId: true,
+        ignoreId: true,
       ),
     ]);
     final conn = XmppConnection(

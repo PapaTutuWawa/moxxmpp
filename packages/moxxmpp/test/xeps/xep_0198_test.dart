@@ -391,10 +391,10 @@ void main() {
           "<enable xmlns='urn:xmpp:sm:3' resume='true' />",
           '<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true" />',
         ),
-        // StringExpectation(
-        //   "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show></presence>",
-        //   '<iq type="result" />',
-        // ),
+        StringExpectation(
+          "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show></presence>",
+          '<iq type="result" />',
+        ),
         StanzaExpectation(
           "<iq to='user@example.com' type='get' id='a' xmlns='jabber:client' />",
           "<iq from='user@example.com' type='result' id='a' />",
@@ -450,7 +450,7 @@ void main() {
         addFrom: StanzaFromType.none,
       );
 
-      expect(sm.state.s2c, /*2*/ 1);
+      expect(sm.state.s2c, 2);
     });
   });
 
