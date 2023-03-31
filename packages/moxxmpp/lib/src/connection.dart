@@ -600,6 +600,7 @@ class XmppConnection {
   /// Called when we timeout during connecting
   Future<void> _onConnectingTimeout() async {
     _log.severe('Connection stuck in "connecting". Causing a reconnection...');
+    await _resetIsConnectionRunning();
     await handleError(TimeoutError());
   }
 
