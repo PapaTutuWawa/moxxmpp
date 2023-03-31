@@ -1,4 +1,3 @@
-import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
@@ -6,15 +5,14 @@ import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
-typedef Sasl2FeaturesReceivedCallback = Future<List<XMLNode>> Function(XMLNode);
-
+/// A special type of [XmppFeatureNegotiatorBase] that is aware of SASL2.
 abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
   Sasl2FeatureNegotiator(
-    int priority,
-    bool sendStreamHeaderWhenDone,
-    String negotiatingXmlns,
-    String id,
-  ) : super(priority, sendStreamHeaderWhenDone, negotiatingXmlns, id);
+    super.priority,
+    super.sendStreamHeaderWhenDone,
+    super.negotiatingXmlns,
+    super.id,
+  );
 
   /// Called by the SASL2 negotiator when we received the SASL2 stream features
   /// [sasl2Features]. The return value is a list of XML elements that should be
@@ -26,10 +24,10 @@ abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
   Future<void> onSasl2Success(XMLNode response);
 }
 
+/// A special type of [SaslNegotiator] that is aware of SASL2.
 abstract class Sasl2AuthenticationNegotiator extends SaslNegotiator
     implements Sasl2FeatureNegotiator {
-  Sasl2AuthenticationNegotiator(int priority, String id, String mechanismName)
-      : super(priority, id, mechanismName);
+  Sasl2AuthenticationNegotiator(super.priority, super.id, super.mechanismName);
 
   /// Perform a SASL step with [input] as the already parsed input data. Returns
   /// the base64-encoded response data.
@@ -59,8 +57,10 @@ class UserAgent {
   final String? device;
 
   XMLNode toXml() {
-    assert(id != null || software != null || device != null,
-        'A completely empty user agent makes no sense');
+    assert(
+      id != null || software != null || device != null,
+      'A completely empty user agent makes no sense',
+    );
     return XMLNode(
       tag: 'user-agent',
       attributes: id != null
@@ -130,7 +130,8 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
 
   @override
   Future<Result<NegotiatorState, NegotiatorError>> negotiate(
-      XMLNode nonza) async {
+    XMLNode nonza,
+  ) async {
     switch (_sasl2State) {
       case Sasl2State.idle:
         final sasl2 = nonza.firstTag('authentication', xmlns: sasl2Xmlns)!;

@@ -8,8 +8,8 @@ import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/errors.dart';
 import 'package:moxxmpp/src/negotiators/sasl/kv.dart';
-import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/nonza.dart';
+import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 import 'package:random_string/random_string.dart';
@@ -95,7 +95,7 @@ enum ScramState { preSent, initialMessageSent, challengeResponseSent, error }
 
 const gs2Header = 'n,,';
 
-class SaslScramNegotiator extends SaslNegotiator {
+class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
   // NOTE: NEVER, and I mean, NEVER set clientNonce or initalMessageNoGS2. They are just there for testing
   SaslScramNegotiator(
     int priority,
@@ -236,20 +236,9 @@ class SaslScramNegotiator extends SaslNegotiator {
   ) async {
     switch (_scramState) {
       case ScramState.preSent:
-        if (clientNonce == null || clientNonce == '') {
-          clientNonce = randomAlphaNumeric(
-            40,
-            provider: CoreRandomProvider.from(Random.secure()),
-          );
-        }
-
-        initialMessageNoGS2 =
-            'n=${attributes.getConnectionSettings().jid.local},r=$clientNonce';
-
-        _scramState = ScramState.initialMessageSent;
         attributes.sendNonza(
           SaslScramAuthNonza(
-            body: base64.encode(utf8.encode(gs2Header + initialMessageNoGS2)),
+            body: await getRawStep(''),
             type: hashType,
           ),
           redact: SaslScramAuthNonza(body: '******', type: hashType).toXml(),
@@ -266,12 +255,8 @@ class SaslScramNegotiator extends SaslNegotiator {
           );
         }
 
-        final challengeBase64 = nonza.innerText();
-        final response = await calculateChallengeResponse(challengeBase64);
-        final responseBase64 = base64.encode(utf8.encode(response));
-        _scramState = ScramState.challengeResponseSent;
         attributes.sendNonza(
-          SaslScramResponseNonza(body: responseBase64),
+          SaslScramResponseNonza(body: await getRawStep(nonza.innerText())),
           redact: SaslScramResponseNonza(body: '******').toXml(),
         );
         return const Result(NegotiatorState.ready);
@@ -313,5 +298,44 @@ class SaslScramNegotiator extends SaslNegotiator {
     _scramState = ScramState.preSent;
 
     super.reset();
+  }
+
+  @override
+  Future<String> getRawStep(String input) async {
+    switch (_scramState) {
+      case ScramState.preSent:
+        if (clientNonce == null || clientNonce == '') {
+          clientNonce = randomAlphaNumeric(
+            40,
+            provider: CoreRandomProvider.from(Random.secure()),
+          );
+        }
+
+        initialMessageNoGS2 =
+            'n=${attributes.getConnectionSettings().jid.local},r=$clientNonce';
+
+        _scramState = ScramState.initialMessageSent;
+        return base64.encode(utf8.encode(gs2Header + initialMessageNoGS2));
+      case ScramState.initialMessageSent:
+        final challengeBase64 = input;
+        final response = await calculateChallengeResponse(challengeBase64);
+        final responseBase64 = base64.encode(utf8.encode(response));
+        _scramState = ScramState.challengeResponseSent;
+
+        return responseBase64;
+      case ScramState.challengeResponseSent:
+      case ScramState.error:
+        return '';
+    }
+  }
+
+  @override
+  Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
+    return [];
+  }
+
+  @override
+  Future<void> onSasl2Success(XMLNode response) async {
+    state = NegotiatorState.done;
   }
 }

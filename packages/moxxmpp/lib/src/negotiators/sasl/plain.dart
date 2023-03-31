@@ -4,7 +4,6 @@ import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/errors.dart';
-import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/nonza.dart';
 import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -58,7 +57,6 @@ class SaslPlainNegotiator extends Sasl2AuthenticationNegotiator {
     } else {
       final tag = nonza.tag;
       if (tag == 'success') {
-        await attributes.sendEvent(AuthenticationSuccessEvent());
         attributes.setAuthenticated();
         return const Result(NegotiatorState.done);
       } else {
@@ -90,7 +88,8 @@ class SaslPlainNegotiator extends Sasl2AuthenticationNegotiator {
   Future<String> getRawStep(String input) async {
     final settings = attributes.getConnectionSettings();
     return base64.encode(
-        utf8.encode('\u0000${settings.jid.local}\u0000${settings.password}'));
+      utf8.encode('\u0000${settings.jid.local}\u0000${settings.password}'),
+    );
   }
 
   @override

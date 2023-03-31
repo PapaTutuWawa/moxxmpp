@@ -268,7 +268,8 @@ class XmppConnection {
 
   /// Register a list of negotiator with the connection.
   Future<void> registerFeatureNegotiators(
-      List<XmppFeatureNegotiatorBase> negotiators) async {
+    List<XmppFeatureNegotiatorBase> negotiators,
+  ) async {
     for (final negotiator in negotiators) {
       _log.finest('Registering ${negotiator.id}');
       negotiator.register(
