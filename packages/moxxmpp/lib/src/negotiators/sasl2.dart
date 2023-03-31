@@ -6,18 +6,6 @@ import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
-bool isInliningPossible(XMLNode nonza, String xmlns) {
-  assert(nonza.tag == 'authentication', 'Ensure we use the correct nonza');
-  assert(nonza.xmlns == sasl2Xmlns, 'Ensure we use the correct nonza');
-  final inline = nonza.firstTag('inline');
-  if (inline == null) {
-    return false;
-  }
-
-  return inline.children.firstWhereOrNull((child) => child.xmlns == xmlns) !=
-      null;
-}
-
 /// A special type of [XmppFeatureNegotiatorBase] that is aware of SASL2.
 abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
   Sasl2FeatureNegotiator(
@@ -30,10 +18,14 @@ abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
   /// Called by the SASL2 negotiator when we received the SASL2 stream features
   /// [sasl2Features]. The return value is a list of XML elements that should be
   /// added to the SASL2 <authenticate /> nonza.
+  /// This method is only called when the <inline /> element contains an item with
+  /// xmlns equal to [negotiatingXmlns].
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features);
 
   /// Called by the SASL2 negotiator when the SASL2 negotiations are done. [response]
   /// is the entire response nonza.
+  /// This method is only called when the previous <inline /> element contains an
+  /// item with xmlns equal to [negotiatingXmlns].
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response);
 }
 
@@ -148,6 +140,18 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
     _featureNegotiators.add(negotiator);
   }
 
+  /// Returns true, if an item with xmlns of [xmlns] is contained inside [_sasl2Data]'s
+  /// <inline /> block. If not, returns false.
+  bool _isInliningPossible(String xmlns) {
+    final inline = _sasl2Data!.firstTag('inline');
+    if (inline == null) {
+      return false;
+    }
+
+    return inline.children.firstWhereOrNull((child) => child.xmlns == xmlns) !=
+        null;
+  }
+
   @override
   bool matchesFeature(List<XMLNode> features) {
     // Only do SASL2 when the socket is secure
@@ -182,7 +186,7 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
         // Collect additional data by interested negotiators
         final children = List<XMLNode>.empty(growable: true);
         for (final negotiator in _featureNegotiators) {
-          if (isInliningPossible(_sasl2Data!, negotiator.negotiatingXmlns)) {
+          if (_isInliningPossible(negotiator.negotiatingXmlns)) {
             children.addAll(
               await negotiator.onSasl2FeaturesReceived(_sasl2Data!),
             );
@@ -214,7 +218,7 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
           // Tell the dependent negotiators about the result
           // TODO(Unknown): This can be written in a better way
           for (final negotiator in _featureNegotiators) {
-            if (isInliningPossible(_sasl2Data!, negotiator.negotiatingXmlns)) {
+            if (_isInliningPossible(negotiator.negotiatingXmlns)) {
               final result = await negotiator.onSasl2Success(nonza);
               if (!result.isType<bool>()) {
                 return Result(result.get<NegotiatorError>());

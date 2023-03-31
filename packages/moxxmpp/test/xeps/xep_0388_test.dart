@@ -25,10 +25,6 @@ class ExampleNegotiator extends Sasl2FeatureNegotiator {
 
   @override
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode nonza) async {
-    if (!isInliningPossible(nonza, 'invalid:example:dont:use')) {
-      return [];
-    }
-
     return [
       XMLNode.xmlns(
         tag: 'test-data-request',
