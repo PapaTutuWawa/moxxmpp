@@ -254,7 +254,8 @@ class XmppConnection {
   }
 
   /// Register a list of negotiator with the connection.
-  void registerFeatureNegotiators(List<XmppFeatureNegotiatorBase> negotiators) {
+  Future<void> registerFeatureNegotiators(
+      List<XmppFeatureNegotiatorBase> negotiators) async {
     for (final negotiator in negotiators) {
       _log.finest('Registering ${negotiator.id}');
       negotiator.register(
@@ -273,6 +274,10 @@ class XmppConnection {
     }
 
     _log.finest('Negotiators registered');
+
+    for (final negotiator in _featureNegotiators.values) {
+      await negotiator.postRegisterCallback();
+    }
   }
 
   /// Reset all registered negotiators.
@@ -399,7 +404,7 @@ class XmppConnection {
 
     // Close the socket
     _socket.close();
-    
+
     if (!error.isRecoverable()) {
       // We cannot recover this error
       _log.severe(

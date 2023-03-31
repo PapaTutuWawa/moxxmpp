@@ -140,7 +140,7 @@ void main() {
       StreamManagementManager(),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
-    conn.registerFeatureNegotiators([
+    await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       SaslScramNegotiator(10, '', '', ScramHashType.sha512),
       ResourceBindingNegotiator(),
@@ -195,7 +195,7 @@ void main() {
       DiscoManager([]),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
-    conn.registerFeatureNegotiators([
+    await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
     ]);
 
@@ -254,7 +254,7 @@ void main() {
       DiscoManager([]),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
-    conn.registerFeatureNegotiators([SaslPlainNegotiator()]);
+    await conn.registerFeatureNegotiators([SaslPlainNegotiator()]);
 
     conn.asBroadcastStream().listen((event) {
       if (event is AuthenticationFailedEvent &&
@@ -407,18 +407,17 @@ void main() {
       RosterManager(TestingRosterStateManager('', [])),
       DiscoManager([]),
     ]);
-    conn
-      ..registerFeatureNegotiators([
-        // SaslPlainNegotiator(),
-        ResourceBindingNegotiator(),
-      ])
-      ..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('testuser@example.org'),
-          password: 'abc123',
-          useDirectTLS: false,
-        ),
-      );
+    await conn.registerFeatureNegotiators([
+      // SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+    ]);
+    conn.setConnectionSettings(
+      ConnectionSettings(
+        jid: JID.fromString('testuser@example.org'),
+        password: 'abc123',
+        useDirectTLS: false,
+      ),
+    );
 
     final result = await conn.connect(
       waitUntilLogin: true,

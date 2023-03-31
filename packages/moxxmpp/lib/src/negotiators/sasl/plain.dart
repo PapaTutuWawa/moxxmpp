@@ -6,6 +6,7 @@ import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/errors.dart';
 import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 import 'package:moxxmpp/src/negotiators/sasl/nonza.dart';
+import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
@@ -75,5 +76,12 @@ class SaslPlainNegotiator extends SaslNegotiator {
     _authSent = false;
 
     super.reset();
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    attributes
+        .getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)
+        ?.registerSaslNegotiator(this);
   }
 }

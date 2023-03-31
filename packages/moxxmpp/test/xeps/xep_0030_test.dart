@@ -84,7 +84,7 @@ void main() {
       DiscoManager([]),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
-    conn.registerFeatureNegotiators([
+    await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       SaslScramNegotiator(10, '', '', ScramHashType.sha512),
       ResourceBindingNegotiator(),

@@ -298,7 +298,7 @@ void main() {
         CarbonsManager()..forceEnable(),
         EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
-      conn.registerFeatureNegotiators([
+      await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
         ResourceBindingNegotiator(),
         StreamManagementNegotiator(),
@@ -423,7 +423,7 @@ void main() {
         CarbonsManager()..forceEnable(),
         //EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
-      conn.registerFeatureNegotiators([
+      await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
         ResourceBindingNegotiator(),
         StreamManagementNegotiator(),
@@ -580,7 +580,7 @@ void main() {
         DiscoManager([]),
         StreamManagementManager(),
       ]);
-      conn.registerFeatureNegotiators([
+      await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
         ResourceBindingNegotiator(),
         StreamManagementNegotiator(),
@@ -674,7 +674,7 @@ void main() {
         DiscoManager([]),
         StreamManagementManager(),
       ]);
-      conn.registerFeatureNegotiators([
+      await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
         ResourceBindingNegotiator(),
         StreamManagementNegotiator(),
@@ -765,7 +765,7 @@ void main() {
         DiscoManager([]),
         StreamManagementManager(),
       ]);
-      conn.registerFeatureNegotiators([
+      await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
         ResourceBindingNegotiator(),
         StreamManagementNegotiator(),

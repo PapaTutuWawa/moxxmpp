@@ -169,12 +169,11 @@ void main() {
       MessageManager(),
       RosterManager(TestingRosterStateManager(null, [])),
     ]);
-    connection
-      ..registerFeatureNegotiators([
-        SaslPlainNegotiator(),
-        ResourceBindingNegotiator(),
-      ])
-      ..setConnectionSettings(TestingManagerHolder.settings);
+    await connection.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+    ]);
+    connection.setConnectionSettings(TestingManagerHolder.settings);
     await connection.connect(
       waitUntilLogin: true,
     );

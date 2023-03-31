@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
@@ -120,5 +121,11 @@ abstract class XmppFeatureNegotiatorBase {
     state = NegotiatorState.ready;
   }
 
+  @protected
   NegotiatorAttributes get attributes => _attributes;
+
+  /// Run after all negotiators are registered. Useful for registering callbacks against
+  /// other negotiators.
+  @visibleForOverriding
+  Future<void> postRegisterCallback() async {}
 }

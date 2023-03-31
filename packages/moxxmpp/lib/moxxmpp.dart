@@ -23,6 +23,7 @@ export 'package:moxxmpp/src/negotiators/sasl/errors.dart';
 export 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
 export 'package:moxxmpp/src/negotiators/sasl/plain.dart';
 export 'package:moxxmpp/src/negotiators/sasl/scram.dart';
+export 'package:moxxmpp/src/negotiators/sasl2.dart';
 export 'package:moxxmpp/src/negotiators/starttls.dart';
 export 'package:moxxmpp/src/ping.dart';
 export 'package:moxxmpp/src/presence.dart';
