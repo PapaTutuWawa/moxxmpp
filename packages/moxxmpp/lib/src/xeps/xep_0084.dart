@@ -163,7 +163,6 @@ class UserAvatarManager extends XmppManagerBase {
 
   /// Subscribe the data and metadata node of [jid].
   Future<Result<AvatarError, bool>> subscribe(String jid) async {
-    await _getPubSubManager().subscribe(jid, userAvatarDataXmlns);
     await _getPubSubManager().subscribe(jid, userAvatarMetadataXmlns);
 
     return const Result(true);
@@ -171,7 +170,6 @@ class UserAvatarManager extends XmppManagerBase {
 
   /// Unsubscribe the data and metadata node of [jid].
   Future<Result<AvatarError, bool>> unsubscribe(String jid) async {
-    await _getPubSubManager().unsubscribe(jid, userAvatarDataXmlns);
     await _getPubSubManager().subscribe(jid, userAvatarMetadataXmlns);
 
     return const Result(true);
