@@ -15,6 +15,18 @@ import 'package:moxxmpp/src/types/result.dart';
 import 'package:random_string/random_string.dart';
 import 'package:saslprep/saslprep.dart';
 
+abstract class SaslScramError extends NegotiatorError {}
+
+class NoAdditionalDataError extends SaslScramError {
+  @override
+  bool isRecoverable() => false;
+}
+
+class InvalidServerSignatureError extends SaslScramError {
+  @override
+  bool isRecoverable() => false;
+}
+
 // NOTE: Inspired by https://github.com/vukoye/xmpp_dart/blob/3b1a0588562b9e591488c99d834088391840911d/lib/src/features/sasl/ScramSaslHandler.dart
 
 enum ScramHashType { sha1, sha256, sha512 }
@@ -230,6 +242,12 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
     return false;
   }
 
+  bool _checkSignature(String base64Signature) {
+    final signature =
+        parseKeyValue(utf8.decode(base64.decode(base64Signature)));
+    return signature['v']! == _serverSignature;
+  }
+
   @override
   Future<Result<NegotiatorState, NegotiatorError>> negotiate(
     XMLNode nonza,
@@ -271,10 +289,7 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
           );
         }
 
-        // NOTE: This assumes that the string is always "v=..." and contains no other parameters
-        final signature =
-            parseKeyValue(utf8.decode(base64.decode(nonza.innerText())));
-        if (signature['v']! != _serverSignature) {
+        if (!_checkSignature(nonza.innerText())) {
           // TODO(Unknown): Notify of a signature mismatch
           //final error = nonza.children.first.tag;
           //attributes.sendEvent(AuthenticationFailedEvent(error));
@@ -330,12 +345,31 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
   }
 
   @override
+  Future<void> postRegisterCallback() async {
+    attributes
+        .getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)
+        ?.registerSaslNegotiator(this);
+  }
+
+  @override
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
     return [];
   }
 
   @override
-  Future<void> onSasl2Success(XMLNode response) async {
+  Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
+    // When we're done with SASL2, check the additional data to verify the server
+    // signature.
     state = NegotiatorState.done;
+    final additionalData = response.firstTag('additional-data');
+    if (additionalData == null) {
+      return Result(NoAdditionalDataError());
+    }
+
+    if (!_checkSignature(additionalData.innerText())) {
+      return Result(InvalidServerSignatureError());
+    }
+
+    return const Result(true);
   }
 }

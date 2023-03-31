@@ -21,7 +21,7 @@ abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
 
   /// Called by the SASL2 negotiator when the SASL2 negotiations are done. [response]
   /// is the entire response nonza.
-  Future<void> onSasl2Success(XMLNode response);
+  Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response);
 }
 
 /// A special type of [SaslNegotiator] that is aware of SASL2.
@@ -184,13 +184,25 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
         if (nonza.tag == 'success') {
           // Tell the dependent negotiators about the result
           for (final negotiator in _featureNegotiators) {
-            await negotiator.onSasl2Success(nonza);
+            final result = await negotiator.onSasl2Success(nonza);
+            if (!result.isType<bool>()) {
+              return Result(result.get<NegotiatorError>());
+            }
           }
 
           // We're done
           attributes.setAuthenticated();
           attributes.removeNegotiatingFeature(saslXmlns);
           return const Result(NegotiatorState.done);
+        } else if (nonza.tag == 'challenge') {
+          // We still have to negotiate
+          final challenge = nonza.innerText();
+          final response = XMLNode.xmlns(
+            tag: 'response',
+            xmlns: sasl2Xmlns,
+            text: await _currentSaslNegotiator!.getRawStep(challenge),
+          );
+          attributes.sendNonza(response);
         }
     }
 

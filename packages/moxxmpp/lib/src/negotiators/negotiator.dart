@@ -134,7 +134,6 @@ abstract class XmppFeatureNegotiatorBase {
   NegotiatorAttributes get attributes => _attributes;
 
   /// Run after all negotiators are registered. Useful for registering callbacks against
-  /// other negotiators.
-  @visibleForOverriding
+  /// other negotiators. By default this function does nothing.
   Future<void> postRegisterCallback() async {}
 }

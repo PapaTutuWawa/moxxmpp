@@ -93,8 +93,9 @@ class SaslPlainNegotiator extends Sasl2AuthenticationNegotiator {
   }
 
   @override
-  Future<void> onSasl2Success(XMLNode response) async {
+  Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
     state = NegotiatorState.done;
+    return const Result(true);
   }
 
   @override
