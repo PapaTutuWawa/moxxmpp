@@ -1,5 +1,6 @@
 import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
+import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
@@ -28,6 +29,7 @@ abstract class NegotiatorError extends XmppError {}
 class NegotiatorAttributes {
   const NegotiatorAttributes(
     this.sendNonza,
+    this.getConnection,
     this.getConnectionSettings,
     this.sendEvent,
     this.getNegotiatorById,
@@ -46,7 +48,10 @@ class NegotiatorAttributes {
   /// Returns the connection settings.
   final ConnectionSettings Function() getConnectionSettings;
 
-  /// Send an event event to the connection's event bus
+  /// Returns the connection object.
+  final XmppConnection Function() getConnection;
+
+  /// Send an event event to the connection's event bus.
   final Future<void> Function(XmppEvent event) sendEvent;
 
   /// Returns the negotiator with id id of the connection or null.

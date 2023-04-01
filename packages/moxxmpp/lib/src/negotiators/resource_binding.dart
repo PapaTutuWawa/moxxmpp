@@ -30,10 +30,13 @@ class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
     if (sm != null) {
       return super.matchesFeature(features) &&
           !sm.streamResumed &&
-          attributes.isAuthenticated();
+          attributes.isAuthenticated() &&
+          attributes.getConnection().resource.isEmpty;
     }
 
-    return super.matchesFeature(features) && attributes.isAuthenticated();
+    return super.matchesFeature(features) &&
+        attributes.isAuthenticated() &&
+        attributes.getConnection().resource.isEmpty;
   }
 
   @override

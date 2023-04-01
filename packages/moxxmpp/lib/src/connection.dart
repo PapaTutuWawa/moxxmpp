@@ -270,6 +270,7 @@ class XmppConnection {
       negotiator.register(
         NegotiatorAttributes(
           sendRawXML,
+          () => this,
           () => _connectionSettings,
           _sendEvent,
           getNegotiatorById,
