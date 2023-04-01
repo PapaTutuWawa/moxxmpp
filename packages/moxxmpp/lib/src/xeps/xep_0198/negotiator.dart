@@ -37,9 +37,15 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
 
   /// Flag indicating whether the resume failed (true) or succeeded (false).
   bool _resumeFailed = false;
+  bool get resumeFailed => _resumeFailed;
 
   /// Flag indicating whether the current stream is resumed (true) or not (false).
   bool _isResumed = false;
+  bool get isResumed => _isResumed;
+
+  /// Flag indicating that stream enablement failed
+  bool _streamEnablementFailed = false;
+  bool get streamEnablementFailed => _streamEnablementFailed;
 
   /// Logger
   final Logger _log = Logger('StreamManagementNegotiator');
@@ -48,8 +54,8 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
   bool _supported = false;
   bool get isSupported => _supported;
 
-  /// True if the current stream is resumed. False if not.
-  bool get isResumed => _isResumed;
+  /// True if we requested stream enablement inline
+  bool _inlineStreamEnablementRequested = false;
 
   @override
   bool canInlineFeature(List<XMLNode> features) {
@@ -112,6 +118,28 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
     _isResumed = true;
   }
 
+  Future<void> _onStreamEnablementSuccessful(XMLNode enabled) async {
+    assert(enabled.tag == 'enabled', 'The correct element must be used');
+    assert(enabled.xmlns == smXmlns, 'The correct element must be used');
+
+    final id = enabled.attributes['id'] as String?;
+    if (id != null && ['true', '1'].contains(enabled.attributes['resume'])) {
+      _log.info('Stream Resumption available');
+    }
+
+    await attributes.sendEvent(
+      StreamManagementEnabledEvent(
+        resource: attributes.getFullJID().resource,
+        id: id,
+        location: enabled.attributes['location'] as String?,
+      ),
+    );
+  }
+
+  void _onStreamEnablementFailed() {
+    _streamEnablementFailed = true;
+  }
+
   @override
   Future<Result<NegotiatorState, NegotiatorError>> negotiate(
     XMLNode nonza,
@@ -168,25 +196,13 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
       case _StreamManagementNegotiatorState.enableRequested:
         if (nonza.tag == 'enabled') {
           _log.finest('Stream Management enabled');
-
-          final id = nonza.attributes['id'] as String?;
-          if (id != null &&
-              ['true', '1'].contains(nonza.attributes['resume'])) {
-            _log.info('Stream Resumption available');
-          }
-
-          await attributes.sendEvent(
-            StreamManagementEnabledEvent(
-              resource: attributes.getFullJID().resource,
-              id: id,
-              location: nonza.attributes['location'] as String?,
-            ),
-          );
+          await _onStreamEnablementSuccessful(nonza);
 
           return const Result(NegotiatorState.done);
         } else {
           // We assume a <failed />
           _log.warning('Stream Management enablement failed');
+          _onStreamEnablementFailed();
           return const Result(NegotiatorState.done);
         }
     }
@@ -198,6 +214,8 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
     _supported = false;
     _resumeFailed = false;
     _isResumed = false;
+    _inlineStreamEnablementRequested = false;
+    _streamEnablementFailed = false;
 
     super.reset();
   }
@@ -210,11 +228,9 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
       return [];
     }
 
+    _inlineStreamEnablementRequested = true;
     return [
-      XMLNode.xmlns(
-        tag: 'enable',
-        xmlns: smXmlns,
-      ),
+      StreamManagementEnableNonza(),
     ];
   }
 
@@ -236,25 +252,36 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
     }
 
     return [
-      XMLNode.xmlns(
-        tag: 'resume',
-        xmlns: smXmlns,
-        attributes: {
-          'h': h.toString(),
-          'previd': srid,
-        },
+      StreamManagementResumeNonza(
+        srid,
+        h,
       ),
     ];
   }
 
   @override
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
-    // TODO(PapaTutuWawa): Handle SM failures.
+    final enabled = response
+        .firstTag('bound', xmlns: bind2Xmlns)
+        ?.firstTag('enabled', xmlns: smXmlns);
     final resumed = response.firstTag('resumed', xmlns: smXmlns);
+    // We can only enable or resume->fail->enable. Thus, we check for enablement first
+    // and then exit.
+    if (_inlineStreamEnablementRequested) {
+      if (enabled != null) {
+        _log.finest('Inline stream enablement successful');
+        await _onStreamEnablementSuccessful(enabled);
+        return const Result(true);
+      } else {
+        _log.warning('Inline stream enablement failed');
+        _onStreamEnablementFailed();
+      }
+    }
+
     if (resumed == null) {
       _log.warning('Inline stream resumption failed');
       await _onStreamResumptionFailed();
-      state = NegotiatorState.retryLater;
+      state = NegotiatorState.done;
       return const Result(true);
     }
 
