@@ -10,6 +10,9 @@ import 'package:moxxmpp/src/types/result.dart';
 class Bind2Negotiator extends Sasl2FeatureNegotiator {
   Bind2Negotiator() : super(0, false, bind2Xmlns, bind2Negotiator);
 
+  /// A tag to sent to the server when requesting Bind2.
+  String? tag;
+
   @override
   Future<Result<NegotiatorState, NegotiatorError>> negotiate(
     XMLNode nonza,
@@ -23,6 +26,13 @@ class Bind2Negotiator extends Sasl2FeatureNegotiator {
       XMLNode.xmlns(
         tag: 'bind',
         xmlns: bind2Xmlns,
+        children: [
+          if (tag != null)
+            XMLNode(
+              tag: 'tag',
+              text: tag,
+            ),
+        ],
       ),
     ];
   }
