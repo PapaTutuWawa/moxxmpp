@@ -1,4 +1,4 @@
-import 'package:moxxmpp/src/events.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
@@ -65,11 +65,9 @@ class ResourceBindingNegotiator extends XmppFeatureNegotiatorBase {
       }
 
       final bind = nonza.firstTag('bind')!;
-      final jid = bind.firstTag('jid')!;
-      final resource = jid.innerText().split('/')[1];
-
-      await attributes
-          .sendEvent(ResourceBindingSuccessEvent(resource: resource));
+      final rawJid = bind.firstTag('jid')!.innerText();
+      final resource = JID.fromString(rawJid).resource;
+      attributes.setResource(resource);
       return const Result(NegotiatorState.done);
     }
   }

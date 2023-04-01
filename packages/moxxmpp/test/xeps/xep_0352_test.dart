@@ -55,7 +55,6 @@ void main() {
             ),
             getManagerById: getManagerNullStub,
             getNegotiatorById: getUnsupportedCSINegotiator,
-            isFeatureSupported: (_) => false,
             getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
             getSocket: () => StubTCPSocket([]),
             getConnection: () => XmppConnection(
@@ -99,7 +98,6 @@ void main() {
             ),
             getManagerById: getManagerNullStub,
             getNegotiatorById: getSupportedCSINegotiator,
-            isFeatureSupported: (_) => false,
             getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
             getSocket: () => StubTCPSocket([]),
             getConnection: () => XmppConnection(

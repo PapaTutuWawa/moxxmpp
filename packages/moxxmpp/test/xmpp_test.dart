@@ -35,7 +35,6 @@ Future<bool> testRosterManager(
         ),
         getManagerById: getManagerNullStub,
         getNegotiatorById: getNegotiatorNullStub,
-        isFeatureSupported: (_) => false,
         getFullJID: () => JID.fromString('$bareJid/$resource'),
         getSocket: () => StubTCPSocket([]),
         getConnection: () => XmppConnection(
@@ -151,6 +150,7 @@ void main() {
       waitUntilLogin: true,
     );
     expect(fakeSocket.getState(), /*6*/ 5);
+    expect(conn.resource, 'MU29eEZn');
   });
 
   test('Test a failed SASL auth', () async {
@@ -296,7 +296,6 @@ void main() {
             ),
             getManagerById: getManagerNullStub,
             getNegotiatorById: getNegotiatorNullStub,
-            isFeatureSupported: (_) => false,
             getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
             getSocket: () => StubTCPSocket([]),
             getConnection: () => XmppConnection(

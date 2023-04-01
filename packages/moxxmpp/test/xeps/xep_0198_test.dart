@@ -63,7 +63,6 @@ XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
       password: 'password',
       useDirectTLS: true,
     ),
-    isFeatureSupported: (_) => false,
     getFullJID: () => JID.fromString('hallo@example.server/uwu'),
     getSocket: () => StubTCPSocket([]),
     getConnection: () => XmppConnection(

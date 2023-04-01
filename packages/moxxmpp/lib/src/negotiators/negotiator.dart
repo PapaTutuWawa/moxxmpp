@@ -36,6 +36,7 @@ class NegotiatorAttributes {
     this.getSocket,
     this.isAuthenticated,
     this.setAuthenticated,
+    this.setResource,
     this.removeNegotiatingFeature,
   );
 
@@ -63,6 +64,10 @@ class NegotiatorAttributes {
 
   /// Returns true if the stream is authenticated. Returns false if not.
   final bool Function() isAuthenticated;
+
+  /// Sets the resource of the connection. If triggerEvent is true, then a
+  /// [ResourceBoundEvent] is triggered.
+  final void Function(String, {bool triggerEvent}) setResource;
 
   /// Sets the authentication state of the connection to true.
   final void Function() setAuthenticated;

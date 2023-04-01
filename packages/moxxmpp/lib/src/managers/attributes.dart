@@ -16,7 +16,6 @@ class XmppManagerAttributes {
     required this.getManagerById,
     required this.sendEvent,
     required this.getConnectionSettings,
-    required this.isFeatureSupported,
     required this.getFullJID,
     required this.getSocket,
     required this.getConnection,
@@ -44,9 +43,6 @@ class XmppManagerAttributes {
 
   /// (Maybe) Get a Manager attached to the connection by its Id.
   final T? Function<T extends XmppManagerBase>(String) getManagerById;
-
-  /// Returns true if a server feature is supported
-  final bool Function(String) isFeatureSupported;
 
   /// Returns the full JID of the current account
   final JID Function() getFullJID;

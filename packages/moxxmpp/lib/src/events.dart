@@ -160,8 +160,10 @@ class StreamManagementEnabledEvent extends XmppEvent {
 }
 
 /// Triggered when we bound a resource
-class ResourceBindingSuccessEvent extends XmppEvent {
-  ResourceBindingSuccessEvent({required this.resource});
+class ResourceBoundEvent extends XmppEvent {
+  ResourceBoundEvent(this.resource);
+
+  /// The resource that was just bound.
   final String resource;
 }
 

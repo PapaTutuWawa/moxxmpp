@@ -27,7 +27,6 @@ void main() {
         password: 'password',
         useDirectTLS: true,
       ),
-      isFeatureSupported: (_) => false,
       getFullJID: () => JID.fromString('bob@xmpp.example/uwu'),
       getSocket: () => StubTCPSocket([]),
       getConnection: () => XmppConnection(

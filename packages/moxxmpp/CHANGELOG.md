@@ -3,6 +3,8 @@
 - **BREAKING**: Removed `connectAwaitable` and merged it with `connect`.
 - **BREAKING**: Removed `allowPlainAuth` from `ConnectionSettings`. If you don't want to use SASL PLAIN, don't register the negotiator. If you want to only conditionally use SASL PLAIN, extend the `SaslPlainNegotiator` and override its `matchesFeature` method to only call the super method when SASL PLAIN should be used.
 - **BREAKING**: The user avatar's `subscribe` and `unsubscribe` no longer subscribe to the `:data` PubSub nodes
+- Renamed `ResourceBindingSuccessEvent` to `ResourceBoundEvent`
+- **BREAKING**: Removed `isFeatureSupported` from the manager attributes. The managers now all have a method `isFeatureSupported` that works the same
 
 ## 0.1.6+1
 

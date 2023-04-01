@@ -6,6 +6,7 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
@@ -29,6 +30,29 @@ abstract class XmppManagerBase {
   /// Must only be called after register has been called on it.
   XmppManagerAttributes getAttributes() {
     return _managerAttributes;
+  }
+
+  /// Resolves to true when the server supports the disco feature [xmlns]. Resolves
+  /// to false when either the disco request fails or the server does not
+  /// support [xmlns].
+  /// Note that this function requires a registered DiscoManager.
+  @protected
+  Future<bool> isFeatureSupported(String xmlns) async {
+    final dm = _managerAttributes.getManagerById<DiscoManager>(discoManager);
+    assert(
+      dm != null,
+      'The DiscoManager must be registered for isFeatureSupported to work',
+    );
+
+    final result = await dm!.discoInfoQuery(
+      _managerAttributes.getConnectionSettings().jid.domain,
+      shouldEncrypt: false,
+    );
+    if (result.isType<DiscoError>()) {
+      return false;
+    }
+
+    return result.get<DiscoInfo>().features.contains(xmlns);
   }
 
   /// Return the StanzaHandlers associated with this manager that deal with stanzas we

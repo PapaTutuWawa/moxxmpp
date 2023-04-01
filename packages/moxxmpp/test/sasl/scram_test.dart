@@ -58,6 +58,7 @@ void main() {
           () => fakeSocket,
           () => false,
           () {},
+          (_, {bool triggerEvent = true}) {},
           (_) {},
         ),
       );
@@ -153,6 +154,7 @@ void main() {
           () => fakeSocket,
           () => false,
           () {},
+          (_, {bool triggerEvent = true}) {},
           (_) {},
         ),
       );
@@ -203,6 +205,7 @@ void main() {
           () => fakeSocket,
           () => false,
           () {},
+          (_, {bool triggerEvent = true}) {},
           (_) {},
         ),
       );
@@ -243,6 +246,7 @@ void main() {
           () => fakeSocket,
           () => false,
           () {},
+          (_, {bool triggerEvent = true}) {},
           (_) {},
         ),
       );
@@ -286,6 +290,7 @@ void main() {
           () => fakeSocket,
           () => false,
           () {},
+          (_, {bool triggerEvent = true}) {},
           (_) {},
         ),
       );

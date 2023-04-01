@@ -133,9 +133,6 @@ class XmppConnection {
       StreamController.broadcast();
   final Map<String, XmppManagerBase> _xmppManagers = {};
 
-  /// Disco info we got after binding a resource (xmlns)
-  final List<String> _serverFeatures = List.empty(growable: true);
-
   /// The buffer object to keep split up stanzas together
   final XmlStreamBuffer _streamBuffer = XmlStreamBuffer();
 
@@ -150,6 +147,7 @@ class XmppConnection {
 
   /// The currently bound resource or '' if none has been bound yet.
   String _resource = '';
+  String get resource => _resource;
 
   /// True if we are authenticated. False if not.
   bool _isAuthenticated = false;
@@ -201,8 +199,6 @@ class XmppConnection {
 
   ReconnectionPolicy get reconnectionPolicy => _reconnectionPolicy;
 
-  List<String> get serverFeatures => _serverFeatures;
-
   bool get isAuthenticated => _isAuthenticated;
 
   /// Return the registered feature negotiator that has id [id]. Returns null if
@@ -221,7 +217,6 @@ class XmppConnection {
           sendEvent: _sendEvent,
           getConnectionSettings: () => _connectionSettings,
           getManagerById: getManagerById,
-          isFeatureSupported: _serverFeatures.contains,
           getFullJID: () => _connectionSettings.jid.withResource(_resource),
           getSocket: () => _socket,
           getConnection: () => this,
@@ -283,6 +278,7 @@ class XmppConnection {
           () => _socket,
           () => _isAuthenticated,
           _setAuthenticated,
+          _setResource,
           _removeNegotiatingFeature,
         ),
       );
@@ -678,9 +674,13 @@ class XmppConnection {
   }
 
   /// Sets the resource of the connection
-  void setResource(String resource) {
+  void _setResource(String resource, {bool triggerEvent = true}) {
     _log.finest('Updating _resource to $resource');
     _resource = resource;
+
+    if (triggerEvent) {
+      _sendEvent(ResourceBoundEvent(resource));
+    }
   }
 
   /// Returns the connection's events as a stream.
@@ -1028,17 +1028,6 @@ class XmppConnection {
   Future<void> _sendEvent(XmppEvent event) async {
     _log.finest('Event: ${event.toString()}');
 
-    // Specific event handling
-    if (event is ResourceBindingSuccessEvent) {
-      _log.finest(
-        'Received ResourceBindingSuccessEvent. Setting _resource to ${event.resource}',
-      );
-      setResource(event.resource);
-
-      _log.finest('Resetting _serverFeatures');
-      _serverFeatures.clear();
-    }
-
     for (final manager in _xmppManagers.values) {
       await manager.onXmppEvent(event);
     }
@@ -1151,7 +1140,7 @@ class XmppConnection {
     }
 
     if (lastResource != null) {
-      setResource(lastResource);
+      _setResource(lastResource, triggerEvent: false);
     }
 
     _enableReconnectOnSuccess = enableReconnectOnSuccess;
