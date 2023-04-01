@@ -53,9 +53,14 @@ abstract class Sasl2AuthenticationNegotiator extends SaslNegotiator
   /// the base64-encoded response data.
   Future<String> getRawStep(String input);
 
+  /// Tells the negotiator that it has been selected as the SASL negotiator for SASL2.
   void pickForSasl2() {
     _pickedForSasl2 = true;
   }
+
+  /// When SASL2 fails, should we retry (true) or just fail (false).
+  /// Defaults to just returning false.
+  bool shouldRetrySasl() => false;
 
   @override
   void reset() {
@@ -287,6 +292,16 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
             ..add(_currentSaslNegotiator!);
           for (final negotiator in negotiators) {
             await negotiator.onSasl2Failure(nonza);
+          }
+
+          // Check if we should retry and, if we should, reset the current
+          // negotiator, this negotiator, and retry.
+          if (_currentSaslNegotiator!.shouldRetrySasl()) {
+            _currentSaslNegotiator!.reset();
+            reset();
+            return const Result(
+              NegotiatorState.retryLater,
+            );
           }
 
           return Result(

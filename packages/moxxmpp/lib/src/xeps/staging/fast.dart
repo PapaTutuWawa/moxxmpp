@@ -30,10 +30,14 @@ class FASTToken {
   );
 
   factory FASTToken.fromXml(XMLNode token) {
-    assert(token.tag == 'token',
-        'Token can only be deserialised from a <token /> element',);
-    assert(token.xmlns == fastXmlns,
-        'Token can only be deserialised from a <token /> element',);
+    assert(
+      token.tag == 'token',
+      'Token can only be deserialised from a <token /> element',
+    );
+    assert(
+      token.xmlns == fastXmlns,
+      'Token can only be deserialised from a <token /> element',
+    );
 
     return FASTToken(
       token.attributes['token']! as String,
@@ -80,7 +84,8 @@ class FASTSaslNegotiator extends Sasl2AuthenticationNegotiator {
   @override
   bool canInlineFeature(List<XMLNode> features) {
     return features.firstWhereOrNull(
-            (child) => child.tag == 'fast' && child.xmlns == fastXmlns,) !=
+          (child) => child.tag == 'fast' && child.xmlns == fastXmlns,
+        ) !=
         null;
   }
 
@@ -113,6 +118,9 @@ class FASTSaslNegotiator extends Sasl2AuthenticationNegotiator {
       InvalidateFASTTokenEvent(),
     );
   }
+
+  @override
+  bool shouldRetrySasl() => true;
 
   @override
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
