@@ -861,9 +861,6 @@ class XmppConnection {
     // Tell consumers of the event stream that we're done with stream feature
     // negotiations
     await _sendEvent(StreamNegotiationsDoneEvent());
-
-    // Send out initial presence
-    await getPresenceManager().sendInitialPresence();
   }
 
   Future<void> _executeCurrentNegotiator(XMLNode nonza) async {
@@ -1090,10 +1087,6 @@ class XmppConnection {
 
   /// Make sure that all required managers are registered
   void _runPreConnectionAssertions() {
-    assert(
-      _xmppManagers.containsKey(presenceManager),
-      'A PresenceManager is mandatory',
-    );
     assert(
       _xmppManagers.containsKey(rosterManager),
       'A RosterManager is mandatory',

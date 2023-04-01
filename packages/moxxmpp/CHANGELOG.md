@@ -5,6 +5,7 @@
 - **BREAKING**: The user avatar's `subscribe` and `unsubscribe` no longer subscribe to the `:data` PubSub nodes
 - Renamed `ResourceBindingSuccessEvent` to `ResourceBoundEvent`
 - **BREAKING**: Removed `isFeatureSupported` from the manager attributes. The managers now all have a method `isFeatureSupported` that works the same
+- The `PresenceManager` is now optional
 
 ## 0.1.6+1
 

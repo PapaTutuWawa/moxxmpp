@@ -431,7 +431,7 @@ void main() {
       await conn.connect(
         waitUntilLogin: true,
       );
-      expect(fakeSocket.getState(), 5);
+      expect(fakeSocket.getState(), 6);
       expect(await conn.getConnectionState(), XmppConnectionState.connected);
       expect(
         conn
@@ -589,7 +589,7 @@ void main() {
         waitUntilLogin: true,
       );
 
-      expect(fakeSocket.getState(), 5);
+      expect(fakeSocket.getState(), 6);
       expect(await conn.getConnectionState(), XmppConnectionState.connected);
       expect(
         conn
@@ -689,7 +689,7 @@ void main() {
       await conn.connect(
         waitUntilLogin: true,
       );
-      expect(fakeSocket.getState(), 6);
+      expect(fakeSocket.getState(), 7);
       expect(await conn.getConnectionState(), XmppConnectionState.connected);
       expect(
         conn
