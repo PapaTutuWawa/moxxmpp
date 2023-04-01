@@ -1142,6 +1142,8 @@ class XmppConnection {
 
     if (lastResource != null) {
       _setResource(lastResource, triggerEvent: false);
+    } else {
+      _setResource('', triggerEvent: false);
     }
 
     _enableReconnectOnSuccess = enableReconnectOnSuccess;
