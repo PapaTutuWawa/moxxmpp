@@ -116,6 +116,9 @@ const omemoBundlesXmlns = 'urn:xmpp:omemo:2:bundles';
 // XEP-0385
 const simsXmlns = 'urn:xmpp:sims:1';
 
+// XEP-0386
+const bind2Xmlns = 'urn:xmpp:bind:0';
+
 // XEP-0388
 const sasl2Xmlns = 'urn:xmpp:sasl:2';
 
