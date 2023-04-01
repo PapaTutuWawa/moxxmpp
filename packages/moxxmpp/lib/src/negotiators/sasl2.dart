@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
@@ -233,6 +234,15 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
           // We're done
           attributes.setAuthenticated();
           attributes.removeNegotiatingFeature(saslXmlns);
+
+          // Check if we also received a resource with the SASL2 success
+          final jid = JID.fromString(
+            nonza.firstTag('authorization-identifier')!.innerText(),
+          );
+          if (!jid.isBare()) {
+            attributes.setResource(jid.resource);
+          }
+
           return const Result(NegotiatorState.done);
         } else if (nonza.tag == 'challenge') {
           // We still have to negotiate
