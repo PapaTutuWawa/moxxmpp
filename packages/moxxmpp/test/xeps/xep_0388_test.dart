@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
 import '../helpers/logging.dart';
@@ -14,6 +15,14 @@ class ExampleNegotiator extends Sasl2FeatureNegotiator {
     XMLNode nonza,
   ) async {
     return const Result(NegotiatorState.done);
+  }
+
+  @override
+  bool canInlineFeature(List<XMLNode> features) {
+    return features.firstWhereOrNull(
+          (child) => child.xmlns == 'invalid:example:dont:use',
+        ) !=
+        null;
   }
 
   @override

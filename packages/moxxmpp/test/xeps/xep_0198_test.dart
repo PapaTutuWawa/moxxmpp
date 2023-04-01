@@ -788,4 +788,98 @@ void main() {
       expect(sm.streamResumed, true);
     });
   });
+
+  test('Test SASL2 inline stream resumption', () async {
+    final fakeSocket = StubTCPSocket([
+      StringExpectation(
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+    <authentication xmlns='urn:xmpp:sasl:2'>
+      <mechanism>PLAIN</mechanism>
+      <inline>
+        <resume xmlns="urn:xmpp:sm:3" />
+      </inline>
+    </authentication>
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+  </stream:features>''',
+      ),
+      StanzaExpectation(
+        "<authenticate xmlns='urn:xmpp:sasl:2' mechanism='PLAIN'><user-agent id='d4565fa7-4d72-4749-b3d3-740edbf87770'><software>moxxmpp</software><device>PapaTutuWawa's awesome device</device></user-agent><initial-response>AHBvbHlub21kaXZpc2lvbgBhYWFh</initial-response><resume xmlns='urn:xmpp:sm:3' previd='test-prev-id' h='2' /></authenticate>",
+        '''
+<success xmlns='urn:xmpp:sasl:2'>
+  <authorization-identifier>polynomdivision@test.server</authorization-identifier>
+  <resumed xmlns='urn:xmpp:sm:3' h='25' previd='test-prev-id' />
+</success>
+        ''',
+      ),
+    ]);
+    final sm = StreamManagementManager();
+    await sm.setState(
+      sm.state.copyWith(
+        c2s: 25,
+        s2c: 2,
+        streamResumptionId: 'test-prev-id',
+      ),
+    );
+
+    final conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      AlwaysConnectedConnectivityManager(),
+      fakeSocket,
+    )
+      ..setConnectionSettings(
+        ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
+        ),
+      )
+      ..setResource('test-resource', triggerEvent: false);
+    await conn.registerManagers([
+      RosterManager(TestingRosterStateManager('', [])),
+      DiscoManager([]),
+      sm,
+    ]);
+    await conn.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+      StreamManagementNegotiator(),
+      Sasl2Negotiator(
+        userAgent: const UserAgent(
+          id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
+          software: 'moxxmpp',
+          device: "PapaTutuWawa's awesome device",
+        ),
+      ),
+    ]);
+
+    final result = await conn.connect(
+      waitUntilLogin: true,
+      shouldReconnect: false,
+      enableReconnectOnSuccess: false,
+    );
+    expect(result.isType<NegotiatorError>(), false);
+
+    expect(
+      sm.state.c2s,
+      25,
+    );
+    expect(
+      sm.state.s2c,
+      2,
+    );
+    expect(conn.resource, 'test-resource');
+  });
 }

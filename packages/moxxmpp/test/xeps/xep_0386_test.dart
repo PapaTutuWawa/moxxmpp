@@ -132,8 +132,7 @@ void main() {
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
-      Bind2Negotiator()
-        ..tag = 'moxxmpp',
+      Bind2Negotiator()..tag = 'moxxmpp',
       Sasl2Negotiator(
         userAgent: const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',

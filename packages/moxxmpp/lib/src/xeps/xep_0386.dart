@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
@@ -35,6 +36,14 @@ class Bind2Negotiator extends Sasl2FeatureNegotiator {
         ],
       ),
     ];
+  }
+
+  @override
+  bool canInlineFeature(List<XMLNode> features) {
+    return features.firstWhereOrNull(
+          (child) => child.tag == 'bind' && child.xmlns == bind2Xmlns,
+        ) !=
+        null;
   }
 
   @override

@@ -279,7 +279,7 @@ class XmppConnection {
           () => _socket,
           () => _isAuthenticated,
           _setAuthenticated,
-          _setResource,
+          setResource,
           _removeNegotiatingFeature,
         ),
       );
@@ -675,7 +675,8 @@ class XmppConnection {
   }
 
   /// Sets the resource of the connection
-  void _setResource(String resource, {bool triggerEvent = true}) {
+  @visibleForTesting
+  void setResource(String resource, {bool triggerEvent = true}) {
     _log.finest('Updating _resource to $resource');
     _resource = resource;
 
@@ -1134,9 +1135,7 @@ class XmppConnection {
     }
 
     if (lastResource != null) {
-      _setResource(lastResource, triggerEvent: false);
-    } else {
-      _setResource('', triggerEvent: false);
+      setResource(lastResource, triggerEvent: false);
     }
 
     _enableReconnectOnSuccess = enableReconnectOnSuccess;

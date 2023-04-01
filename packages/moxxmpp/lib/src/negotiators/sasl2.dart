@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
@@ -28,6 +27,11 @@ abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {
   /// This method is only called when the previous <inline /> element contains an
   /// item with xmlns equal to [negotiatingXmlns].
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response);
+
+  /// Called by the SASL2 negotiator to find out whether the negotiator is willing
+  /// to inline a feature. [features] is the list of elements inside the <inline />
+  /// element.
+  bool canInlineFeature(List<XMLNode> features);
 }
 
 /// A special type of [SaslNegotiator] that is aware of SASL2.
@@ -38,6 +42,11 @@ abstract class Sasl2AuthenticationNegotiator extends SaslNegotiator
   /// Perform a SASL step with [input] as the already parsed input data. Returns
   /// the base64-encoded response data.
   Future<String> getRawStep(String input);
+
+  @override
+  bool canInlineFeature(List<XMLNode> features) {
+    return true;
+  }
 }
 
 class NoSASLMechanismSelectedError extends NegotiatorError {
@@ -125,6 +134,8 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
 
   /// The SASL2 <authentication /> element we received with the stream features.
   XMLNode? _sasl2Data;
+  final List<String> _activeSasl2Negotiators =
+      List<String>.empty(growable: true);
 
   /// Register a SASL negotiator so that we can use that SASL implementation during
   /// SASL2.
@@ -139,18 +150,6 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
   /// the SASL authentication.
   void registerNegotiator(Sasl2FeatureNegotiator negotiator) {
     _featureNegotiators.add(negotiator);
-  }
-
-  /// Returns true, if an item with xmlns of [xmlns] is contained inside [_sasl2Data]'s
-  /// <inline /> block. If not, returns false.
-  bool _isInliningPossible(String xmlns) {
-    final inline = _sasl2Data!.firstTag('inline');
-    if (inline == null) {
-      return false;
-    }
-
-    return inline.children.firstWhereOrNull((child) => child.xmlns == xmlns) !=
-        null;
   }
 
   @override
@@ -185,12 +184,16 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
         }
 
         // Collect additional data by interested negotiators
+        final inline = _sasl2Data!.firstTag('inline');
         final children = List<XMLNode>.empty(growable: true);
-        for (final negotiator in _featureNegotiators) {
-          if (_isInliningPossible(negotiator.negotiatingXmlns)) {
-            children.addAll(
-              await negotiator.onSasl2FeaturesReceived(_sasl2Data!),
-            );
+        if (inline != null && inline.children.isNotEmpty) {
+          for (final negotiator in _featureNegotiators) {
+            if (negotiator.canInlineFeature(inline.children)) {
+              _activeSasl2Negotiators.add(negotiator.id);
+              children.addAll(
+                await negotiator.onSasl2FeaturesReceived(_sasl2Data!),
+              );
+            }
           }
         }
 
@@ -217,18 +220,17 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
       case Sasl2State.authenticateSent:
         if (nonza.tag == 'success') {
           // Tell the dependent negotiators about the result
-          // TODO(Unknown): This can be written in a better way
-          for (final negotiator in _featureNegotiators) {
-            if (_isInliningPossible(negotiator.negotiatingXmlns)) {
-              final result = await negotiator.onSasl2Success(nonza);
-              if (!result.isType<bool>()) {
-                return Result(result.get<NegotiatorError>());
-              }
+          final negotiators = _featureNegotiators
+              .where(
+                (negotiator) => _activeSasl2Negotiators.contains(negotiator.id),
+              )
+              .toList()
+            ..add(_currentSaslNegotiator!);
+          for (final negotiator in negotiators) {
+            final result = await negotiator.onSasl2Success(nonza);
+            if (!result.isType<bool>()) {
+              return Result(result.get<NegotiatorError>());
             }
-          }
-          final result = await _currentSaslNegotiator!.onSasl2Success(nonza);
-          if (!result.isType<bool>()) {
-            return Result(result.get<NegotiatorError>());
           }
 
           // We're done
@@ -264,6 +266,7 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
     _currentSaslNegotiator = null;
     _sasl2State = Sasl2State.idle;
     _sasl2Data = null;
+    _activeSasl2Negotiators.clear();
 
     super.reset();
   }
