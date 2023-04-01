@@ -39,6 +39,7 @@ export 'package:moxxmpp/src/stanza.dart';
 export 'package:moxxmpp/src/stringxml.dart';
 export 'package:moxxmpp/src/types/result.dart';
 export 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
+export 'package:moxxmpp/src/xeps/staging/fast.dart';
 export 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
 export 'package:moxxmpp/src/xeps/xep_0004.dart';
 export 'package:moxxmpp/src/xeps/xep_0030/errors.dart';

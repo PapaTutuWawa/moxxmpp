@@ -99,6 +99,9 @@ class SaslPlainNegotiator extends Sasl2AuthenticationNegotiator {
   }
 
   @override
+  Future<void> onSasl2Failure(XMLNode response) async {}
+
+  @override
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
     return [];
   }

@@ -160,3 +160,6 @@ const fallbackXmlns = 'urn:xmpp:feature-fallback:0';
 
 // ???
 const urlDataXmlns = 'http://jabber.org/protocol/url-data';
+
+// XEP-XXXX
+const fastXmlns = 'urn:xmpp:fast:0';

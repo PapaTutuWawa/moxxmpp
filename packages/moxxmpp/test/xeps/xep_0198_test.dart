@@ -855,7 +855,7 @@ void main() {
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
-      StreamManagementNegotiator(),
+      StreamManagementNegotiator()..setResource('test-resource'),
       Sasl2Negotiator(
         userAgent: const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
@@ -954,7 +954,7 @@ void main() {
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
-      StreamManagementNegotiator(),
+      StreamManagementNegotiator()..setResource('test-resource'),
       Bind2Negotiator(),
       Sasl2Negotiator(
         userAgent: const UserAgent(

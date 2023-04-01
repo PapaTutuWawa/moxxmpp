@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
@@ -57,6 +58,13 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
   /// True if we requested stream enablement inline
   bool _inlineStreamEnablementRequested = false;
 
+  /// Cached resource for stream resumption
+  String _resource = '';
+  @visibleForTesting
+  void setResource(String resource) {
+    _resource = resource;
+  }
+
   @override
   bool canInlineFeature(List<XMLNode> features) {
     final sm = attributes.getManagerById<StreamManagementManager>(smManager)!;
@@ -75,6 +83,13 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
             (child) => child.tag == 'enable' && child.xmlns == smXmlns,
           ) !=
           null;
+    }
+  }
+
+  @override
+  Future<void> onXmppEvent(XmppEvent event) async {
+    if (event is ResourceBoundEvent) {
+      _resource = event.resource;
     }
   }
 
@@ -116,6 +131,13 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
 
     _resumeFailed = false;
     _isResumed = true;
+
+    if (attributes.getConnection().resource.isEmpty && _resource.isNotEmpty) {
+      attributes.setResource(_resource);
+    } else if (attributes.getConnection().resource.isNotEmpty &&
+        _resource.isEmpty) {
+      _resource = attributes.getConnection().resource;
+    }
   }
 
   Future<void> _onStreamEnablementSuccessful(XMLNode enabled) async {

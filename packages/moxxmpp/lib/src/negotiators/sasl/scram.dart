@@ -357,6 +357,9 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
   }
 
   @override
+  Future<void> onSasl2Failure(XMLNode response) async {}
+
+  @override
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
     // When we're done with SASL2, check the additional data to verify the server
     // signature.

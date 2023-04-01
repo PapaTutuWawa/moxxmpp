@@ -124,6 +124,9 @@ abstract class XmppFeatureNegotiatorBase {
         null;
   }
 
+  /// Called when an event is triggered in the [XmppConnection].
+  Future<void> onXmppEvent(XmppEvent event) async {}
+
   /// Called with the currently received nonza [nonza] when the negotiator is active.
   /// If the negotiator is just elected to be the next one, then [nonza] is equal to
   /// the <stream:features /> nonza.

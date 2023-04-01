@@ -314,13 +314,8 @@ class XmppConnection {
 
   /// A [PresenceManager] is required, so have a wrapper for getting it.
   /// Returns the registered [PresenceManager].
-  PresenceManager getPresenceManager() {
-    assert(
-      _xmppManagers.containsKey(presenceManager),
-      'A PresenceManager is mandatory',
-    );
-
-    return getManagerById(presenceManager)!;
+  PresenceManager? getPresenceManager() {
+    return getManagerById(presenceManager);
   }
 
   /// A [DiscoManager] is required so, have a wrapper for getting it.
@@ -1030,6 +1025,9 @@ class XmppConnection {
     for (final manager in _xmppManagers.values) {
       await manager.onXmppEvent(event);
     }
+    for (final negotiator in _featureNegotiators.values) {
+      await negotiator.onXmppEvent(event);
+    }
 
     _eventStreamController.add(event);
   }
@@ -1068,7 +1066,7 @@ class XmppConnection {
     await _reconnectionPolicy.setShouldReconnect(false);
 
     if (triggeredByUser) {
-      getPresenceManager().sendUnavailablePresence();
+      getPresenceManager()?.sendUnavailablePresence();
     }
 
     _socket.prepareDisconnect();
@@ -1136,6 +1134,8 @@ class XmppConnection {
 
     if (lastResource != null) {
       setResource(lastResource, triggerEvent: false);
+    } else {
+      setResource('', triggerEvent: false);
     }
 
     _enableReconnectOnSuccess = enableReconnectOnSuccess;
