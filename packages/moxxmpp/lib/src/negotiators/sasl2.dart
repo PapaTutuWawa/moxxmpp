@@ -218,6 +218,7 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
         attributes.sendNonza(authenticate);
         return const Result(NegotiatorState.ready);
       case Sasl2State.authenticateSent:
+        // TODO(PapaTutuWawa): Handle failure
         if (nonza.tag == 'success') {
           // Tell the dependent negotiators about the result
           final negotiators = _featureNegotiators

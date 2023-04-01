@@ -6,13 +6,32 @@ import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 
+/// An interface that allows registering against Bind2's feature list in order to
+/// negotiate features inline with Bind2.
+// ignore: one_member_abstracts
+abstract class Bind2FeatureNegotiator {
+  /// Called by the Bind2 negotiator when Bind2 features are received. The returned
+  /// [XMLNode]s are added to Bind2's bind request.
+  Future<List<XMLNode>> onBind2FeaturesReceived(List<String> bind2Features);
+}
+
 /// A negotiator implementing XEP-0386. This negotiator is useless on its own
 /// and requires a [Sasl2Negotiator] to be registered.
 class Bind2Negotiator extends Sasl2FeatureNegotiator {
   Bind2Negotiator() : super(0, false, bind2Xmlns, bind2Negotiator);
 
+  /// A list of negotiators that can work with Bind2.
+  final List<Bind2FeatureNegotiator> _negotiators =
+      List<Bind2FeatureNegotiator>.empty(growable: true);
+
   /// A tag to sent to the server when requesting Bind2.
   String? tag;
+
+  /// Register [negotiator] against the Bind2 negotiator to append data to the Bind2
+  /// negotiation.
+  void registerNegotiator(Bind2FeatureNegotiator negotiator) {
+    _negotiators.add(negotiator);
+  }
 
   @override
   Future<Result<NegotiatorState, NegotiatorError>> negotiate(
@@ -23,6 +42,25 @@ class Bind2Negotiator extends Sasl2FeatureNegotiator {
 
   @override
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
+    final children = List<XMLNode>.empty(growable: true);
+    if (_negotiators.isNotEmpty) {
+      final inline = sasl2Features
+          .firstTag('inline')!
+          .firstTag('bind', xmlns: bind2Xmlns)!
+          .firstTag('inline');
+      if (inline != null) {
+        final features = inline.children
+            .where((child) => child.tag == 'feature')
+            .map((child) => child.attributes['var']! as String)
+            .toList();
+
+        // Only call the negotiators if Bind2 allows doing stuff inline
+        for (final negotiator in _negotiators) {
+          children.addAll(await negotiator.onBind2FeaturesReceived(features));
+        }
+      }
+    }
+
     return [
       XMLNode.xmlns(
         tag: 'bind',
@@ -33,6 +71,7 @@ class Bind2Negotiator extends Sasl2FeatureNegotiator {
               tag: 'tag',
               text: tag,
             ),
+          ...children,
         ],
       ),
     ];

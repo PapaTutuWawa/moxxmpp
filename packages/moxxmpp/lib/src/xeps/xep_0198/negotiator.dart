@@ -12,6 +12,7 @@ import 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/state.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
+import 'package:moxxmpp/src/xeps/xep_0386.dart';
 
 enum _StreamManagementNegotiatorState {
   // We have not done anything yet
@@ -25,7 +26,8 @@ enum _StreamManagementNegotiatorState {
 /// NOTE: The stream management negotiator requires that loadState has been called on the
 ///       StreamManagementManager at least once before connecting, if stream resumption
 ///       is wanted.
-class StreamManagementNegotiator extends Sasl2FeatureNegotiator {
+class StreamManagementNegotiator extends Sasl2FeatureNegotiator
+    implements Bind2FeatureNegotiator {
   StreamManagementNegotiator()
       : super(10, false, smXmlns, streamManagementNegotiator);
 
@@ -201,6 +203,22 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator {
   }
 
   @override
+  Future<List<XMLNode>> onBind2FeaturesReceived(
+    List<String> bind2Features,
+  ) async {
+    if (!bind2Features.contains(smXmlns)) {
+      return [];
+    }
+
+    return [
+      XMLNode.xmlns(
+        tag: 'enable',
+        xmlns: smXmlns,
+      ),
+    ];
+  }
+
+  @override
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
     final inline = sasl2Features.firstTag('inline')!;
     final resume = inline.firstTag('resume', xmlns: smXmlns);
@@ -231,6 +249,7 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator {
 
   @override
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
+    // TODO(PapaTutuWawa): Handle SM failures.
     final resumed = response.firstTag('resumed', xmlns: smXmlns);
     if (resumed == null) {
       _log.warning('Inline stream resumption failed');
@@ -253,6 +272,9 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator {
   Future<void> postRegisterCallback() async {
     attributes
         .getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)
+        ?.registerNegotiator(this);
+    attributes
+        .getNegotiatorById<Bind2Negotiator>(bind2Negotiator)
         ?.registerNegotiator(this);
   }
 }
