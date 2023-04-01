@@ -50,7 +50,8 @@ class PresenceManager extends XmppManagerBase {
     if (event is StreamNegotiationsDoneEvent) {
       // Send initial presence only when we have not resumed the stream
       final sm = getAttributes().getNegotiatorById<StreamManagementNegotiator>(
-          streamManagementNegotiator);
+        streamManagementNegotiator,
+      );
       final isResumed = sm?.isResumed ?? false;
       if (!isResumed) {
         unawaited(sendInitialPresence());
