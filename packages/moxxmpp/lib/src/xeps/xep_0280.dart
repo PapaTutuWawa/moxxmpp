@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/events.dart';
@@ -7,10 +8,15 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0297.dart';
+import 'package:moxxmpp/src/xeps/xep_0386.dart';
 
 /// This manager class implements support for XEP-0280.
 class CarbonsManager extends XmppManagerBase {
@@ -173,6 +179,16 @@ class CarbonsManager extends XmppManagerBase {
     _isEnabled = true;
   }
 
+  @internal
+  void setEnabled() {
+    _isEnabled = true;
+  }
+
+  @internal
+  void setDisabled() {
+    _isEnabled = false;
+  }
+
   /// Checks if a carbon sent by [senderJid] is valid to prevent vulnerabilities like
   /// the ones listed at https://xmpp.org/extensions/xep-0280.html#security.
   ///
@@ -183,5 +199,84 @@ class CarbonsManager extends XmppManagerBase {
               senderJid,
               ensureBare: true,
             );
+  }
+}
+
+class CarbonsNegotiator extends Sasl2FeatureNegotiator
+    implements Bind2FeatureNegotiator {
+  CarbonsNegotiator() : super(0, false, carbonsXmlns, carbonsNegotiator);
+
+  /// Flag indicating whether we requested to enable carbons inline (true) or not
+  /// (false).
+  bool _requestedEnablement = false;
+
+  /// Logger
+  final Logger _log = Logger('CarbonsNegotiator');
+
+  @override
+  bool canInlineFeature(List<XMLNode> features) => true;
+
+  @override
+  Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
+    return [];
+  }
+
+  @override
+  Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
+    if (_requestedEnablement) {
+      final enabled = response
+          .firstTag('bound', xmlns: bind2Xmlns)
+          ?.firstTag('enabled', xmlns: carbonsXmlns);
+      final cm = attributes.getManagerById<CarbonsManager>(carbonsManager)!;
+      if (enabled != null) {
+        _log.finest('Successfully enabled Message Carbons inline');
+        cm.setEnabled();
+      } else {
+        _log.warning('Failed to enable Message Carbons inline');
+        cm.setDisabled();
+      }
+    }
+
+    return const Result(true);
+  }
+
+  @override
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
+    return const Result(NegotiatorState.done);
+  }
+
+  @override
+  Future<List<XMLNode>> onBind2FeaturesReceived(
+      List<String> bind2Features) async {
+    if (!bind2Features.contains(carbonsXmlns)) {
+      return [];
+    }
+
+    _requestedEnablement = true;
+    return [
+      XMLNode.xmlns(
+        tag: 'enable',
+        xmlns: carbonsXmlns,
+      ),
+    ];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    attributes
+        .getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)
+        ?.registerNegotiator(this);
+    attributes
+        .getNegotiatorById<Bind2Negotiator>(bind2Negotiator)
+        ?.registerNegotiator(this);
+  }
+
+  @override
+  void reset() {
+    _requestedEnablement = false;
+
+    super.reset();
   }
 }

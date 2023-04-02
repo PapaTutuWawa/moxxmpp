@@ -10,3 +10,4 @@ const startTlsNegotiator = 'im.moxxmpp.core.starttls';
 const sasl2Negotiator = 'org.moxxmpp.sasl.sasl2';
 const bind2Negotiator = 'org.moxxmpp.bind2';
 const saslFASTNegotiator = 'org.moxxmpp.sasl.fast';
+const carbonsNegotiator = 'org.moxxmpp.bind2.carbons';
