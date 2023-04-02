@@ -9,7 +9,7 @@ void main() {
   test('Test simple Bind2 negotiation', () async {
     final fakeSocket = StubTCPSocket([
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"
@@ -82,7 +82,7 @@ void main() {
   test('Test simple Bind2 negotiation with a provided tag', () async {
     final fakeSocket = StubTCPSocket([
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"

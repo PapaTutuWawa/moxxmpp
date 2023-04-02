@@ -9,7 +9,7 @@ void main() {
   test('Test FAST authentication without a token', () async {
     final fakeSocket = StubTCPSocket([
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"
@@ -60,7 +60,7 @@ void main() {
         '',
       ),
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"
@@ -164,7 +164,7 @@ void main() {
   test('Test failed FAST authentication with a token', () async {
     final fakeSocket = StubTCPSocket([
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"

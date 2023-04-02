@@ -70,7 +70,7 @@ void main() {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -89,7 +89,7 @@ void main() {
           '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
         ),
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -157,7 +157,7 @@ void main() {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -216,7 +216,7 @@ void main() {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -379,7 +379,7 @@ void main() {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' from='testuser@example.org' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"

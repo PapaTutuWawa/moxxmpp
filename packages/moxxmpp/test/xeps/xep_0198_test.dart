@@ -227,7 +227,7 @@ void main() {
         () async {
       final fakeSocket = StubTCPSocket([
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -246,7 +246,7 @@ void main() {
           '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
         ),
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -342,7 +342,7 @@ void main() {
     test('Test counting incoming stanzas that are awaited', () async {
       final fakeSocket = StubTCPSocket([
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -361,7 +361,7 @@ void main() {
           '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
         ),
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -512,7 +512,7 @@ void main() {
     test('Test successful stream enablement', () async {
       final fakeSocket = StubTCPSocket([
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -531,7 +531,7 @@ void main() {
           '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
         ),
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -602,7 +602,7 @@ void main() {
     test('Test a failed stream resumption', () async {
       final fakeSocket = StubTCPSocket([
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -621,7 +621,7 @@ void main() {
           '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
         ),
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -702,7 +702,7 @@ void main() {
     test('Test a successful stream resumption', () async {
       final fakeSocket = StubTCPSocket([
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -721,7 +721,7 @@ void main() {
           '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
         ),
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -792,7 +792,7 @@ void main() {
   test('Test SASL2 inline stream resumption', () async {
     final fakeSocket = StubTCPSocket([
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"
@@ -886,7 +886,7 @@ void main() {
   test('Test SASL2 inline stream resumption with Bind2', () async {
     final fakeSocket = StubTCPSocket([
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"
@@ -986,7 +986,7 @@ void main() {
   test('Test failed SASL2 inline stream resumption with Bind2', () async {
     final fakeSocket = StubTCPSocket([
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"

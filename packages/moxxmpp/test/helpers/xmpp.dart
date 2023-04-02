@@ -58,7 +58,7 @@ List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
   );
   return [
     StringExpectation(
-      "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' xml:lang='en'>",
+      "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' from='${settings.jid.toBare().toString()}' xml:lang='en'>",
       '''
 <stream:stream
     xmlns="jabber:client"
@@ -77,7 +77,7 @@ List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
       '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
     ),
     StringExpectation(
-      "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' xml:lang='en'>",
+      "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='${settings.jid.domain}' from='${settings.jid.toBare().toString()}' xml:lang='en'>",
       '''
 <stream:stream
     xmlns="jabber:client"
