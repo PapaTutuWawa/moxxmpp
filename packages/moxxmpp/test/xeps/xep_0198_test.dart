@@ -1020,7 +1020,7 @@ void main() {
 <success xmlns='urn:xmpp:sasl:2'>
   <authorization-identifier>polynomdivision@test.server/test-resource</authorization-identifier>
   <failed xmlns='urn:xmpp:sm:3' />
-  <bound xmlns='urn:xmpp:sm:3'>
+  <bound xmlns='urn:xmpp:bind:0'>
     <failed xmlns='urn:xmpp:sm:3' />
   </bound>
 </success>
