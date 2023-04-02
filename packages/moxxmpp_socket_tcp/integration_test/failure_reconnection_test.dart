@@ -19,9 +19,10 @@ void main() {
         TestingSleepReconnectionPolicy(10),
         AlwaysConnectedConnectivityManager(),
         TCPSocketWrapper(),
-      )..registerFeatureNegotiators([
-          StartTlsNegotiator(),
-        ]);
+      );
+      await connection.registerFeatureNegotiators([
+        StartTlsNegotiator(),
+      ]);
       await connection.registerManagers([
         DiscoManager([]),
         RosterManager(TestingRosterStateManager('', [])),
@@ -68,9 +69,10 @@ void main() {
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
         TCPSocketWrapper(),
-      )..registerFeatureNegotiators([
-          StartTlsNegotiator(),
-        ]);
+      );
+      await connection.registerFeatureNegotiators([
+        StartTlsNegotiator(),
+      ]);
       await connection.registerManagers([
         DiscoManager([]),
         RosterManager(TestingRosterStateManager('', [])),

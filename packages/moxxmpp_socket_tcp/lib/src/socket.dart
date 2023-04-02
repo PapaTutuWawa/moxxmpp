@@ -289,17 +289,13 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       _eventStream.stream.asBroadcastStream();
 
   @override
-  void write(String data, {String? redact}) {
+  void write(String data) {
     if (_socket == null) {
       _log.severe('Failed to write to socket as _socket is null');
       return;
     }
 
-    if (redact != null) {
-      _log.finest('**> $redact');
-    } else {
-      _log.finest('==> $data');
-    }
+    _log.finest('==> $data');
 
     try {
       _socket!.write(data);

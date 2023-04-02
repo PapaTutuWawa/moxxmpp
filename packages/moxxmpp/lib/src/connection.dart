@@ -152,7 +152,7 @@ class XmppConnection {
   /// True if we are authenticated. False if not.
   bool _isAuthenticated = false;
 
-  /// Timer for the connecting timeout
+  /// Timer for the connecting timeout.
   Timer? _connectingTimeoutTimer;
 
   /// Completers for certain actions
@@ -467,10 +467,10 @@ class XmppConnection {
   }
 
   /// Sends an [XMLNode] without any further processing to the server.
-  void sendRawXML(XMLNode node, {String? redact}) {
+  void sendRawXML(XMLNode node) {
     final string = node.toXml();
     _log.finest('==> $string');
-    _socket.write(string, redact: redact);
+    _socket.write(string);
   }
 
   /// Sends [raw] to the server.

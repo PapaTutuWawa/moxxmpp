@@ -18,9 +18,10 @@ Future<void> _runTest(String domain) async {
     TestingReconnectionPolicy(),
     AlwaysConnectedConnectivityManager(),
     socket,
-  )..registerFeatureNegotiators([
-      StartTlsNegotiator(),
-    ]);
+  );
+  await connection.registerFeatureNegotiators([
+    StartTlsNegotiator(),
+  ]);
   await connection.registerManagers([
     DiscoManager([]),
     RosterManager(TestingRosterStateManager('', [])),

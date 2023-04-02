@@ -43,7 +43,7 @@ class NegotiatorAttributes {
   );
 
   /// Sends the nonza nonza and optionally redacts it in logs if redact is not null.
-  final void Function(XMLNode nonza, {String? redact}) sendNonza;
+  final void Function(XMLNode nonza) sendNonza;
 
   /// Returns the connection settings.
   final ConnectionSettings Function() getConnectionSettings;

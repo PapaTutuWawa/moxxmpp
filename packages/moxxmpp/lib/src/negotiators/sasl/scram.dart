@@ -259,7 +259,6 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
             body: await getRawStep(''),
             type: hashType,
           ),
-          redact: SaslScramAuthNonza(body: '******', type: hashType).toXml(),
         );
         return const Result(NegotiatorState.ready);
       case ScramState.initialMessageSent:
@@ -275,7 +274,6 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
 
         attributes.sendNonza(
           SaslScramResponseNonza(body: await getRawStep(nonza.innerText())),
-          redact: SaslScramResponseNonza(body: '******').toXml(),
         );
         return const Result(NegotiatorState.ready);
       case ScramState.challengeResponseSent:

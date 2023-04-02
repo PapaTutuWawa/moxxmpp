@@ -232,11 +232,11 @@ class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
             'mechanism': _currentSaslNegotiator!.mechanismName,
           },
           children: [
-            if (userAgent != null) userAgent!.toXml(),
             XMLNode(
               tag: 'initial-response',
               text: await _currentSaslNegotiator!.getRawStep(''),
             ),
+            if (userAgent != null) userAgent!.toXml(),
             ...children,
           ],
         );

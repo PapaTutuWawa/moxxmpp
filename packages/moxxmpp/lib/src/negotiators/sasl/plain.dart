@@ -50,7 +50,6 @@ class SaslPlainNegotiator extends Sasl2AuthenticationNegotiator {
       final data = await getRawStep('');
       attributes.sendNonza(
         SaslPlainAuthNonza(data),
-        redact: SaslPlainAuthNonza('******').toXml(),
       );
       _authSent = true;
       return const Result(NegotiatorState.ready);
