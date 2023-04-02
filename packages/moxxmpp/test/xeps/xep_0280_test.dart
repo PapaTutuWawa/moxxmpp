@@ -141,6 +141,8 @@ void main() {
     expect(result.isType<NegotiatorError>(), false);
     expect(conn.resource, 'test-resource');
     expect(
-        conn.getManagerById<CarbonsManager>(carbonsManager)!.isEnabled, true);
+      conn.getManagerById<CarbonsManager>(carbonsManager)!.isEnabled,
+      true,
+    );
   });
 }

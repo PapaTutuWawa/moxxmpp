@@ -9,11 +9,8 @@ import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
-import 'package:moxxmpp/src/negotiators/negotiator.dart';
-import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0297.dart';
 import 'package:moxxmpp/src/xeps/xep_0386.dart';
@@ -202,9 +199,8 @@ class CarbonsManager extends XmppManagerBase {
   }
 }
 
-class CarbonsNegotiator extends Sasl2FeatureNegotiator
-    implements Bind2FeatureNegotiator {
-  CarbonsNegotiator() : super(0, false, carbonsXmlns, carbonsNegotiator);
+class CarbonsNegotiator extends Bind2FeatureNegotiator {
+  CarbonsNegotiator() : super(0, carbonsXmlns, carbonsNegotiator);
 
   /// Flag indicating whether we requested to enable carbons inline (true) or not
   /// (false).
@@ -214,42 +210,26 @@ class CarbonsNegotiator extends Sasl2FeatureNegotiator
   final Logger _log = Logger('CarbonsNegotiator');
 
   @override
-  bool canInlineFeature(List<XMLNode> features) => true;
-
-  @override
-  Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
-    return [];
-  }
-
-  @override
-  Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
-    if (_requestedEnablement) {
-      final enabled = response
-          .firstTag('bound', xmlns: bind2Xmlns)
-          ?.firstTag('enabled', xmlns: carbonsXmlns);
-      final cm = attributes.getManagerById<CarbonsManager>(carbonsManager)!;
-      if (enabled != null) {
-        _log.finest('Successfully enabled Message Carbons inline');
-        cm.setEnabled();
-      } else {
-        _log.warning('Failed to enable Message Carbons inline');
-        cm.setDisabled();
-      }
+  Future<void> onBind2Success(XMLNode response) async {
+    if (!_requestedEnablement) {
+      return;
     }
 
-    return const Result(true);
-  }
-
-  @override
-  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
-    XMLNode nonza,
-  ) async {
-    return const Result(NegotiatorState.done);
+    final enabled = response.firstTag('enabled', xmlns: carbonsXmlns);
+    final cm = attributes.getManagerById<CarbonsManager>(carbonsManager)!;
+    if (enabled != null) {
+      _log.finest('Successfully enabled Message Carbons inline');
+      cm.setEnabled();
+    } else {
+      _log.warning('Failed to enable Message Carbons inline');
+      cm.setDisabled();
+    }
   }
 
   @override
   Future<List<XMLNode>> onBind2FeaturesReceived(
-      List<String> bind2Features) async {
+    List<String> bind2Features,
+  ) async {
     if (!bind2Features.contains(carbonsXmlns)) {
       return [];
     }
@@ -261,16 +241,6 @@ class CarbonsNegotiator extends Sasl2FeatureNegotiator
         xmlns: carbonsXmlns,
       ),
     ];
-  }
-
-  @override
-  Future<void> postRegisterCallback() async {
-    attributes
-        .getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)
-        ?.registerNegotiator(this);
-    attributes
-        .getNegotiatorById<Bind2Negotiator>(bind2Negotiator)
-        ?.registerNegotiator(this);
   }
 
   @override

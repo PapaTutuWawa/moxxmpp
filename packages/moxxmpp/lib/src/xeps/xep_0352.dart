@@ -25,7 +25,7 @@ class CSIInactiveNonza extends XMLNode {
 
 /// A Stub negotiator that is just for "intercepting" the stream feature.
 class CSINegotiator extends XmppFeatureNegotiatorBase
-    implements Bind2FeatureNegotiator {
+    implements Bind2FeatureNegotiatorInterface {
   CSINegotiator() : super(11, false, csiXmlns, csiNegotiator);
 
   /// True if CSI is supported. False otherwise.
@@ -50,11 +50,15 @@ class CSINegotiator extends XmppFeatureNegotiatorBase
       return [];
     }
 
+    _supported = true;
     final active = attributes.getManagerById<CSIManager>(csiManager)!.isActive;
     return [
       if (active) CSIActiveNonza() else CSIInactiveNonza(),
     ];
   }
+
+  @override
+  Future<void> onBind2Success(XMLNode response) async {}
 
   @override
   void reset() {

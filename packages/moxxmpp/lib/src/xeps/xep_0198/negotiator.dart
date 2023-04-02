@@ -28,7 +28,7 @@ enum _StreamManagementNegotiatorState {
 ///       StreamManagementManager at least once before connecting, if stream resumption
 ///       is wanted.
 class StreamManagementNegotiator extends Sasl2FeatureNegotiator
-    implements Bind2FeatureNegotiator {
+    implements Bind2FeatureNegotiatorInterface {
   StreamManagementNegotiator()
       : super(10, false, smXmlns, streamManagementNegotiator);
 
@@ -255,6 +255,9 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
       StreamManagementEnableNonza(),
     ];
   }
+
+  @override
+  Future<void> onBind2Success(XMLNode response) async {}
 
   @override
   Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {

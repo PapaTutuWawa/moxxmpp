@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
@@ -9,10 +10,43 @@ import 'package:moxxmpp/src/types/result.dart';
 /// An interface that allows registering against Bind2's feature list in order to
 /// negotiate features inline with Bind2.
 // ignore: one_member_abstracts
-abstract class Bind2FeatureNegotiator {
+abstract class Bind2FeatureNegotiatorInterface {
   /// Called by the Bind2 negotiator when Bind2 features are received. The returned
   /// [XMLNode]s are added to Bind2's bind request.
   Future<List<XMLNode>> onBind2FeaturesReceived(List<String> bind2Features);
+
+  /// Called by the Bind2 negotiator when Bind2 results are received.
+  Future<void> onBind2Success(XMLNode result);
+}
+
+/// A class that allows for simple negotiators that only registers itself against
+/// the Bind2 negotiator. You only have to implement the functions required by
+/// [Bind2FeatureNegotiatorInterface].
+abstract class Bind2FeatureNegotiator extends XmppFeatureNegotiatorBase
+    implements Bind2FeatureNegotiatorInterface {
+  Bind2FeatureNegotiator(
+    int priority,
+    String negotiatingXmlns,
+    String id,
+  ) : super(priority, false, negotiatingXmlns, id);
+
+  @override
+  bool matchesFeature(List<XMLNode> features) => false;
+
+  @override
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
+    return const Result(NegotiatorState.done);
+  }
+
+  @mustCallSuper
+  @override
+  Future<void> postRegisterCallback() async {
+    attributes
+        .getNegotiatorById<Bind2Negotiator>(bind2Negotiator)!
+        .registerNegotiator(this);
+  }
 }
 
 /// A negotiator implementing XEP-0386. This negotiator is useless on its own
@@ -21,15 +55,15 @@ class Bind2Negotiator extends Sasl2FeatureNegotiator {
   Bind2Negotiator() : super(0, false, bind2Xmlns, bind2Negotiator);
 
   /// A list of negotiators that can work with Bind2.
-  final List<Bind2FeatureNegotiator> _negotiators =
-      List<Bind2FeatureNegotiator>.empty(growable: true);
+  final List<Bind2FeatureNegotiatorInterface> _negotiators =
+      List<Bind2FeatureNegotiatorInterface>.empty(growable: true);
 
   /// A tag to sent to the server when requesting Bind2.
   String? tag;
 
   /// Register [negotiator] against the Bind2 negotiator to append data to the Bind2
   /// negotiation.
-  void registerNegotiator(Bind2FeatureNegotiator negotiator) {
+  void registerNegotiator(Bind2FeatureNegotiatorInterface negotiator) {
     _negotiators.add(negotiator);
   }
 
@@ -87,8 +121,14 @@ class Bind2Negotiator extends Sasl2FeatureNegotiator {
 
   @override
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
-    attributes.removeNegotiatingFeature(bindXmlns);
+    final bound = response.firstTag('bound', xmlns: bind2Xmlns);
+    if (bound != null) {
+      for (final negotiator in _negotiators) {
+        await negotiator.onBind2Success(bound);
+      }
+    }
 
+    attributes.removeNegotiatingFeature(bindXmlns);
     return const Result(true);
   }
 

@@ -204,5 +204,9 @@ void main() {
     );
     expect(result.isType<NegotiatorError>(), false);
     expect(fakeSocket.getState(), 2);
+    expect(
+      conn.getNegotiatorById<CSINegotiator>(csiNegotiator)!.isSupported,
+      true,
+    );
   });
 }
