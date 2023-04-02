@@ -1,5 +1,5 @@
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
-import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
+import 'package:moxxmpp/src/rfcs/rfc_6120/sasl/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 

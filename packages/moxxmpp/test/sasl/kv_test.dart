@@ -1,4 +1,4 @@
-import 'package:moxxmpp/src/negotiators/sasl/kv.dart';
+import 'package:moxxmpp/src/rfcs/rfc_6120/sasl/kv.dart';
 import 'package:test/test.dart';
 
 void main() {

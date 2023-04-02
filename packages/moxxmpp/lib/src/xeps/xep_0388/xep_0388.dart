@@ -2,7 +2,7 @@ import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
-import 'package:moxxmpp/src/negotiators/sasl/errors.dart';
+import 'package:moxxmpp/src/rfcs/rfc_6120/sasl/errors.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0388/errors.dart';
