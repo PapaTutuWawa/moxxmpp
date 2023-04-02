@@ -6,14 +6,27 @@ import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
-import 'package:moxxmpp/src/negotiators/sasl/errors.dart';
-import 'package:moxxmpp/src/negotiators/sasl/kv.dart';
-import 'package:moxxmpp/src/negotiators/sasl/negotiator.dart';
-import 'package:moxxmpp/src/negotiators/sasl/nonza.dart';
+import 'package:moxxmpp/src/rfcs/rfc_6120/sasl/errors.dart';
+import 'package:moxxmpp/src/rfcs/rfc_6120/sasl/kv.dart';
+import 'package:moxxmpp/src/rfcs/rfc_6120/sasl/nonza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/xeps/xep_0388/negotiators.dart';
+import 'package:moxxmpp/src/xeps/xep_0388/xep_0388.dart';
 import 'package:random_string/random_string.dart';
 import 'package:saslprep/saslprep.dart';
+
+abstract class SaslScramError extends NegotiatorError {}
+
+class NoAdditionalDataError extends SaslScramError {
+  @override
+  bool isRecoverable() => false;
+}
+
+class InvalidServerSignatureError extends SaslScramError {
+  @override
+  bool isRecoverable() => false;
+}
 
 // NOTE: Inspired by https://github.com/vukoye/xmpp_dart/blob/3b1a0588562b9e591488c99d834088391840911d/lib/src/features/sasl/ScramSaslHandler.dart
 
@@ -95,7 +108,7 @@ enum ScramState { preSent, initialMessageSent, challengeResponseSent, error }
 
 const gs2Header = 'n,,';
 
-class SaslScramNegotiator extends SaslNegotiator {
+class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
   // NOTE: NEVER, and I mean, NEVER set clientNonce or initalMessageNoGS2. They are just there for testing
   SaslScramNegotiator(
     int priority,
@@ -230,29 +243,23 @@ class SaslScramNegotiator extends SaslNegotiator {
     return false;
   }
 
+  bool _checkSignature(String base64Signature) {
+    final signature =
+        parseKeyValue(utf8.decode(base64.decode(base64Signature)));
+    return signature['v']! == _serverSignature;
+  }
+
   @override
   Future<Result<NegotiatorState, NegotiatorError>> negotiate(
     XMLNode nonza,
   ) async {
     switch (_scramState) {
       case ScramState.preSent:
-        if (clientNonce == null || clientNonce == '') {
-          clientNonce = randomAlphaNumeric(
-            40,
-            provider: CoreRandomProvider.from(Random.secure()),
-          );
-        }
-
-        initialMessageNoGS2 =
-            'n=${attributes.getConnectionSettings().jid.local},r=$clientNonce';
-
-        _scramState = ScramState.initialMessageSent;
         attributes.sendNonza(
           SaslScramAuthNonza(
-            body: base64.encode(utf8.encode(gs2Header + initialMessageNoGS2)),
+            body: await getRawStep(''),
             type: hashType,
           ),
-          redact: SaslScramAuthNonza(body: '******', type: hashType).toXml(),
         );
         return const Result(NegotiatorState.ready);
       case ScramState.initialMessageSent:
@@ -266,13 +273,8 @@ class SaslScramNegotiator extends SaslNegotiator {
           );
         }
 
-        final challengeBase64 = nonza.innerText();
-        final response = await calculateChallengeResponse(challengeBase64);
-        final responseBase64 = base64.encode(utf8.encode(response));
-        _scramState = ScramState.challengeResponseSent;
         attributes.sendNonza(
-          SaslScramResponseNonza(body: responseBase64),
-          redact: SaslScramResponseNonza(body: '******').toXml(),
+          SaslScramResponseNonza(body: await getRawStep(nonza.innerText())),
         );
         return const Result(NegotiatorState.ready);
       case ScramState.challengeResponseSent:
@@ -286,10 +288,7 @@ class SaslScramNegotiator extends SaslNegotiator {
           );
         }
 
-        // NOTE: This assumes that the string is always "v=..." and contains no other parameters
-        final signature =
-            parseKeyValue(utf8.decode(base64.decode(nonza.innerText())));
-        if (signature['v']! != _serverSignature) {
+        if (!_checkSignature(nonza.innerText())) {
           // TODO(Unknown): Notify of a signature mismatch
           //final error = nonza.children.first.tag;
           //attributes.sendEvent(AuthenticationFailedEvent(error));
@@ -299,7 +298,7 @@ class SaslScramNegotiator extends SaslNegotiator {
           );
         }
 
-        await attributes.sendEvent(AuthenticationSuccessEvent());
+        attributes.setAuthenticated();
         return const Result(NegotiatorState.done);
       case ScramState.error:
         return Result(
@@ -313,5 +312,66 @@ class SaslScramNegotiator extends SaslNegotiator {
     _scramState = ScramState.preSent;
 
     super.reset();
+  }
+
+  @override
+  Future<String> getRawStep(String input) async {
+    switch (_scramState) {
+      case ScramState.preSent:
+        if (clientNonce == null || clientNonce == '') {
+          clientNonce = randomAlphaNumeric(
+            40,
+            provider: CoreRandomProvider.from(Random.secure()),
+          );
+        }
+
+        initialMessageNoGS2 =
+            'n=${attributes.getConnectionSettings().jid.local},r=$clientNonce';
+
+        _scramState = ScramState.initialMessageSent;
+        return base64.encode(utf8.encode(gs2Header + initialMessageNoGS2));
+      case ScramState.initialMessageSent:
+        final challengeBase64 = input;
+        final response = await calculateChallengeResponse(challengeBase64);
+        final responseBase64 = base64.encode(utf8.encode(response));
+        _scramState = ScramState.challengeResponseSent;
+
+        return responseBase64;
+      case ScramState.challengeResponseSent:
+      case ScramState.error:
+        return '';
+    }
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    attributes
+        .getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)
+        ?.registerSaslNegotiator(this);
+  }
+
+  @override
+  Future<List<XMLNode>> onSasl2FeaturesReceived(XMLNode sasl2Features) async {
+    return [];
+  }
+
+  @override
+  Future<void> onSasl2Failure(XMLNode response) async {}
+
+  @override
+  Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
+    // When we're done with SASL2, check the additional data to verify the server
+    // signature.
+    state = NegotiatorState.done;
+    final additionalData = response.firstTag('additional-data');
+    if (additionalData == null) {
+      return Result(NoAdditionalDataError());
+    }
+
+    if (!_checkSignature(additionalData.innerText())) {
+      return Result(InvalidServerSignatureError());
+    }
+
+    return const Result(true);
   }
 }

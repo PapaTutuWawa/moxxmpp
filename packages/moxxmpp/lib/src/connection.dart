@@ -9,6 +9,7 @@ import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/iq.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
@@ -63,14 +64,15 @@ enum StanzaFromType {
 
 /// Nonza describing the XMPP stream header.
 class StreamHeaderNonza extends XMLNode {
-  StreamHeaderNonza(String serverDomain)
+  StreamHeaderNonza(JID jid)
       : super(
           tag: 'stream:stream',
           attributes: <String, String>{
             'xmlns': stanzaXmlns,
             'version': '1.0',
             'xmlns:stream': streamXmlns,
-            'to': serverDomain,
+            'to': jid.domain,
+            'from': jid.toBare().toString(),
             'xml:lang': 'en',
           },
           closeTag: false,
@@ -133,9 +135,6 @@ class XmppConnection {
       StreamController.broadcast();
   final Map<String, XmppManagerBase> _xmppManagers = {};
 
-  /// Disco info we got after binding a resource (xmlns)
-  final List<String> _serverFeatures = List.empty(growable: true);
-
   /// The buffer object to keep split up stanzas together
   final XmlStreamBuffer _streamBuffer = XmlStreamBuffer();
 
@@ -150,11 +149,12 @@ class XmppConnection {
 
   /// The currently bound resource or '' if none has been bound yet.
   String _resource = '';
+  String get resource => _resource;
 
   /// True if we are authenticated. False if not.
   bool _isAuthenticated = false;
 
-  /// Timer for the connecting timeout
+  /// Timer for the connecting timeout.
   Timer? _connectingTimeoutTimer;
 
   /// Completers for certain actions
@@ -201,8 +201,6 @@ class XmppConnection {
 
   ReconnectionPolicy get reconnectionPolicy => _reconnectionPolicy;
 
-  List<String> get serverFeatures => _serverFeatures;
-
   bool get isAuthenticated => _isAuthenticated;
 
   /// Return the registered feature negotiator that has id [id]. Returns null if
@@ -221,7 +219,6 @@ class XmppConnection {
           sendEvent: _sendEvent,
           getConnectionSettings: () => _connectionSettings,
           getManagerById: getManagerById,
-          isFeatureSupported: _serverFeatures.contains,
           getFullJID: () => _connectionSettings.jid.withResource(_resource),
           getSocket: () => _socket,
           getConnection: () => this,
@@ -253,13 +250,29 @@ class XmppConnection {
     }
   }
 
+  // Mark the current connection as authenticated.
+  void _setAuthenticated() {
+    _sendEvent(AuthenticationSuccessEvent());
+    _isAuthenticated = true;
+  }
+
+  /// Remove [feature] from the stream features we are currently negotiating.
+  void _removeNegotiatingFeature(String feature) {
+    _streamFeatures.removeWhere((node) {
+      return node.attributes['xmlns'] == feature;
+    });
+  }
+
   /// Register a list of negotiator with the connection.
-  void registerFeatureNegotiators(List<XmppFeatureNegotiatorBase> negotiators) {
+  Future<void> registerFeatureNegotiators(
+    List<XmppFeatureNegotiatorBase> negotiators,
+  ) async {
     for (final negotiator in negotiators) {
       _log.finest('Registering ${negotiator.id}');
       negotiator.register(
         NegotiatorAttributes(
           sendRawXML,
+          () => this,
           () => _connectionSettings,
           _sendEvent,
           getNegotiatorById,
@@ -267,12 +280,19 @@ class XmppConnection {
           () => _connectionSettings.jid.withResource(_resource),
           () => _socket,
           () => _isAuthenticated,
+          _setAuthenticated,
+          setResource,
+          _removeNegotiatingFeature,
         ),
       );
       _featureNegotiators[negotiator.id] = negotiator;
     }
 
     _log.finest('Negotiators registered');
+
+    for (final negotiator in _featureNegotiators.values) {
+      await negotiator.postRegisterCallback();
+    }
   }
 
   /// Reset all registered negotiators.
@@ -296,13 +316,8 @@ class XmppConnection {
 
   /// A [PresenceManager] is required, so have a wrapper for getting it.
   /// Returns the registered [PresenceManager].
-  PresenceManager getPresenceManager() {
-    assert(
-      _xmppManagers.containsKey(presenceManager),
-      'A PresenceManager is mandatory',
-    );
-
-    return getManagerById(presenceManager)!;
+  PresenceManager? getPresenceManager() {
+    return getManagerById(presenceManager);
   }
 
   /// A [DiscoManager] is required so, have a wrapper for getting it.
@@ -399,7 +414,7 @@ class XmppConnection {
 
     // Close the socket
     _socket.close();
-    
+
     if (!error.isRecoverable()) {
       // We cannot recover this error
       _log.severe(
@@ -454,10 +469,10 @@ class XmppConnection {
   }
 
   /// Sends an [XMLNode] without any further processing to the server.
-  void sendRawXML(XMLNode node, {String? redact}) {
+  void sendRawXML(XMLNode node) {
     final string = node.toXml();
     _log.finest('==> $string');
-    _socket.write(string, redact: redact);
+    _socket.write(string);
   }
 
   /// Sends [raw] to the server.
@@ -657,9 +672,14 @@ class XmppConnection {
   }
 
   /// Sets the resource of the connection
-  void setResource(String resource) {
+  @visibleForTesting
+  void setResource(String resource, {bool triggerEvent = true}) {
     _log.finest('Updating _resource to $resource');
     _resource = resource;
+
+    if (triggerEvent) {
+      _sendEvent(ResourceBoundEvent(resource));
+    }
   }
 
   /// Returns the connection's events as a stream.
@@ -839,9 +859,6 @@ class XmppConnection {
     // Tell consumers of the event stream that we're done with stream feature
     // negotiations
     await _sendEvent(StreamNegotiationsDoneEvent());
-
-    // Send out initial presence
-    await getPresenceManager().sendInitialPresence();
   }
 
   Future<void> _executeCurrentNegotiator(XMLNode nonza) async {
@@ -895,10 +912,7 @@ class XmppConnection {
           _streamFeatures.clear();
           _sendStreamHeader();
         } else {
-          _streamFeatures.removeWhere((node) {
-            return node.attributes['xmlns'] ==
-                _currentNegotiator!.negotiatingXmlns;
-          });
+          _removeNegotiatingFeature(_currentNegotiator!.negotiatingXmlns);
           _currentNegotiator = null;
 
           if (_isMandatoryNegotiationDone(_streamFeatures) &&
@@ -1010,24 +1024,11 @@ class XmppConnection {
   Future<void> _sendEvent(XmppEvent event) async {
     _log.finest('Event: ${event.toString()}');
 
-    // Specific event handling
-    if (event is ResourceBindingSuccessEvent) {
-      _log.finest(
-        'Received ResourceBindingSuccessEvent. Setting _resource to ${event.resource}',
-      );
-      setResource(event.resource);
-
-      _log.finest('Resetting _serverFeatures');
-      _serverFeatures.clear();
-    } else if (event is AuthenticationSuccessEvent) {
-      _log.finest(
-        'Received AuthenticationSuccessEvent. Setting _isAuthenticated to true',
-      );
-      _isAuthenticated = true;
-    }
-
     for (final manager in _xmppManagers.values) {
       await manager.onXmppEvent(event);
+    }
+    for (final negotiator in _featureNegotiators.values) {
+      await negotiator.onXmppEvent(event);
     }
 
     _eventStreamController.add(event);
@@ -1038,11 +1039,11 @@ class XmppConnection {
     _socket.write(
       XMLNode(
         tag: 'xml',
-        attributes: <String, String>{'version': '1.0'},
+        attributes: {'version': '1.0'},
         closeTag: false,
         isDeclaration: true,
         children: [
-          StreamHeaderNonza(_connectionSettings.jid.domain),
+          StreamHeaderNonza(_connectionSettings.jid),
         ],
       ).toXml(),
     );
@@ -1067,7 +1068,7 @@ class XmppConnection {
     await _reconnectionPolicy.setShouldReconnect(false);
 
     if (triggeredByUser) {
-      getPresenceManager().sendUnavailablePresence();
+      getPresenceManager()?.sendUnavailablePresence();
     }
 
     _socket.prepareDisconnect();
@@ -1087,10 +1088,6 @@ class XmppConnection {
 
   /// Make sure that all required managers are registered
   void _runPreConnectionAssertions() {
-    assert(
-      _xmppManagers.containsKey(presenceManager),
-      'A PresenceManager is mandatory',
-    );
     assert(
       _xmppManagers.containsKey(rosterManager),
       'A RosterManager is mandatory',
@@ -1138,7 +1135,9 @@ class XmppConnection {
     }
 
     if (lastResource != null) {
-      setResource(lastResource);
+      setResource(lastResource, triggerEvent: false);
+    } else {
+      setResource('', triggerEvent: false);
     }
 
     _enableReconnectOnSuccess = enableReconnectOnSuccess;
@@ -1159,13 +1158,16 @@ class XmppConnection {
     }
 
     final smManager = getStreamManagementManager();
-    String? host;
-    int? port;
+    var host = _connectionSettings.host;
+    var port = _connectionSettings.port;
     if (smManager?.state.streamResumptionLocation != null) {
       // TODO(Unknown): Maybe wrap this in a try catch?
       final parsed = Uri.parse(smManager!.state.streamResumptionLocation!);
       host = parsed.host;
       port = parsed.port;
+    } else {
+      host = _connectionSettings.host;
+      port = _connectionSettings.port;
     }
 
     final result = await _socket.connect(

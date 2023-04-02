@@ -56,7 +56,6 @@ class TestingManagerHolder {
         sendNonza: (_) {},
         sendEvent: (_) {},
         getSocket: () => _socket,
-        isFeatureSupported: (_) => false,
         getNegotiatorById: getNegotiatorNullStub,
         getFullJID: () => jid,
         getManagerById: _getManagerById,

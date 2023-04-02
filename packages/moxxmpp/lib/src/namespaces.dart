@@ -116,6 +116,12 @@ const omemoBundlesXmlns = 'urn:xmpp:omemo:2:bundles';
 // XEP-0385
 const simsXmlns = 'urn:xmpp:sims:1';
 
+// XEP-0386
+const bind2Xmlns = 'urn:xmpp:bind:0';
+
+// XEP-0388
+const sasl2Xmlns = 'urn:xmpp:sasl:2';
+
 // XEP-0420
 const sceXmlns = 'urn:xmpp:sce:1';
 
@@ -154,3 +160,6 @@ const fallbackXmlns = 'urn:xmpp:feature-fallback:0';
 
 // ???
 const urlDataXmlns = 'http://jabber.org/protocol/url-data';
+
+// XEP-XXXX
+const fastXmlns = 'urn:xmpp:fast:0';

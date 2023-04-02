@@ -146,4 +146,6 @@ class XMLNode {
   String innerText() {
     return text ?? '';
   }
+
+  String? get xmlns => attributes['xmlns'] as String?;
 }

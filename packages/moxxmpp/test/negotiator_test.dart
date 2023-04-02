@@ -46,7 +46,7 @@ void main() {
   final stubSocket = StubTCPSocket(
     [
       StringExpectation(
-        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='user@test.server' xml:lang='en'>",
         '''
 <stream:stream
     xmlns="jabber:client"

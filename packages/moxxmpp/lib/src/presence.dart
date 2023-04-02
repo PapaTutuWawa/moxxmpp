@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
@@ -6,8 +7,10 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
 
 /// A function that will be called when presence, outside of subscription request
 /// management, will be sent. Useful for managers that want to add [XMLNode]s to said
@@ -40,6 +43,20 @@ class PresenceManager extends XmppManagerBase {
   /// Register the pre-send callback [callback].
   void registerPreSendCallback(PresencePreSendCallback callback) {
     _presenceCallbacks.add(callback);
+  }
+
+  @override
+  Future<void> onXmppEvent(XmppEvent event) async {
+    if (event is StreamNegotiationsDoneEvent) {
+      // Send initial presence only when we have not resumed the stream
+      final sm = getAttributes().getNegotiatorById<StreamManagementNegotiator>(
+        streamManagementNegotiator,
+      );
+      final isResumed = sm?.isResumed ?? false;
+      if (!isResumed) {
+        unawaited(sendInitialPresence());
+      }
+    }
   }
 
   Future<StanzaHandlerData> _onPresence(

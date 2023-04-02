@@ -1,4 +1,6 @@
+import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
+import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
@@ -27,6 +29,7 @@ abstract class NegotiatorError extends XmppError {}
 class NegotiatorAttributes {
   const NegotiatorAttributes(
     this.sendNonza,
+    this.getConnection,
     this.getConnectionSettings,
     this.sendEvent,
     this.getNegotiatorById,
@@ -34,15 +37,21 @@ class NegotiatorAttributes {
     this.getFullJID,
     this.getSocket,
     this.isAuthenticated,
+    this.setAuthenticated,
+    this.setResource,
+    this.removeNegotiatingFeature,
   );
 
   /// Sends the nonza nonza and optionally redacts it in logs if redact is not null.
-  final void Function(XMLNode nonza, {String? redact}) sendNonza;
+  final void Function(XMLNode nonza) sendNonza;
 
   /// Returns the connection settings.
   final ConnectionSettings Function() getConnectionSettings;
 
-  /// Send an event event to the connection's event bus
+  /// Returns the connection object.
+  final XmppConnection Function() getConnection;
+
+  /// Send an event event to the connection's event bus.
   final Future<void> Function(XmppEvent event) sendEvent;
 
   /// Returns the negotiator with id id of the connection or null.
@@ -60,6 +69,17 @@ class NegotiatorAttributes {
 
   /// Returns true if the stream is authenticated. Returns false if not.
   final bool Function() isAuthenticated;
+
+  /// Sets the resource of the connection. If triggerEvent is true, then a
+  /// [ResourceBoundEvent] is triggered.
+  final void Function(String, {bool triggerEvent}) setResource;
+
+  /// Sets the authentication state of the connection to true.
+  final void Function() setAuthenticated;
+
+  /// Remove a stream feature from our internal cache. This is useful for when you
+  /// negotiated a feature for another negotiator, like SASL2.
+  final void Function(String) removeNegotiatingFeature;
 }
 
 abstract class XmppFeatureNegotiatorBase {
@@ -104,6 +124,9 @@ abstract class XmppFeatureNegotiatorBase {
         null;
   }
 
+  /// Called when an event is triggered in the [XmppConnection].
+  Future<void> onXmppEvent(XmppEvent event) async {}
+
   /// Called with the currently received nonza [nonza] when the negotiator is active.
   /// If the negotiator is just elected to be the next one, then [nonza] is equal to
   /// the <stream:features /> nonza.
@@ -120,5 +143,10 @@ abstract class XmppFeatureNegotiatorBase {
     state = NegotiatorState.ready;
   }
 
+  @protected
   NegotiatorAttributes get attributes => _attributes;
+
+  /// Run after all negotiators are registered. Useful for registering callbacks against
+  /// other negotiators. By default this function does nothing.
+  Future<void> postRegisterCallback() async {}
 }

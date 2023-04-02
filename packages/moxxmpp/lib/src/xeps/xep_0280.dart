@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/events.dart';
@@ -7,10 +8,12 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0297.dart';
+import 'package:moxxmpp/src/xeps/xep_0386.dart';
 
 /// This manager class implements support for XEP-0280.
 class CarbonsManager extends XmppManagerBase {
@@ -173,6 +176,16 @@ class CarbonsManager extends XmppManagerBase {
     _isEnabled = true;
   }
 
+  @internal
+  void setEnabled() {
+    _isEnabled = true;
+  }
+
+  @internal
+  void setDisabled() {
+    _isEnabled = false;
+  }
+
   /// Checks if a carbon sent by [senderJid] is valid to prevent vulnerabilities like
   /// the ones listed at https://xmpp.org/extensions/xep-0280.html#security.
   ///
@@ -183,5 +196,57 @@ class CarbonsManager extends XmppManagerBase {
               senderJid,
               ensureBare: true,
             );
+  }
+}
+
+class CarbonsNegotiator extends Bind2FeatureNegotiator {
+  CarbonsNegotiator() : super(0, carbonsXmlns, carbonsNegotiator);
+
+  /// Flag indicating whether we requested to enable carbons inline (true) or not
+  /// (false).
+  bool _requestedEnablement = false;
+
+  /// Logger
+  final Logger _log = Logger('CarbonsNegotiator');
+
+  @override
+  Future<void> onBind2Success(XMLNode response) async {
+    if (!_requestedEnablement) {
+      return;
+    }
+
+    final enabled = response.firstTag('enabled', xmlns: carbonsXmlns);
+    final cm = attributes.getManagerById<CarbonsManager>(carbonsManager)!;
+    if (enabled != null) {
+      _log.finest('Successfully enabled Message Carbons inline');
+      cm.setEnabled();
+    } else {
+      _log.warning('Failed to enable Message Carbons inline');
+      cm.setDisabled();
+    }
+  }
+
+  @override
+  Future<List<XMLNode>> onBind2FeaturesReceived(
+    List<String> bind2Features,
+  ) async {
+    if (!bind2Features.contains(carbonsXmlns)) {
+      return [];
+    }
+
+    _requestedEnablement = true;
+    return [
+      XMLNode.xmlns(
+        tag: 'enable',
+        xmlns: carbonsXmlns,
+      ),
+    ];
+  }
+
+  @override
+  void reset() {
+    _requestedEnablement = false;
+
+    super.reset();
   }
 }

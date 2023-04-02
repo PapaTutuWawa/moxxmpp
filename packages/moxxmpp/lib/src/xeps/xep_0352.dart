@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/xeps/xep_0386.dart';
 
 class CSIActiveNonza extends XMLNode {
   CSIActiveNonza()
@@ -23,7 +24,8 @@ class CSIInactiveNonza extends XMLNode {
 }
 
 /// A Stub negotiator that is just for "intercepting" the stream feature.
-class CSINegotiator extends XmppFeatureNegotiatorBase {
+class CSINegotiator extends XmppFeatureNegotiatorBase
+    implements Bind2FeatureNegotiatorInterface {
   CSINegotiator() : super(11, false, csiXmlns, csiNegotiator);
 
   /// True if CSI is supported. False otherwise.
@@ -41,10 +43,35 @@ class CSINegotiator extends XmppFeatureNegotiatorBase {
   }
 
   @override
+  Future<List<XMLNode>> onBind2FeaturesReceived(
+    List<String> bind2Features,
+  ) async {
+    if (!bind2Features.contains(csiXmlns)) {
+      return [];
+    }
+
+    _supported = true;
+    final active = attributes.getManagerById<CSIManager>(csiManager)!.isActive;
+    return [
+      if (active) CSIActiveNonza() else CSIInactiveNonza(),
+    ];
+  }
+
+  @override
+  Future<void> onBind2Success(XMLNode response) async {}
+
+  @override
   void reset() {
     _supported = false;
 
     super.reset();
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    attributes
+        .getNegotiatorById<Bind2Negotiator>(bind2Negotiator)
+        ?.registerNegotiator(this);
   }
 }
 
@@ -52,7 +79,10 @@ class CSINegotiator extends XmppFeatureNegotiatorBase {
 class CSIManager extends XmppManagerBase {
   CSIManager() : super(csiManager);
 
+  /// Flag indicating whether the application is currently active and the CSI
+  /// traffic optimisation should be disabled (true).
   bool _isActive = true;
+  bool get isActive => _isActive;
 
   @override
   Future<bool> isSupported() async {
@@ -71,23 +101,31 @@ class CSIManager extends XmppManagerBase {
     }
   }
 
-  /// Tells the server to top optimizing traffic
-  Future<void> setActive() async {
+  /// Tells the server to stop optimizing traffic.
+  /// If [sendNonza] is false, then no nonza is sent. This is useful
+  /// for setting up the CSI manager for Bind2.
+  Future<void> setActive({bool sendNonza = true}) async {
     _isActive = true;
 
-    final attrs = getAttributes();
-    if (await isSupported()) {
-      attrs.sendNonza(CSIActiveNonza());
+    if (sendNonza) {
+      final attrs = getAttributes();
+      if (await isSupported()) {
+        attrs.sendNonza(CSIActiveNonza());
+      }
     }
   }
 
   /// Tells the server to optimize traffic following XEP-0352
-  Future<void> setInactive() async {
+  /// If [sendNonza] is false, then no nonza is sent. This is useful
+  /// for setting up the CSI manager for Bind2.
+  Future<void> setInactive({bool sendNonza = true}) async {
     _isActive = false;
 
-    final attrs = getAttributes();
-    if (await isSupported()) {
-      attrs.sendNonza(CSIInactiveNonza());
+    if (sendNonza) {
+      final attrs = getAttributes();
+      if (await isSupported()) {
+        attrs.sendNonza(CSIInactiveNonza());
+      }
     }
   }
 }

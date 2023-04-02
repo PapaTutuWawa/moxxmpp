@@ -30,9 +30,8 @@ abstract class BaseSocketWrapper {
   /// reused by calling [this.connect] again.
   void close();
 
-  /// Write [data] into the socket. If [redact] is not null, then [redact] will be
-  /// logged instead of [data].
-  void write(String data, {String? redact});
+  /// Write [data] into the socket.
+  void write(String data);
 
   /// This must connect to [host]:[port] and initialize the streams accordingly.
   /// [domain] is the domain that TLS should be validated against, in case the Socket

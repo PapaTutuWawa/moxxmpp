@@ -35,7 +35,6 @@ Future<bool> testRosterManager(
         ),
         getManagerById: getManagerNullStub,
         getNegotiatorById: getNegotiatorNullStub,
-        isFeatureSupported: (_) => false,
         getFullJID: () => JID.fromString('$bareJid/$resource'),
         getSocket: () => StubTCPSocket([]),
         getConnection: () => XmppConnection(
@@ -71,7 +70,7 @@ void main() {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -90,7 +89,7 @@ void main() {
           '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
         ),
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -140,7 +139,7 @@ void main() {
       StreamManagementManager(),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
-    conn.registerFeatureNegotiators([
+    await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       SaslScramNegotiator(10, '', '', ScramHashType.sha512),
       ResourceBindingNegotiator(),
@@ -151,13 +150,14 @@ void main() {
       waitUntilLogin: true,
     );
     expect(fakeSocket.getState(), /*6*/ 5);
+    expect(conn.resource, 'MU29eEZn');
   });
 
   test('Test a failed SASL auth', () async {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -195,7 +195,7 @@ void main() {
       DiscoManager([]),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
-    conn.registerFeatureNegotiators([
+    await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
     ]);
 
@@ -216,7 +216,7 @@ void main() {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -254,7 +254,7 @@ void main() {
       DiscoManager([]),
       EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
-    conn.registerFeatureNegotiators([SaslPlainNegotiator()]);
+    await conn.registerFeatureNegotiators([SaslPlainNegotiator()]);
 
     conn.asBroadcastStream().listen((event) {
       if (event is AuthenticationFailedEvent &&
@@ -296,7 +296,6 @@ void main() {
             ),
             getManagerById: getManagerNullStub,
             getNegotiatorById: getNegotiatorNullStub,
-            isFeatureSupported: (_) => false,
             getFullJID: () => JID.fromString('some.user@example.server/aaaaa'),
             getSocket: () => StubTCPSocket([]),
             getConnection: () => XmppConnection(
@@ -380,7 +379,7 @@ void main() {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' xml:lang='en'>",
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' from='testuser@example.org' xml:lang='en'>",
           '''
 <stream:stream
     xmlns="jabber:client"
@@ -407,18 +406,17 @@ void main() {
       RosterManager(TestingRosterStateManager('', [])),
       DiscoManager([]),
     ]);
-    conn
-      ..registerFeatureNegotiators([
-        // SaslPlainNegotiator(),
-        ResourceBindingNegotiator(),
-      ])
-      ..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('testuser@example.org'),
-          password: 'abc123',
-          useDirectTLS: false,
-        ),
-      );
+    await conn.registerFeatureNegotiators([
+      // SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+    ]);
+    conn.setConnectionSettings(
+      ConnectionSettings(
+        jid: JID.fromString('testuser@example.org'),
+        password: 'abc123',
+        useDirectTLS: false,
+      ),
+    );
 
     final result = await conn.connect(
       waitUntilLogin: true,

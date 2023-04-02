@@ -46,6 +46,11 @@ void main() {
     )..register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
+          () => XmppConnection(
+            TestingReconnectionPolicy(),
+            AlwaysConnectedConnectivityManager(),
+            fakeSocket,
+          ),
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
@@ -57,6 +62,9 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_, {bool triggerEvent = true}) {},
+          (_) {},
         ),
       );
 
@@ -139,6 +147,11 @@ void main() {
     )..register(
         NegotiatorAttributes(
           (XMLNode n, {String? redact}) => lastMessage = n.innerText(),
+          () => XmppConnection(
+            TestingReconnectionPolicy(),
+            AlwaysConnectedConnectivityManager(),
+            StubTCPSocket([]),
+          ),
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
@@ -150,6 +163,9 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_, {bool triggerEvent = true}) {},
+          (_) {},
         ),
       );
 
@@ -187,6 +203,11 @@ void main() {
     )..register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
+          () => XmppConnection(
+            TestingReconnectionPolicy(),
+            AlwaysConnectedConnectivityManager(),
+            StubTCPSocket([]),
+          ),
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
@@ -198,6 +219,9 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_, {bool triggerEvent = true}) {},
+          (_) {},
         ),
       );
 
@@ -225,6 +249,11 @@ void main() {
     )..register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
+          () => XmppConnection(
+            TestingReconnectionPolicy(),
+            AlwaysConnectedConnectivityManager(),
+            StubTCPSocket([]),
+          ),
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
@@ -236,6 +265,9 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_, {bool triggerEvent = true}) {},
+          (_) {},
         ),
       );
 
@@ -266,6 +298,11 @@ void main() {
     )..register(
         NegotiatorAttributes(
           (XMLNode _, {String? redact}) {},
+          () => XmppConnection(
+            TestingReconnectionPolicy(),
+            AlwaysConnectedConnectivityManager(),
+            StubTCPSocket([]),
+          ),
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
@@ -277,6 +314,9 @@ void main() {
           () => JID.fromString('user@server'),
           () => fakeSocket,
           () => false,
+          () {},
+          (_, {bool triggerEvent = true}) {},
+          (_) {},
         ),
       );
 
