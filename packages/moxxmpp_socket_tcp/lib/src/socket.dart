@@ -243,6 +243,8 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       if (await _hostPortConnect(host, port)) {
         _setupStreams();
         return true;
+      } else {
+        return false;
       }
     }
 

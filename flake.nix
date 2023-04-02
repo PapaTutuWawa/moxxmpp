@@ -2,16 +2,20 @@
   description = "moxxmpp";
   inputs = {
     nixpkgs.url = "github:AtaraxiaSjel/nixpkgs/update/flutter";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system: let
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils }: flake-utils.lib.eachDefaultSystem (system: let
     pkgs = import nixpkgs {
       inherit system;
       config = {
         android_sdk.accept_license = true;
         allowUnfree = true;
       };
+    };
+    unstable = import nixpkgs-unstable {
+      inherit system;
     };
     android = pkgs.androidenv.composeAndroidPackages {
       # TODO: Find a way to pin these
@@ -46,7 +50,26 @@
       };
     };
 
-    devShell = pkgs.mkShell {
+    devShell = let
+      prosody-newer-community-modules = unstable.prosody.overrideAttrs (old: {
+        communityModules = pkgs.fetchhg {
+          url = "https://hg.prosody.im/prosody-modules";
+          rev = "e3a3a6c86a9f";
+          sha256 = "sha256-C2x6PCv0sYuj4/SroDOJLsNPzfeNCodYKbMqmNodFrk=";
+        };
+
+        src = pkgs.fetchhg {
+          url = "https://hg.prosody.im/trunk";
+          rev = "8a2f75e38eb2";
+          sha256 = "sha256-zMNp9+wQ/hvUVyxFl76DqCVzQUPP8GkNdstiTDkG8Hw=";
+        };
+      });
+      prosody-sasl2 = prosody-newer-community-modules.override {
+        withCommunityModules = [
+          "sasl2" "sasl2_fast" "sasl2_sm" "sasl2_bind2"
+        ];
+      };
+    in pkgs.mkShell {
       buildInputs = with pkgs; [
         flutter pinnedJDK android.platform-tools dart # Dart
 	      gitlint # Code hygiene
@@ -71,6 +94,10 @@
 
         # For the scripts in ./scripts/
         pythonEnv
+
+        # For integration testing against a local prosody server
+        prosody-sasl2
+        mkcert
       ];
 
       CPATH = "${pkgs.xorg.libX11.dev}/include:${pkgs.xorg.xorgproto}/include";

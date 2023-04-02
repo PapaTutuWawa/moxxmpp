@@ -9,6 +9,7 @@ import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/iq.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
@@ -63,14 +64,15 @@ enum StanzaFromType {
 
 /// Nonza describing the XMPP stream header.
 class StreamHeaderNonza extends XMLNode {
-  StreamHeaderNonza(String serverDomain)
+  StreamHeaderNonza(JID jid)
       : super(
           tag: 'stream:stream',
           attributes: <String, String>{
             'xmlns': stanzaXmlns,
             'version': '1.0',
             'xmlns:stream': streamXmlns,
-            'to': serverDomain,
+            'to': jid.domain,
+            'from': jid.toBare().toString(),
             'xml:lang': 'en',
           },
           closeTag: false,
@@ -1037,11 +1039,11 @@ class XmppConnection {
     _socket.write(
       XMLNode(
         tag: 'xml',
-        attributes: <String, String>{'version': '1.0'},
+        attributes: {'version': '1.0'},
         closeTag: false,
         isDeclaration: true,
         children: [
-          StreamHeaderNonza(_connectionSettings.jid.domain),
+          StreamHeaderNonza(_connectionSettings.jid),
         ],
       ).toXml(),
     );
@@ -1156,13 +1158,16 @@ class XmppConnection {
     }
 
     final smManager = getStreamManagementManager();
-    String? host;
-    int? port;
+    String? host = _connectionSettings.host;
+    int? port = _connectionSettings.port;
     if (smManager?.state.streamResumptionLocation != null) {
       // TODO(Unknown): Maybe wrap this in a try catch?
       final parsed = Uri.parse(smManager!.state.streamResumptionLocation!);
       host = parsed.host;
       port = parsed.port;
+    } else {
+      host = _connectionSettings.host;
+      port = _connectionSettings.port;
     }
 
     final result = await _socket.connect(

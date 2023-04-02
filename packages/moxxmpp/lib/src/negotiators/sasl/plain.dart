@@ -8,6 +8,7 @@ import 'package:moxxmpp/src/negotiators/sasl/nonza.dart';
 import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:saslprep/saslprep.dart';
 
 class SaslPlainAuthNonza extends SaslAuthNonza {
   SaslPlainAuthNonza(String data)
@@ -86,8 +87,9 @@ class SaslPlainNegotiator extends Sasl2AuthenticationNegotiator {
   @override
   Future<String> getRawStep(String input) async {
     final settings = attributes.getConnectionSettings();
+    final prep = Saslprep.saslprep(settings.password);
     return base64.encode(
-      utf8.encode('\u0000${settings.jid.local}\u0000${settings.password}'),
+      utf8.encode('\u0000${settings.jid.local}\u0000${prep}'),
     );
   }
 
