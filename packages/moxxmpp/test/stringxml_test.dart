@@ -23,7 +23,7 @@ void main() {
     );
 
     expect(
-      StreamHeaderNonza('uwu.server').toXml(),
+      StreamHeaderNonza(JID.fromString('uwu.server')).toXml(),
       "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='uwu.server' xml:lang='en'>",
     );
 

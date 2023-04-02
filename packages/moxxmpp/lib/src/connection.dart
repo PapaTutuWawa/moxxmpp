@@ -1158,8 +1158,8 @@ class XmppConnection {
     }
 
     final smManager = getStreamManagementManager();
-    String? host = _connectionSettings.host;
-    int? port = _connectionSettings.port;
+    var host = _connectionSettings.host;
+    var port = _connectionSettings.port;
     if (smManager?.state.streamResumptionLocation != null) {
       // TODO(Unknown): Maybe wrap this in a try catch?
       final parsed = Uri.parse(smManager!.state.streamResumptionLocation!);

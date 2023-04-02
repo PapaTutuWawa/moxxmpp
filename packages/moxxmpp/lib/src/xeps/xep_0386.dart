@@ -3,9 +3,10 @@ import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
-import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/xeps/xep_0388/negotiators.dart';
+import 'package:moxxmpp/src/xeps/xep_0388/xep_0388.dart';
 
 /// An interface that allows registering against Bind2's feature list in order to
 /// negotiate features inline with Bind2.

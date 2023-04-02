@@ -6,7 +6,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
-import 'package:moxxmpp/src/negotiators/sasl2.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
@@ -14,6 +13,8 @@ import 'package:moxxmpp/src/xeps/xep_0198/state.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
 import 'package:moxxmpp/src/xeps/xep_0386.dart';
+import 'package:moxxmpp/src/xeps/xep_0388/negotiators.dart';
+import 'package:moxxmpp/src/xeps/xep_0388/xep_0388.dart';
 
 enum _StreamManagementNegotiatorState {
   // We have not done anything yet
