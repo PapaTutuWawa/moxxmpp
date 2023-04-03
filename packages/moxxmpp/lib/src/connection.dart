@@ -91,7 +91,6 @@ class XmppConnection {
     // Allow the reconnection policy to perform reconnections by itself
     _reconnectionPolicy.register(
       _attemptReconnection,
-      _onNetworkConnectionLost,
     );
 
     _socketStream = _socket.getDataStream();
@@ -398,7 +397,7 @@ class XmppConnection {
     // The error is recoverable
     await _setConnectionState(XmppConnectionState.notConnected);
 
-    if (await _reconnectionPolicy.getShouldReconnect()) {
+    if (await _reconnectionPolicy.canTriggerFailure()) {
       await _reconnectionPolicy.onFailure();
     } else {
       _log.info(
@@ -1009,12 +1008,6 @@ class XmppConnection {
     );
   }
 
-  /// To be called when we lost the network connection.
-  Future<void> _onNetworkConnectionLost() async {
-    _socket.close();
-    await _setConnectionState(XmppConnectionState.notConnected);
-  }
-
   /// Attempt to gracefully close the session
   Future<void> disconnect() async {
     await _disconnect(state: XmppConnectionState.notConnected);
@@ -1069,6 +1062,15 @@ class XmppConnection {
     // Kill a possibly existing connection
     _socket.close();
 
+    await _reconnectionPolicy.reset();
+    _enableReconnectOnSuccess = enableReconnectOnSuccess;
+    if (shouldReconnect) {
+      await _reconnectionPolicy.setShouldReconnect(true);
+    } else {
+      await _reconnectionPolicy.setShouldReconnect(false);
+    }
+    await _sendEvent(ConnectingEvent());
+
     if (waitUntilLogin) {
       _log.finest('Setting up completer for awaiting completed login');
       _connectionCompleter = Completer();
@@ -1079,16 +1081,6 @@ class XmppConnection {
     } else {
       setResource('', triggerEvent: false);
     }
-
-    _enableReconnectOnSuccess = enableReconnectOnSuccess;
-    if (shouldReconnect) {
-      await _reconnectionPolicy.setShouldReconnect(true);
-    } else {
-      await _reconnectionPolicy.setShouldReconnect(false);
-    }
-
-    await _reconnectionPolicy.reset();
-    await _sendEvent(ConnectingEvent());
 
     // If requested, wait until we have a network connection
     if (waitForConnection) {
