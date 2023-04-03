@@ -49,6 +49,7 @@ void main() {
           () => XmppConnection(
             TestingReconnectionPolicy(),
             AlwaysConnectedConnectivityManager(),
+            ClientToServerNegotiator(),
             fakeSocket,
           ),
           () => ConnectionSettings(
@@ -150,6 +151,7 @@ void main() {
           () => XmppConnection(
             TestingReconnectionPolicy(),
             AlwaysConnectedConnectivityManager(),
+            ClientToServerNegotiator(),
             StubTCPSocket([]),
           ),
           () => ConnectionSettings(
@@ -206,6 +208,7 @@ void main() {
           () => XmppConnection(
             TestingReconnectionPolicy(),
             AlwaysConnectedConnectivityManager(),
+            ClientToServerNegotiator(),
             StubTCPSocket([]),
           ),
           () => ConnectionSettings(
@@ -252,6 +255,7 @@ void main() {
           () => XmppConnection(
             TestingReconnectionPolicy(),
             AlwaysConnectedConnectivityManager(),
+            ClientToServerNegotiator(),
             StubTCPSocket([]),
           ),
           () => ConnectionSettings(
@@ -301,6 +305,7 @@ void main() {
           () => XmppConnection(
             TestingReconnectionPolicy(),
             AlwaysConnectedConnectivityManager(),
+            ClientToServerNegotiator(),
             StubTCPSocket([]),
           ),
           () => ConnectionSettings(

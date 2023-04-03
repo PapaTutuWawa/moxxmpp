@@ -159,6 +159,7 @@ void main() {
     final connection = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       socket,
     );
 

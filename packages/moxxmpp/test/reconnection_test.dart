@@ -11,7 +11,7 @@ void main() {
       9999,
     );
     await policy.setShouldReconnect(true);
-    
+
     // We have a failure
     expect(
       await policy.canTriggerFailure(),
@@ -32,7 +32,7 @@ void main() {
       9999,
     )..register(() async => expect(true, false));
     await policy.setShouldReconnect(true);
-    
+
     // We have a failure
     expect(
       await policy.canTriggerFailure(),
@@ -63,7 +63,7 @@ void main() {
       counter++;
     });
     await policy.setShouldReconnect(true);
-    
+
     // We have a failure
     expect(
       await policy.canTriggerFailure(),

@@ -44,6 +44,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )..setConnectionSettings(
         ConnectionSettings(
@@ -117,6 +118,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )..setConnectionSettings(
         ConnectionSettings(

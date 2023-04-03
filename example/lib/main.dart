@@ -61,6 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final XmppConnection connection = XmppConnection(
     RandomBackoffReconnectionPolicy(1, 60),
     AlwaysConnectedConnectivityManager(),
+    ClientToServerNegotiator(),
     // The below causes the app to crash.
     //ExampleTcpSocketWrapper(),
     // In a production app, the below should be false.

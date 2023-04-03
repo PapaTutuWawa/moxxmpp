@@ -68,6 +68,7 @@ XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
     getConnection: () => XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       StubTCPSocket([]),
     ),
     getNegotiatorById: getNegotiatorNullStub,
@@ -280,6 +281,7 @@ void main() {
       final conn = XmppConnection(
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
         fakeSocket,
       )..setConnectionSettings(
           ConnectionSettings(
@@ -405,6 +407,7 @@ void main() {
       final conn = XmppConnection(
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
         fakeSocket,
       )..setConnectionSettings(
           ConnectionSettings(
@@ -565,6 +568,7 @@ void main() {
       final conn = XmppConnection(
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
         fakeSocket,
       )..setConnectionSettings(
           ConnectionSettings(
@@ -659,6 +663,7 @@ void main() {
       final conn = XmppConnection(
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
         fakeSocket,
       )..setConnectionSettings(
           ConnectionSettings(
@@ -750,6 +755,7 @@ void main() {
       final conn = XmppConnection(
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
         fakeSocket,
       )..setConnectionSettings(
           ConnectionSettings(
@@ -837,6 +843,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )
       ..setConnectionSettings(
@@ -936,6 +943,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )
       ..setConnectionSettings(
@@ -1039,6 +1047,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )
       ..setConnectionSettings(

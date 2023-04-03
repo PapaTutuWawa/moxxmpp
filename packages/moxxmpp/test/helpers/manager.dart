@@ -4,6 +4,7 @@ import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
+import 'package:moxxmpp/src/negotiators/handler.dart';
 import 'package:moxxmpp/src/reconnect.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
@@ -50,6 +51,7 @@ class TestingManagerHolder {
         getConnection: () => XmppConnection(
           TestingReconnectionPolicy(),
           AlwaysConnectedConnectivityManager(),
+          ClientToServerNegotiator(),
           _socket,
         ),
         getConnectionSettings: () => settings,

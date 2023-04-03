@@ -15,6 +15,7 @@ export 'package:moxxmpp/src/managers/namespaces.dart';
 export 'package:moxxmpp/src/managers/priorities.dart';
 export 'package:moxxmpp/src/message.dart';
 export 'package:moxxmpp/src/namespaces.dart';
+export 'package:moxxmpp/src/negotiators/handler.dart';
 export 'package:moxxmpp/src/negotiators/manager.dart';
 export 'package:moxxmpp/src/negotiators/namespaces.dart';
 export 'package:moxxmpp/src/negotiators/negotiator.dart';

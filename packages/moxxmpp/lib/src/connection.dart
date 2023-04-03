@@ -16,6 +16,7 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/handler.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/presence.dart';
@@ -84,6 +85,7 @@ class XmppConnection {
   XmppConnection(
     ReconnectionPolicy reconnectionPolicy,
     ConnectivityManager connectivityManager,
+    this._negotiationsHandler,
     this._socket, {
     this.connectingTimeout = const Duration(minutes: 2),
   })  : _reconnectionPolicy = reconnectionPolicy,
@@ -91,6 +93,14 @@ class XmppConnection {
     // Allow the reconnection policy to perform reconnections by itself
     _reconnectionPolicy.register(
       _attemptReconnection,
+    );
+
+    // Register the negotiations handler
+    _negotiationsHandler.register(
+      _onNegotiationsDone,
+      handleError,
+      _sendStreamHeaders,
+      () => _isAuthenticated,
     );
 
     _socketStream = _socket.getDataStream();
@@ -161,10 +171,10 @@ class XmppConnection {
   // ignore: use_late_for_private_fields_and_variables
   Completer<Result<bool, XmppError>>? _connectionCompleter;
 
-  /// Negotiators
-  final Map<String, XmppFeatureNegotiatorBase> _featureNegotiators = {};
-  XmppFeatureNegotiatorBase? _currentNegotiator;
-  final List<XMLNode> _streamFeatures = List.empty(growable: true);
+  /// The handler for dealing with stream feature negotiations.
+  final NegotiationsHandler _negotiationsHandler;
+  T? getNegotiatorById<T extends XmppFeatureNegotiatorBase>(String id) =>
+      _negotiationsHandler.getNegotiatorById<T>(id);
 
   /// Prevent data from being passed to _currentNegotiator.negotiator while the negotiator
   /// is still running.
@@ -177,11 +187,6 @@ class XmppConnection {
   bool _enableReconnectOnSuccess = false;
 
   bool get isAuthenticated => _isAuthenticated;
-
-  /// Return the registered feature negotiator that has id [id]. Returns null if
-  /// none can be found.
-  T? getNegotiatorById<T extends XmppFeatureNegotiatorBase>(String id) =>
-      _featureNegotiators[id] as T?;
 
   /// Registers a list of [XmppManagerBase] sub-classes as managers on this connection.
   Future<void> registerManagers(List<XmppManagerBase> managers) async {
@@ -197,7 +202,7 @@ class XmppConnection {
           getFullJID: () => _connectionSettings.jid.withResource(_resource),
           getSocket: () => _socket,
           getConnection: () => this,
-          getNegotiatorById: getNegotiatorById,
+          getNegotiatorById: _negotiationsHandler.getNegotiatorById,
         ),
       );
 
@@ -231,13 +236,6 @@ class XmppConnection {
     _isAuthenticated = true;
   }
 
-  /// Remove [feature] from the stream features we are currently negotiating.
-  void _removeNegotiatingFeature(String feature) {
-    _streamFeatures.removeWhere((node) {
-      return node.attributes['xmlns'] == feature;
-    });
-  }
-
   /// Register a list of negotiator with the connection.
   Future<void> registerFeatureNegotiators(
     List<XmppFeatureNegotiatorBase> negotiators,
@@ -250,34 +248,21 @@ class XmppConnection {
           () => this,
           () => _connectionSettings,
           _sendEvent,
-          getNegotiatorById,
+          _negotiationsHandler.getNegotiatorById,
           getManagerById,
           () => _connectionSettings.jid.withResource(_resource),
           () => _socket,
           () => _isAuthenticated,
           _setAuthenticated,
           setResource,
-          _removeNegotiatingFeature,
+          _negotiationsHandler.removeNegotiatingFeature,
         ),
       );
-      _featureNegotiators[negotiator.id] = negotiator;
+      _negotiationsHandler.registerNegotiator(negotiator);
     }
 
     _log.finest('Negotiators registered');
-
-    for (final negotiator in _featureNegotiators.values) {
-      await negotiator.postRegisterCallback();
-    }
-  }
-
-  /// Reset all registered negotiators.
-  void _resetNegotiators() {
-    for (final negotiator in _featureNegotiators.values) {
-      negotiator.reset();
-    }
-
-    // Prevent leaking the last active negotiator
-    _currentNegotiator = null;
+    await _negotiationsHandler.runPostRegisterCallback();
   }
 
   /// Generate an Id suitable for an origin-id or stanza id
@@ -358,7 +343,7 @@ class XmppConnection {
   /// Called when a stream ending error has occurred
   Future<void> handleError(XmppError error) async {
     _log.severe('handleError called with ${error.toString()}');
-    
+
     // Whenever we encounter an error that would trigger a reconnection attempt while
     // the connection result is being awaited, don't attempt a reconnection but instead
     // try to gracefully disconnect.
@@ -594,6 +579,29 @@ class XmppConnection {
     }
   }
 
+  /// Called once all negotiations are done. Sends the initial presence, performs
+  /// a disco sweep among other things.
+  Future<void> _onNegotiationsDone() async {
+    // Set the new routing state
+    _updateRoutingState(RoutingState.handleStanzas);
+
+    // Set the connection state
+    await _setConnectionState(XmppConnectionState.connected);
+
+    // Enable reconnections
+    if (_enableReconnectOnSuccess) {
+      await _reconnectionPolicy.setShouldReconnect(true);
+    }
+
+    // Resolve the connection completion future
+    _connectionCompleter?.complete(const Result(true));
+    _connectionCompleter = null;
+
+    // Tell consumers of the event stream that we're done with stream feature
+    // negotiations
+    await _sendEvent(StreamNegotiationsDoneEvent());
+  }
+
   /// Sets the connection state to [state] and triggers an event of type
   /// [ConnectionStateChangedEvent].
   Future<void> _setConnectionState(XmppConnectionState state) async {
@@ -619,7 +627,8 @@ class XmppConnection {
       _destroyConnectingTimer();
     }
 
-    final sm = getNegotiatorById<StreamManagementNegotiator>(
+    final sm =
+        _negotiationsHandler.getNegotiatorById<StreamManagementNegotiator>(
       streamManagementNegotiator,
     );
     await _sendEvent(
@@ -766,167 +775,6 @@ class XmppConnection {
     }
   }
 
-  /// Returns true if all mandatory features in [features] have been negotiated.
-  /// Otherwise returns false.
-  bool _isMandatoryNegotiationDone(List<XMLNode> features) {
-    return features.every((XMLNode feature) {
-      return feature.firstTag('required') == null &&
-          feature.tag != 'mechanisms';
-    });
-  }
-
-  /// Returns true if we can still negotiate. Returns false if no negotiator is
-  /// matching and ready.
-  bool _isNegotiationPossible(List<XMLNode> features) {
-    return getNextNegotiator(features, log: false) != null;
-  }
-
-  /// Returns the next negotiator that matches [features]. Returns null if none can be
-  /// picked. If [log] is true, then the list of matching negotiators will be logged.
-  @visibleForTesting
-  XmppFeatureNegotiatorBase? getNextNegotiator(
-    List<XMLNode> features, {
-    bool log = true,
-  }) {
-    final matchingNegotiators = _featureNegotiators.values
-        .where((XmppFeatureNegotiatorBase negotiator) {
-      return negotiator.state == NegotiatorState.ready &&
-          negotiator.matchesFeature(features);
-    }).toList()
-      ..sort((a, b) => b.priority.compareTo(a.priority));
-
-    if (log) {
-      _log.finest(
-        'List of matching negotiators: ${matchingNegotiators.map((a) => a.id)}',
-      );
-    }
-
-    if (matchingNegotiators.isEmpty) return null;
-
-    return matchingNegotiators.first;
-  }
-
-  /// Called once all negotiations are done. Sends the initial presence, performs
-  /// a disco sweep among other things.
-  Future<void> _onNegotiationsDone() async {
-    // Set the connection state
-    await _setConnectionState(XmppConnectionState.connected);
-
-    // Enable reconnections
-    if (_enableReconnectOnSuccess) {
-      await _reconnectionPolicy.setShouldReconnect(true);
-    }
-
-    // Resolve the connection completion future
-    _connectionCompleter?.complete(const Result(true));
-    _connectionCompleter = null;
-
-    // Tell consumers of the event stream that we're done with stream feature
-    // negotiations
-    await _sendEvent(StreamNegotiationsDoneEvent());
-  }
-
-  Future<void> _executeCurrentNegotiator(XMLNode nonza) async {
-    // If we don't have a negotiator, get one
-    _currentNegotiator ??= getNextNegotiator(_streamFeatures);
-    if (_currentNegotiator == null &&
-        _isMandatoryNegotiationDone(_streamFeatures) &&
-        !_isNegotiationPossible(_streamFeatures)) {
-      _log.finest('Negotiations done!');
-      _updateRoutingState(RoutingState.handleStanzas);
-      await _onNegotiationsDone();
-      return;
-    }
-
-    // If we don't have a next negotiator, we have to bail
-    if (_currentNegotiator == null &&
-        !_isMandatoryNegotiationDone(_streamFeatures) &&
-        !_isNegotiationPossible(_streamFeatures)) {
-      // We failed before authenticating
-      if (!_isAuthenticated) {
-        _log.severe('No negotiator could be picked while unauthenticated');
-        await handleError(NoMatchingAuthenticationMechanismAvailableError());
-        return;
-      } else {
-        _log.severe(
-          'No negotiator could be picked while negotiations are not done',
-        );
-        await handleError(NoAuthenticatorAvailableError());
-        return;
-      }
-    }
-
-    final result = await _currentNegotiator!.negotiate(nonza);
-    if (result.isType<NegotiatorError>()) {
-      _log.severe('Negotiator returned an error');
-      await handleError(result.get<NegotiatorError>());
-      return;
-    }
-
-    final state = result.get<NegotiatorState>();
-    _currentNegotiator!.state = state;
-    switch (state) {
-      case NegotiatorState.ready:
-        return;
-      case NegotiatorState.done:
-        if (_currentNegotiator!.sendStreamHeaderWhenDone) {
-          _currentNegotiator = null;
-          _streamFeatures.clear();
-          _sendStreamHeader();
-        } else {
-          _removeNegotiatingFeature(_currentNegotiator!.negotiatingXmlns);
-          _currentNegotiator = null;
-
-          if (_isMandatoryNegotiationDone(_streamFeatures) &&
-              !_isNegotiationPossible(_streamFeatures)) {
-            _log.finest('Negotiations done!');
-            _updateRoutingState(RoutingState.handleStanzas);
-            await _onNegotiationsDone();
-          } else {
-            _currentNegotiator = getNextNegotiator(_streamFeatures);
-            _log.finest('Chose ${_currentNegotiator!.id} as next negotiator');
-
-            final fakeStanza = XMLNode(
-              tag: 'stream:features',
-              children: _streamFeatures,
-            );
-
-            await _executeCurrentNegotiator(fakeStanza);
-          }
-        }
-        break;
-      case NegotiatorState.retryLater:
-        _log.finest('Negotiator wants to continue later. Picking new one...');
-        _currentNegotiator!.state = NegotiatorState.ready;
-
-        if (_isMandatoryNegotiationDone(_streamFeatures) &&
-            !_isNegotiationPossible(_streamFeatures)) {
-          _log.finest('Negotiations done!');
-
-          _updateRoutingState(RoutingState.handleStanzas);
-          await _onNegotiationsDone();
-        } else {
-          _log.finest('Picking new negotiator...');
-          _currentNegotiator = getNextNegotiator(_streamFeatures);
-          _log.finest('Chose $_currentNegotiator as next negotiator');
-          final fakeStanza = XMLNode(
-            tag: 'stream:features',
-            children: _streamFeatures,
-          );
-          await _executeCurrentNegotiator(fakeStanza);
-        }
-        break;
-      case NegotiatorState.skipRest:
-        _log.finest(
-          'Negotiator wants to skip the remaining negotiation... Negotiations (assumed) done!',
-        );
-
-        _updateRoutingState(RoutingState.handleStanzas);
-        await _onNegotiationsDone();
-        break;
-    }
-  }
-
   /// Called whenever we receive data that has been parsed as XML.
   Future<void> handleXmlStream(XMLNode node) async {
     // Check if we received a stream error
@@ -954,14 +802,7 @@ class XmppConnection {
             return;
           }
 
-          if (node.tag == 'stream:features') {
-            // Store the received stream features
-            _streamFeatures
-              ..clear()
-              ..addAll(node.children);
-          }
-
-          await _executeCurrentNegotiator(node);
+          await _negotiationsHandler.negotiate(node);
         });
         break;
       case RoutingState.handleStanzas:
@@ -986,15 +827,13 @@ class XmppConnection {
     for (final manager in _xmppManagers.values) {
       await manager.onXmppEvent(event);
     }
-    for (final negotiator in _featureNegotiators.values) {
-      await negotiator.onXmppEvent(event);
-    }
+    await _negotiationsHandler.sendEventToNegotiators(event);
 
     _eventStreamController.add(event);
   }
 
   /// Sends a stream header to the socket.
-  void _sendStreamHeader() {
+  void _sendStreamHeaders() {
     _socket.write(
       XMLNode(
         tag: 'xml',
@@ -1114,11 +953,11 @@ class XmppConnection {
     } else {
       await _reconnectionPolicy.onSuccess();
       _log.fine('Preparing the internal state for a connection attempt');
-      _resetNegotiators();
+      _negotiationsHandler.resetNegotiators();
       await _setConnectionState(XmppConnectionState.connecting);
       _updateRoutingState(RoutingState.negotiating);
       _isAuthenticated = false;
-      _sendStreamHeader();
+      _sendStreamHeaders();
 
       if (waitUntilLogin) {
         return _connectionCompleter!.future;

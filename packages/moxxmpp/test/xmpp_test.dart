@@ -40,6 +40,7 @@ Future<bool> testRosterManager(
         getConnection: () => XmppConnection(
           TestingReconnectionPolicy(),
           AlwaysConnectedConnectivityManager(),
+          ClientToServerNegotiator(),
           StubTCPSocket([]),
         ),
       ),
@@ -124,6 +125,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )..setConnectionSettings(
         ConnectionSettings(
@@ -181,6 +183,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )..setConnectionSettings(
         ConnectionSettings(
@@ -240,6 +243,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )..setConnectionSettings(
         ConnectionSettings(
@@ -301,6 +305,7 @@ void main() {
             getConnection: () => XmppConnection(
               TestingReconnectionPolicy(),
               AlwaysConnectedConnectivityManager(),
+              ClientToServerNegotiator(),
               StubTCPSocket([]),
             ),
           ),
@@ -399,6 +404,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     );
     await conn.registerManagers([
@@ -487,7 +493,7 @@ void main() {
         StanzaExpectation(
           '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
           '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>testuser@example.org/MU29eEZn</jid></bind></iq>',
-        ignoreId: true,
+          ignoreId: true,
         ),
       ],
     );
@@ -495,6 +501,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     );
     await conn.registerManagers([

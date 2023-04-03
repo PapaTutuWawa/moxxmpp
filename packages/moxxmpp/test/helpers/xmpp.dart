@@ -143,7 +143,7 @@ class StubTCPSocket extends BaseSocketWrapper {
   void injectSocketFault() {
     _eventStream.add(XmppSocketClosureEvent(false));
   }
-      
+
   /// Let the "connection" receive [data].
   void injectRawXml(String data) {
     // ignore: avoid_print

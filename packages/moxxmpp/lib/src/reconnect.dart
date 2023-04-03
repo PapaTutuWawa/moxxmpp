@@ -17,7 +17,7 @@ abstract class ReconnectionPolicy {
   PerformReconnectFunction? performReconnect;
 
   final Lock _lock = Lock();
-  
+
   /// Indicate if a reconnection attempt is currently running.
   bool _isReconnecting = false;
 
@@ -25,17 +25,19 @@ abstract class ReconnectionPolicy {
   bool _shouldAttemptReconnection = false;
 
   @protected
-  Future<bool> canTryReconnecting() async => _lock.synchronized(() => !_isReconnecting);
+  Future<bool> canTryReconnecting() async =>
+      _lock.synchronized(() => !_isReconnecting);
 
   @protected
-  Future<bool> getIsReconnecting() async => _lock.synchronized(() => _isReconnecting);
+  Future<bool> getIsReconnecting() async =>
+      _lock.synchronized(() => _isReconnecting);
 
   Future<void> _resetIsReconnecting() async {
     await _lock.synchronized(() {
       _isReconnecting = false;
     });
   }
-  
+
   /// Called by XmppConnection to register the policy.
   void register(
     PerformReconnectFunction performReconnect,
@@ -62,10 +64,10 @@ abstract class ReconnectionPolicy {
       return false;
     });
   }
-  
+
   /// Called by the XmppConnection when the reconnection failed.
   Future<void> onFailure() async {}
-  
+
   /// Caled by the XmppConnection when the reconnection was successful.
   Future<void> onSuccess();
 
@@ -75,8 +77,7 @@ abstract class ReconnectionPolicy {
 
   /// Set whether a reconnection attempt should be made.
   Future<void> setShouldReconnect(bool value) async {
-    return _lock
-        .synchronized(() => _shouldAttemptReconnection = value);
+    return _lock.synchronized(() => _shouldAttemptReconnection = value);
   }
 }
 
@@ -106,7 +107,7 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
   final Logger _log = Logger('RandomBackoffReconnectionPolicy');
 
   final Lock _timerLock = Lock();
-  
+
   /// Called when the backoff expired
   @visibleForTesting
   Future<void> onTimerElapsed() async {
@@ -118,7 +119,7 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
 
       if (!(await getShouldReconnect())) {
         _log.fine(
-            'Should not reconnect. Stopping here.',
+          'Should not reconnect. Stopping here.',
         );
         return;
       }
@@ -147,7 +148,7 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
 
     _timer = Timer(Duration(seconds: seconds), onTimerElapsed);
   }
- 
+
   @override
   Future<void> onSuccess() async {
     await reset();

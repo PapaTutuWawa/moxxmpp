@@ -63,6 +63,7 @@ void main() {
             getConnection: () => XmppConnection(
               TestingReconnectionPolicy(),
               AlwaysConnectedConnectivityManager(),
+              ClientToServerNegotiator(),
               StubTCPSocket([]),
             ),
           ),
@@ -106,6 +107,7 @@ void main() {
             getConnection: () => XmppConnection(
               TestingReconnectionPolicy(),
               AlwaysConnectedConnectivityManager(),
+              ClientToServerNegotiator(),
               StubTCPSocket([]),
             ),
           ),
@@ -167,6 +169,7 @@ void main() {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
       fakeSocket,
     )..setConnectionSettings(
         ConnectionSettings(
