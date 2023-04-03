@@ -1,5 +1,5 @@
 import 'package:moxxmpp/moxxmpp.dart';
-//import 'package:test/test.dart';
+import 'package:test/test.dart';
 import 'helpers/logging.dart';
 //import 'helpers/xmpp.dart';
 
@@ -43,67 +43,54 @@ class StubNegotiator2 extends XmppFeatureNegotiatorBase {
 void main() {
   initLogger();
 
-  // TODO(Unknown): Directly test the ClientToServerNegotiator.
-//   final stubSocket = StubTCPSocket(
-//     [
-//       StringExpectation(
-//         "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='user@test.server' xml:lang='en'>",
-//         '''
-// <stream:stream
-//     xmlns="jabber:client"
-//     version="1.0"
-//     xmlns:stream="http://etherx.jabber.org/streams"
-//     from="test.server"
-//     xml:lang="en">
-//   <stream:features xmlns="http://etherx.jabber.org/streams">
-//     <example1 xmlns="im:moxxmpp:example1" />
-//     <example2 xmlns="im:moxxmpp:example2" />
-//   </stream:features>''',
-//       ),
-//     ],
-//   );
+  test('Test the priority system', () async {
+    final features = [
+      XMLNode.xmlns(tag: 'example1', xmlns: exampleXmlns1),
+      XMLNode.xmlns(tag: 'example2', xmlns: exampleXmlns2),
+    ];
 
-//   final connection = XmppConnection(
-//     TestingReconnectionPolicy(),
-//     AlwaysConnectedConnectivityManager(),
-//     ClientToServerNegotiator(),
-//     stubSocket,
-//   )
-//     ..registerFeatureNegotiators([
-//       StubNegotiator1(),
-//       StubNegotiator2(),
-//     ])
-//     ..registerManagers([
-//       PresenceManager(),
-//       RosterManager(TestingRosterStateManager('', [])),
-//       DiscoManager([]),
-//       EntityCapabilitiesManager('http://moxxmpp.example'),
-//     ])
-//     ..setConnectionSettings(
-//       ConnectionSettings(
-//         jid: JID.fromString('user@test.server'),
-//         password: 'abc123',
-//         useDirectTLS: true,
-//       ),
-//     );
-//   final features = [
-//     XMLNode.xmlns(tag: 'example1', xmlns: exampleXmlns1),
-//     XMLNode.xmlns(tag: 'example2', xmlns: exampleXmlns2),
-//   ];
+    final negotiator = ClientToServerNegotiator()
+      ..register(
+        () async {},
+        (_) async {},
+        () {},
+        () => false,
+      )
+      ..registerNegotiator(StubNegotiator1())
+      ..registerNegotiator(StubNegotiator2());
+    await negotiator.runPostRegisterCallback();
+    expect(negotiator.getNextNegotiator(features)?.id, exampleNamespace2);
+  });
 
-//   test('Test the priority system', () {
-//     expect(connection.getNextNegotiator(features)?.id, exampleNamespace2);
-//   });
+  test('Test negotiating features with no stream restarts', () async {
+    final negotiator = ClientToServerNegotiator()
+      ..register(
+        () async {},
+        (_) async {},
+        () {},
+        () => false,
+      )
+      ..registerNegotiator(StubNegotiator1())
+      ..registerNegotiator(StubNegotiator2());
+    await negotiator.runPostRegisterCallback();
 
-//   test('Test negotiating features with no stream restarts', () async {
-//     await connection.connect();
-//     await Future.delayed(const Duration(seconds: 3), () {
-//       final negotiator1 =
-//           connection.getNegotiatorById<StubNegotiator1>(exampleNamespace1);
-//       final negotiator2 =
-//           connection.getNegotiatorById<StubNegotiator2>(exampleNamespace2);
-//       expect(negotiator1?.called, true);
-//       expect(negotiator2?.called, true);
-//     });
-//   });
+    await negotiator.negotiate(
+      XMLNode.fromString(
+        '''
+<stream:features xmlns="http://etherx.jabber.org/streams">
+  <example1 xmlns="im:moxxmpp:example1" />
+  <example2 xmlns="im:moxxmpp:example2" />
+</stream:features>''',
+      ),
+    );
+
+    expect(
+      negotiator.getNegotiatorById<StubNegotiator1>(exampleNamespace1)!.called,
+      true,
+    );
+    expect(
+      negotiator.getNegotiatorById<StubNegotiator2>(exampleNamespace2)!.called,
+      true,
+    );
+  });
 }
