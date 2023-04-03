@@ -353,7 +353,6 @@ class XmppConnection {
     _log.finest('Calling _connectImpl() from _attemptReconnection');
     await _connectImpl(
       waitForConnection: true,
-      ignoreLock: true,
     );
   }
 
@@ -1060,17 +1059,12 @@ class XmppConnection {
 
   /// The private implementation for [XmppConnection.connect]. The parameters have
   /// the same meaning as with [XmppConnection.connect].
-  ///
-  /// [ignoreLock] is a flag that, if true, causes the method to not try to aquire
-  /// a connection lock. This is useful when we already aquired the connection lock,
-  /// for example, in _attemptReconnection.
   Future<Result<bool, XmppError>> _connectImpl({
     String? lastResource,
     bool waitForConnection = false,
     bool shouldReconnect = true,
     bool waitUntilLogin = false,
     bool enableReconnectOnSuccess = true,
-    bool ignoreLock = false,
   }) async {
     // Kill a possibly existing connection
     _socket.close();
