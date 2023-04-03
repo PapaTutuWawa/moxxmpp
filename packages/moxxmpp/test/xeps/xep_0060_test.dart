@@ -161,7 +161,7 @@ void main() {
       AlwaysConnectedConnectivityManager(),
       ClientToServerNegotiator(),
       socket,
-    );
+    )..connectionSettings = TestingManagerHolder.settings;
 
     await connection.registerManagers([
       PubSubManager(),
@@ -174,7 +174,6 @@ void main() {
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
     ]);
-    connection.setConnectionSettings(TestingManagerHolder.settings);
     await connection.connect(
       waitUntilLogin: true,
     );

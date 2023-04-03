@@ -127,12 +127,10 @@ void main() {
       AlwaysConnectedConnectivityManager(),
       ClientToServerNegotiator(),
       fakeSocket,
-    )..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       );
     await conn.registerManagers([
       PresenceManager(),
@@ -185,12 +183,10 @@ void main() {
       AlwaysConnectedConnectivityManager(),
       ClientToServerNegotiator(),
       fakeSocket,
-    )..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       );
     await conn.registerManagers([
       PresenceManager(),
@@ -245,12 +241,10 @@ void main() {
       AlwaysConnectedConnectivityManager(),
       ClientToServerNegotiator(),
       fakeSocket,
-    )..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       );
     await conn.registerManagers([
       PresenceManager(),
@@ -406,7 +400,11 @@ void main() {
       AlwaysConnectedConnectivityManager(),
       ClientToServerNegotiator(),
       fakeSocket,
-    );
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('testuser@example.org'),
+        password: 'abc123',
+        useDirectTLS: false,
+      );
     await conn.registerManagers([
       PresenceManager(),
       RosterManager(TestingRosterStateManager('', [])),
@@ -416,13 +414,6 @@ void main() {
       // SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
     ]);
-    conn.setConnectionSettings(
-      ConnectionSettings(
-        jid: JID.fromString('testuser@example.org'),
-        password: 'abc123',
-        useDirectTLS: false,
-      ),
-    );
 
     final result = await conn.connect(
       waitUntilLogin: true,
@@ -503,7 +494,11 @@ void main() {
       AlwaysConnectedConnectivityManager(),
       ClientToServerNegotiator(),
       fakeSocket,
-    );
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('testuser@example.org'),
+        password: 'abc123',
+        useDirectTLS: false,
+      );
     await conn.registerManagers([
       RosterManager(TestingRosterStateManager('', [])),
       DiscoManager([]),
@@ -512,13 +507,6 @@ void main() {
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
     ]);
-    conn.setConnectionSettings(
-      ConnectionSettings(
-        jid: JID.fromString('testuser@example.org'),
-        password: 'abc123',
-        useDirectTLS: false,
-      ),
-    );
 
     final result1 = conn.connect(
       waitUntilLogin: true,

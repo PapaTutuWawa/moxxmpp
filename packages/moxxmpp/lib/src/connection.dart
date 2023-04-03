@@ -119,7 +119,7 @@ class XmppConnection {
   late final Stream<String> _socketStream;
 
   /// Connection settings
-  late ConnectionSettings _connectionSettings;
+  late ConnectionSettings connectionSettings;
 
   /// A policy on how to reconnect
   final ReconnectionPolicy _reconnectionPolicy;
@@ -197,9 +197,9 @@ class XmppConnection {
           sendStanza: sendStanza,
           sendNonza: sendRawXML,
           sendEvent: _sendEvent,
-          getConnectionSettings: () => _connectionSettings,
+          getConnectionSettings: () => connectionSettings,
           getManagerById: getManagerById,
-          getFullJID: () => _connectionSettings.jid.withResource(_resource),
+          getFullJID: () => connectionSettings.jid.withResource(_resource),
           getSocket: () => _socket,
           getConnection: () => this,
           getNegotiatorById: _negotiationsHandler.getNegotiatorById,
@@ -246,11 +246,11 @@ class XmppConnection {
         NegotiatorAttributes(
           sendRawXML,
           () => this,
-          () => _connectionSettings,
+          () => connectionSettings,
           _sendEvent,
           _negotiationsHandler.getNegotiatorById,
           getManagerById,
-          () => _connectionSettings.jid.withResource(_resource),
+          () => connectionSettings.jid.withResource(_resource),
           () => _socket,
           () => _isAuthenticated,
           _setAuthenticated,
@@ -310,16 +310,6 @@ class XmppConnection {
   /// Returns the registered [CSIManager], if one is registered.
   CSIManager? getCSIManager() {
     return getManagerById(csiManager);
-  }
-
-  /// Set the connection settings of this connection.
-  void setConnectionSettings(ConnectionSettings settings) {
-    _connectionSettings = settings;
-  }
-
-  /// Returns the connection settings of this connection.
-  ConnectionSettings getConnectionSettings() {
-    return _connectionSettings;
   }
 
   /// Attempts to reconnect to the server by following an exponential backoff.
@@ -471,14 +461,14 @@ class XmppConnection {
         case StanzaFromType.full:
           {
             stanza_ = stanza_.copyWith(
-              from: _connectionSettings.jid.withResource(_resource).toString(),
+              from: connectionSettings.jid.withResource(_resource).toString(),
             );
           }
           break;
         case StanzaFromType.bare:
           {
             stanza_ = stanza_.copyWith(
-              from: _connectionSettings.jid.toBare().toString(),
+              from: connectionSettings.jid.toBare().toString(),
             );
           }
           break;
@@ -533,7 +523,7 @@ class XmppConnection {
         // A stanza with no to attribute is for direct processing by the server. As such,
         // we can correlate it by just *assuming* we have that attribute
         // (RFC 6120 Section 8.1.1.1)
-        data.stanza.to ?? _connectionSettings.jid.toBare().toString(),
+        data.stanza.to ?? connectionSettings.jid.toBare().toString(),
         data.stanza.id!,
         data.stanza.tag,
       );
@@ -752,7 +742,7 @@ class XmppConnection {
 
     final awaited = await _stanzaAwaiter.onData(
       incomingPreHandlers.stanza,
-      _connectionSettings.jid.toBare(),
+      connectionSettings.jid.toBare(),
     );
     if (awaited) {
       return;
@@ -841,7 +831,7 @@ class XmppConnection {
         closeTag: false,
         isDeclaration: true,
         children: [
-          StreamHeaderNonza(_connectionSettings.jid),
+          StreamHeaderNonza(connectionSettings.jid),
         ],
       ).toXml(),
     );
@@ -929,20 +919,17 @@ class XmppConnection {
     }
 
     final smManager = getStreamManagementManager();
-    var host = _connectionSettings.host;
-    var port = _connectionSettings.port;
+    var host = connectionSettings.host;
+    var port = connectionSettings.port;
     if (smManager?.state.streamResumptionLocation != null) {
       // TODO(Unknown): Maybe wrap this in a try catch?
       final parsed = Uri.parse(smManager!.state.streamResumptionLocation!);
       host = parsed.host;
       port = parsed.port;
-    } else {
-      host = _connectionSettings.host;
-      port = _connectionSettings.port;
     }
 
     final result = await _socket.connect(
-      _connectionSettings.jid.domain,
+      connectionSettings.jid.domain,
       host: host,
       port: port,
     );

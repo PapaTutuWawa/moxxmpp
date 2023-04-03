@@ -72,12 +72,10 @@ void main() {
       AlwaysConnectedConnectivityManager(),
       ClientToServerNegotiator(),
       fakeSocket,
-    )..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       );
     await conn.registerManagers([
       PresenceManager(),

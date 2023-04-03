@@ -283,12 +283,10 @@ void main() {
         AlwaysConnectedConnectivityManager(),
         ClientToServerNegotiator(),
         fakeSocket,
-      )..setConnectionSettings(
-          ConnectionSettings(
-            jid: JID.fromString('polynomdivision@test.server'),
-            password: 'aaaa',
-            useDirectTLS: true,
-          ),
+      )..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
         );
       final sm = StreamManagementManager();
       await conn.registerManagers([
@@ -409,12 +407,10 @@ void main() {
         AlwaysConnectedConnectivityManager(),
         ClientToServerNegotiator(),
         fakeSocket,
-      )..setConnectionSettings(
-          ConnectionSettings(
-            jid: JID.fromString('polynomdivision@test.server'),
-            password: 'aaaa',
-            useDirectTLS: true,
-          ),
+      )..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
         );
       final sm = StreamManagementManager();
       await conn.registerManagers([
@@ -570,12 +566,10 @@ void main() {
         AlwaysConnectedConnectivityManager(),
         ClientToServerNegotiator(),
         fakeSocket,
-      )..setConnectionSettings(
-          ConnectionSettings(
-            jid: JID.fromString('polynomdivision@test.server'),
-            password: 'aaaa',
-            useDirectTLS: true,
-          ),
+      )..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
         );
       await conn.registerManagers([
         PresenceManager(),
@@ -665,12 +659,10 @@ void main() {
         AlwaysConnectedConnectivityManager(),
         ClientToServerNegotiator(),
         fakeSocket,
-      )..setConnectionSettings(
-          ConnectionSettings(
-            jid: JID.fromString('polynomdivision@test.server'),
-            password: 'aaaa',
-            useDirectTLS: true,
-          ),
+      )..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
         );
       await conn.registerManagers([
         PresenceManager(),
@@ -757,12 +749,10 @@ void main() {
         AlwaysConnectedConnectivityManager(),
         ClientToServerNegotiator(),
         fakeSocket,
-      )..setConnectionSettings(
-          ConnectionSettings(
-            jid: JID.fromString('polynomdivision@test.server'),
-            password: 'aaaa',
-            useDirectTLS: true,
-          ),
+      )..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+          useDirectTLS: true,
         );
       await conn.registerManagers([
         PresenceManager(),
@@ -846,12 +836,10 @@ void main() {
       ClientToServerNegotiator(),
       fakeSocket,
     )
-      ..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+      ..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([
@@ -946,12 +934,10 @@ void main() {
       ClientToServerNegotiator(),
       fakeSocket,
     )
-      ..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+      ..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([
@@ -1050,12 +1036,10 @@ void main() {
       ClientToServerNegotiator(),
       fakeSocket,
     )
-      ..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+      ..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([

@@ -107,12 +107,10 @@ void main() {
       ClientToServerNegotiator(),
       fakeSocket,
     )
-      ..setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
-        ),
+      ..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([
