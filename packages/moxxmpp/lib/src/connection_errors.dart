@@ -4,12 +4,6 @@ import 'package:moxxmpp/src/negotiators/negotiator.dart';
 /// The reason a call to `XmppConnection.connect` failed.
 abstract class XmppConnectionError extends XmppError {}
 
-/// Returned by `XmppConnection.connect` when a connection is already active.
-class ConnectionAlreadyRunningError extends XmppConnectionError {
-  @override
-  bool isRecoverable() => true;
-}
-
 /// Returned by `XmppConnection.connect` when a negotiator returned an unrecoverable
 /// error. Only returned when waitUntilLogin is true.
 class NegotiatorReturnedError extends XmppConnectionError {
