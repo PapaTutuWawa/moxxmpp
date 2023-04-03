@@ -18,6 +18,7 @@ typedef SendStreamHeadersFunction = void Function();
 /// Return true if the current connection is authenticated. If not, return false.
 typedef IsAuthenticatedFunction = bool Function();
 
+/// This class implements the stream feature negotiation for XmppConnection.
 abstract class NegotiationsHandler {
   @protected
   late final Logger log;
@@ -92,6 +93,8 @@ abstract class NegotiationsHandler {
   Future<void> negotiate(XMLNode nonza);
 }
 
+/// This class implements the stream feature negotiation for usage in client to server
+/// connections.
 class ClientToServerNegotiator extends NegotiationsHandler {
   ClientToServerNegotiator() : super();
 
