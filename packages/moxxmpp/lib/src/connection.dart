@@ -766,7 +766,18 @@ class XmppConnection {
   }
 
   /// Called whenever we receive data that has been parsed as XML.
-  Future<void> handleXmlStream(XMLNode node) async {
+  Future<void> handleXmlStream(XmlStreamBufferObject event) async {
+    if (event is XmlStreamBufferHeader) {
+      _negotiationsHandler.setStreamHeaderId(event.attributes['id']);
+      return;
+    }
+
+    assert(
+      event is XmlStreamBufferElement,
+      'The event must be a XmlStreamBufferElement',
+    );
+    final node = (event as XmlStreamBufferElement).node;
+
     // Check if we received a stream error
     if (node.tag == 'stream:error') {
       _log
@@ -788,7 +799,7 @@ class XmppConnection {
         // prevent this issue.
         await _negotiationLock.synchronized(() async {
           if (_routingState != RoutingState.negotiating) {
-            unawaited(handleXmlStream(node));
+            unawaited(handleXmlStream(XmlStreamBufferElement(node)));
             return;
           }
 
@@ -940,7 +951,7 @@ class XmppConnection {
     } else {
       await _reconnectionPolicy.onSuccess();
       _log.fine('Preparing the internal state for a connection attempt');
-      _negotiationsHandler.resetNegotiators();
+      _negotiationsHandler.reset();
       await _setConnectionState(XmppConnectionState.connecting);
       _updateRoutingState(RoutingState.negotiating);
       _isAuthenticated = false;

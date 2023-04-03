@@ -43,6 +43,15 @@ abstract class NegotiationsHandler {
   @protected
   late final IsAuthenticatedFunction isAuthenticated;
 
+  /// The id included in the last stream header.
+  @protected
+  String? streamId;
+
+  /// Set the id of the last stream header.
+  void setStreamHeaderId(String? id) {
+    streamId = id;
+  }
+
   /// Returns, if registered, a negotiator with id [id].
   T? getNegotiatorById<T extends XmppFeatureNegotiatorBase>(String id) =>
       negotiators[id] as T?;
@@ -81,9 +90,10 @@ abstract class NegotiationsHandler {
   /// Remove [feature] from the stream features we are currently negotiating.
   void removeNegotiatingFeature(String feature) {}
 
-  /// Resets all registered negotiators.
+  /// Resets all registered negotiators and the negotiation handler.
   @mustCallSuper
-  void resetNegotiators() {
+  void reset() {
+    streamId = null;
     for (final negotiator in negotiators.values) {
       negotiator.reset();
     }
@@ -110,8 +120,8 @@ class ClientToServerNegotiator extends NegotiationsHandler {
   }
 
   @override
-  void resetNegotiators() {
-    super.resetNegotiators();
+  void reset() {
+    super.reset();
 
     // Prevent leaking the last active negotiator
     _currentNegotiator = null;

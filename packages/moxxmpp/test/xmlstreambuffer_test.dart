@@ -11,7 +11,10 @@ void main() {
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(buffer).forEach((node) {
+      controller.stream.transform(buffer).forEach((event) {
+        if (event is! XmlStreamBufferElement) return;
+        final node = event.node;
+
         if (node.tag == 'childa') {
           childa = true;
         } else if (node.tag == 'childb') {
@@ -33,7 +36,10 @@ void main() {
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(buffer).forEach((node) {
+      controller.stream.transform(buffer).forEach((event) {
+        if (event is! XmlStreamBufferElement) return;
+        final node = event.node;
+
         if (node.tag == 'childa') {
           childa = true;
         } else if (node.tag == 'childb') {
@@ -58,7 +64,10 @@ void main() {
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(buffer).forEach((node) {
+      controller.stream.transform(buffer).forEach((event) {
+        if (event is! XmlStreamBufferElement) return;
+        final node = event.node;
+
         if (node.tag == 'childa') {
           childa = true;
         } else if (node.tag == 'childb') {
@@ -74,5 +83,32 @@ void main() {
     await Future<void>.delayed(const Duration(seconds: 2));
     expect(childa, true);
     expect(childb, true);
+  });
+
+  test('Test opening the stream', () async {
+    var childa = false;
+    Map<String, String>? attrs;
+
+    final buffer = XmlStreamBuffer();
+    final controller = StreamController<String>();
+
+    unawaited(
+      controller.stream.transform(buffer).forEach((node) {
+        if (node is XmlStreamBufferElement) {
+          if (node.node.tag == 'childa') {
+            childa = true;
+          }
+        } else if (node is XmlStreamBufferHeader) {
+          attrs = node.attributes;
+        }
+      }),
+    );
+    controller
+      ..add('<stream:stream id="abc123"><childa')
+      ..add(' />');
+
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(childa, true);
+    expect(attrs!['id'], 'abc123');
   });
 }
