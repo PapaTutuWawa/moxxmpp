@@ -7,7 +7,7 @@
 - **BREAKING**: Removed `isFeatureSupported` from the manager attributes. The managers now all have a method `isFeatureSupported` that works the same
 - The `PresenceManager` is now optional
 - **BREAKING**: Removed `setConnectionSettings` and `getConnectionSettings`. Just directly acces the `connectionSettings` field.
-- Implement XEP-0144 for implementing components
+- Implement XEP-0114 for implementing components
 - **BREAKING**: Remove `useDirectTLS` from `ConnectionSettings`
 
 ## 0.1.6+1
