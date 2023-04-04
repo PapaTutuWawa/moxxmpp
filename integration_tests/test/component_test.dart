@@ -19,39 +19,22 @@ void main() {
     );
   });
 
-  test('Test authenticating against Prosody with SASL2, Bind2, and FAST',
-      () async {
+  test('Test connecting to prosody as a component', () async {
     final conn = XmppConnection(
       TestingReconnectionPolicy(),
       AlwaysConnectedConnectivityManager(),
-      ClientToServerNegotiator(),
+      ComponentToServerNegotiator(),
       TestingTCPSocketWrapper(),
     )..connectionSettings = ConnectionSettings(
-        jid: JID.fromString('testuser@localhost'),
+        jid: JID.fromString('component.localhost'),
         password: 'abc123',
         useDirectTLS: false,
         host: '127.0.0.1',
-        port: 5222,
+        port: 8888,
       );
-    final csi = CSIManager();
-    await csi.setInactive(sendNonza: false);
     await conn.registerManagers([
       RosterManager(TestingRosterStateManager('', [])),
       DiscoManager([]),
-    ]);
-    await conn.registerFeatureNegotiators([
-      SaslPlainNegotiator(),
-      ResourceBindingNegotiator(),
-      FASTSaslNegotiator(),
-      Bind2Negotiator(),
-      StartTlsNegotiator(),
-      Sasl2Negotiator(
-        userAgent: const UserAgent(
-          id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
-          software: 'moxxmpp',
-          device: "PapaTutuWawa's awesome device",
-        ),
-      ),
     ]);
 
     final result = await conn.connect(
@@ -60,16 +43,5 @@ void main() {
       enableReconnectOnSuccess: false,
     );
     expect(result.isType<bool>(), true);
-    expect(
-      conn.getNegotiatorById<Sasl2Negotiator>(sasl2Negotiator)!.state,
-      NegotiatorState.done,
-    );
-    expect(
-      conn
-              .getNegotiatorById<FASTSaslNegotiator>(saslFASTNegotiator)!
-              .fastToken !=
-          null,
-      true,
-    );
   });
 }

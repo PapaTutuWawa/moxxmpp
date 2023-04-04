@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/connectivity.dart';
+import 'package:moxxmpp/src/handlers/client.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
-import 'package:moxxmpp/src/negotiators/handler.dart';
 import 'package:moxxmpp/src/reconnect.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';

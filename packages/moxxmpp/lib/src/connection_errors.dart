@@ -46,3 +46,15 @@ class NoAuthenticatorAvailableError extends XmppConnectionError {
   @override
   bool isRecoverable() => false;
 }
+
+/// Returned by the negotiation handler if unexpected data has been received
+class UnexpectedDataError extends XmppConnectionError {
+  @override
+  bool isRecoverable() => false;
+}
+
+/// Returned by the ComponentToServerNegotiator if the handshake is not successful.
+class InvalidHandshakeCredentialsError extends XmppConnectionError {
+  @override
+  bool isRecoverable() => false;
+}

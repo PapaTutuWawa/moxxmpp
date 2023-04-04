@@ -1,106 +1,27 @@
-import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:moxxmpp/src/buffer.dart';
 import 'package:moxxmpp/src/connection_errors.dart';
-import 'package:moxxmpp/src/errors.dart';
-import 'package:moxxmpp/src/events.dart';
+import 'package:moxxmpp/src/handlers/base.dart';
+import 'package:moxxmpp/src/jid.dart';
+import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
-/// A callback for when the [NegotiationsHandler] is done.
-typedef NegotiationsDoneCallback = Future<void> Function();
-
-/// A callback for the case that an error occurs while negotiating.
-typedef ErrorCallback = Future<void> Function(XmppError);
-
-/// Trigger stream headers to be sent
-typedef SendStreamHeadersFunction = void Function();
-
-/// Return true if the current connection is authenticated. If not, return false.
-typedef IsAuthenticatedFunction = bool Function();
-
-/// This class implements the stream feature negotiation for XmppConnection.
-abstract class NegotiationsHandler {
-  @protected
-  late final Logger log;
-
-  /// Map of all negotiators registered against the handler.
-  @protected
-  final Map<String, XmppFeatureNegotiatorBase> negotiators = {};
-
-  /// Function that is called once the negotiator is done with its stream negotiations.
-  @protected
-  late final NegotiationsDoneCallback onNegotiationsDone;
-
-  /// XmppConnection's handleError method.
-  @protected
-  late final ErrorCallback handleError;
-
-  /// Sends stream headers in the stream.
-  @protected
-  late final SendStreamHeadersFunction sendStreamHeaders;
-
-  /// Returns true if the connection is authenticated. If not, returns false.
-  @protected
-  late final IsAuthenticatedFunction isAuthenticated;
-
-  /// The id included in the last stream header.
-  @protected
-  String? streamId;
-
-  /// Set the id of the last stream header.
-  void setStreamHeaderId(String? id) {
-    streamId = id;
-  }
-
-  /// Returns, if registered, a negotiator with id [id].
-  T? getNegotiatorById<T extends XmppFeatureNegotiatorBase>(String id) =>
-      negotiators[id] as T?;
-
-  /// Register the parameters as the corresponding methods in this class. Also
-  /// initializes the logger.
-  void register(
-    NegotiationsDoneCallback onNegotiationsDone,
-    ErrorCallback handleError,
-    SendStreamHeadersFunction sendStreamHeaders,
-    IsAuthenticatedFunction isAuthenticated,
-  ) {
-    this.onNegotiationsDone = onNegotiationsDone;
-    this.handleError = handleError;
-    this.sendStreamHeaders = sendStreamHeaders;
-    this.isAuthenticated = isAuthenticated;
-    log = Logger(toString());
-  }
-
-  /// Registers the negotiator [negotiator] against this negotiations handler.
-  void registerNegotiator(XmppFeatureNegotiatorBase negotiator);
-
-  /// Runs the post-register callback of all negotiators.
-  Future<void> runPostRegisterCallback() async {
-    for (final negotiator in negotiators.values) {
-      await negotiator.postRegisterCallback();
-    }
-  }
-
-  Future<void> sendEventToNegotiators(XmppEvent event) async {
-    for (final negotiator in negotiators.values) {
-      await negotiator.onXmppEvent(event);
-    }
-  }
-
-  /// Remove [feature] from the stream features we are currently negotiating.
-  void removeNegotiatingFeature(String feature) {}
-
-  /// Resets all registered negotiators and the negotiation handler.
-  @mustCallSuper
-  void reset() {
-    streamId = null;
-    for (final negotiator in negotiators.values) {
-      negotiator.reset();
-    }
-  }
-
-  /// Called whenever a new nonza [nonza] is received while negotiating.
-  Future<void> negotiate(XMLNode nonza);
+/// "Nonza" describing the XMPP stream header of a client-to-server connection.
+class ClientStreamHeaderNonza extends XMLNode {
+  ClientStreamHeaderNonza(JID jid)
+      : super(
+          tag: 'stream:stream',
+          attributes: <String, String>{
+            'xmlns': stanzaXmlns,
+            'version': '1.0',
+            'xmlns:stream': streamXmlns,
+            'to': jid.domain,
+            'from': jid.toBare().toString(),
+            'xml:lang': 'en',
+          },
+          closeTag: false,
+        );
 }
 
 /// This class implements the stream feature negotiation for usage in client to server
@@ -132,6 +53,21 @@ class ClientToServerNegotiator extends NegotiationsHandler {
     _streamFeatures.removeWhere((node) {
       return node.attributes['xmlns'] == feature;
     });
+  }
+
+  @override
+  void sendStreamHeader() {
+    sendNonza(
+      XMLNode(
+        tag: 'xml',
+        attributes: {'version': '1.0'},
+        closeTag: false,
+        isDeclaration: true,
+        children: [
+          ClientStreamHeaderNonza(getConnectionSettings().jid),
+        ],
+      ),
+    );
   }
 
   /// Returns true if all mandatory features in [features] have been negotiated.
@@ -219,7 +155,7 @@ class ClientToServerNegotiator extends NegotiationsHandler {
         if (_currentNegotiator!.sendStreamHeaderWhenDone) {
           _currentNegotiator = null;
           _streamFeatures.clear();
-          sendStreamHeaders();
+          sendStreamHeader();
         } else {
           removeNegotiatingFeature(_currentNegotiator!.negotiatingXmlns);
           _currentNegotiator = null;
@@ -272,14 +208,16 @@ class ClientToServerNegotiator extends NegotiationsHandler {
   }
 
   @override
-  Future<void> negotiate(XMLNode nonza) async {
-    if (nonza.tag == 'stream:features') {
-      // Store the received stream features
-      _streamFeatures
-        ..clear()
-        ..addAll(nonza.children);
-    }
+  Future<void> negotiate(XmlStreamBufferObject event) async {
+    if (event is XmlStreamBufferElement) {
+      if (event.node.tag == 'stream:features') {
+        // Store the received stream features
+        _streamFeatures
+          ..clear()
+          ..addAll(event.node.children);
+      }
 
-    await _executeCurrentNegotiator(nonza);
+      await _executeCurrentNegotiator(event.node);
+    }
   }
 }

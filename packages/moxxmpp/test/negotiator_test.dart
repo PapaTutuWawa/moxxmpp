@@ -1,7 +1,7 @@
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/buffer.dart';
 import 'package:test/test.dart';
 import 'helpers/logging.dart';
-//import 'helpers/xmpp.dart';
 
 const exampleXmlns1 = 'im:moxxmpp:example1';
 const exampleNamespace1 = 'im.moxxmpp.test.example1';
@@ -53,8 +53,13 @@ void main() {
       ..register(
         () async {},
         (_) async {},
-        () {},
         () => false,
+        (_) {},
+        () => ConnectionSettings(
+          jid: JID.fromString('test'),
+          password: 'abc123',
+          useDirectTLS: false,
+        ),
       )
       ..registerNegotiator(StubNegotiator1())
       ..registerNegotiator(StubNegotiator2());
@@ -67,20 +72,27 @@ void main() {
       ..register(
         () async {},
         (_) async {},
-        () {},
         () => false,
+        (_) {},
+        () => ConnectionSettings(
+          jid: JID.fromString('test'),
+          password: 'abc123',
+          useDirectTLS: false,
+        ),
       )
       ..registerNegotiator(StubNegotiator1())
       ..registerNegotiator(StubNegotiator2());
     await negotiator.runPostRegisterCallback();
 
     await negotiator.negotiate(
-      XMLNode.fromString(
-        '''
+      XmlStreamBufferElement(
+        XMLNode.fromString(
+          '''
 <stream:features xmlns="http://etherx.jabber.org/streams">
   <example1 xmlns="im:moxxmpp:example1" />
   <example2 xmlns="im:moxxmpp:example2" />
 </stream:features>''',
+        ),
       ),
     );
 

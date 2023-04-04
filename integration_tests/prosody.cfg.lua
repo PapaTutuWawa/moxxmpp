@@ -52,5 +52,9 @@ log = {
 
 pidfile = "/tmp/prosody.pid"
 
+component_ports = { 8888 }
+component_interfaces = { '127.0.0.1' }
 VirtualHost "localhost"
 
+Component "component.localhost"
+    component_secret = "abc123"

@@ -8,15 +8,13 @@ import 'package:moxxmpp/src/connection_errors.dart';
 import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
+import 'package:moxxmpp/src/handlers/base.dart';
 import 'package:moxxmpp/src/iq.dart';
-import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
-import 'package:moxxmpp/src/namespaces.dart';
-import 'package:moxxmpp/src/negotiators/handler.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/presence.dart';
@@ -63,23 +61,6 @@ enum StanzaFromType {
   none,
 }
 
-/// Nonza describing the XMPP stream header.
-class StreamHeaderNonza extends XMLNode {
-  StreamHeaderNonza(JID jid)
-      : super(
-          tag: 'stream:stream',
-          attributes: <String, String>{
-            'xmlns': stanzaXmlns,
-            'version': '1.0',
-            'xmlns:stream': streamXmlns,
-            'to': jid.domain,
-            'from': jid.toBare().toString(),
-            'xml:lang': 'en',
-          },
-          closeTag: false,
-        );
-}
-
 /// This class is a connection to the server.
 class XmppConnection {
   XmppConnection(
@@ -99,8 +80,9 @@ class XmppConnection {
     _negotiationsHandler.register(
       _onNegotiationsDone,
       handleError,
-      _sendStreamHeaders,
       () => _isAuthenticated,
+      sendRawXML,
+      () => connectionSettings,
     );
 
     _socketStream = _socket.getDataStream();
@@ -768,7 +750,7 @@ class XmppConnection {
   /// Called whenever we receive data that has been parsed as XML.
   Future<void> handleXmlStream(XmlStreamBufferObject event) async {
     if (event is XmlStreamBufferHeader) {
-      _negotiationsHandler.setStreamHeaderId(event.attributes['id']);
+      await _negotiationsHandler.negotiate(event);
       return;
     }
 
@@ -799,11 +781,11 @@ class XmppConnection {
         // prevent this issue.
         await _negotiationLock.synchronized(() async {
           if (_routingState != RoutingState.negotiating) {
-            unawaited(handleXmlStream(XmlStreamBufferElement(node)));
+            unawaited(handleXmlStream(event));
             return;
           }
 
-          await _negotiationsHandler.negotiate(node);
+          await _negotiationsHandler.negotiate(event);
         });
         break;
       case RoutingState.handleStanzas:
@@ -831,21 +813,6 @@ class XmppConnection {
     await _negotiationsHandler.sendEventToNegotiators(event);
 
     _eventStreamController.add(event);
-  }
-
-  /// Sends a stream header to the socket.
-  void _sendStreamHeaders() {
-    _socket.write(
-      XMLNode(
-        tag: 'xml',
-        attributes: {'version': '1.0'},
-        closeTag: false,
-        isDeclaration: true,
-        children: [
-          StreamHeaderNonza(connectionSettings.jid),
-        ],
-      ).toXml(),
-    );
   }
 
   /// Attempt to gracefully close the session
@@ -955,7 +922,7 @@ class XmppConnection {
       await _setConnectionState(XmppConnectionState.connecting);
       _updateRoutingState(RoutingState.negotiating);
       _isAuthenticated = false;
-      _sendStreamHeaders();
+      _negotiationsHandler.sendStreamHeader();
 
       if (waitUntilLogin) {
         return _connectionCompleter!.future;
