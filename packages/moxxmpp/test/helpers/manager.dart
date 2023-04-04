@@ -26,7 +26,6 @@ class TestingManagerHolder {
   static final ConnectionSettings settings = ConnectionSettings(
     jid: jid,
     password: 'abc123',
-    useDirectTLS: true,
   );
 
   Future<XMLNode> _sendStanza(

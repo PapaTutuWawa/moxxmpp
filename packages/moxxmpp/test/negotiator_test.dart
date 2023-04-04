@@ -58,7 +58,6 @@ void main() {
         () => ConnectionSettings(
           jid: JID.fromString('test'),
           password: 'abc123',
-          useDirectTLS: false,
         ),
       )
       ..registerNegotiator(StubNegotiator1())
@@ -77,7 +76,6 @@ void main() {
         () => ConnectionSettings(
           jid: JID.fromString('test'),
           password: 'abc123',
-          useDirectTLS: false,
         ),
       )
       ..registerNegotiator(StubNegotiator1())

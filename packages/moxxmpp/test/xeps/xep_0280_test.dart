@@ -28,7 +28,6 @@ void main() {
       getConnectionSettings: () => ConnectionSettings(
         jid: JID.fromString('bob@xmpp.example'),
         password: 'password',
-        useDirectTLS: true,
       ),
       getFullJID: () => JID.fromString('bob@xmpp.example/uwu'),
       getSocket: () => StubTCPSocket([]),
@@ -110,7 +109,6 @@ void main() {
       ..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([

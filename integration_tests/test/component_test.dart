@@ -28,7 +28,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('component.localhost'),
         password: 'abc123',
-        useDirectTLS: false,
         host: '127.0.0.1',
         port: 8888,
       );

@@ -55,7 +55,6 @@ void main() {
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
-            useDirectTLS: true,
           ),
           (_) async {},
           getNegotiatorNullStub,
@@ -157,7 +156,6 @@ void main() {
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
-            useDirectTLS: true,
           ),
           (_) async {},
           getNegotiatorNullStub,
@@ -214,7 +212,6 @@ void main() {
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
-            useDirectTLS: true,
           ),
           (_) async {},
           getNegotiatorNullStub,
@@ -261,7 +258,6 @@ void main() {
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
-            useDirectTLS: true,
           ),
           (_) async {},
           getNegotiatorNullStub,
@@ -311,7 +307,6 @@ void main() {
           () => ConnectionSettings(
             jid: JID.fromString('user@server'),
             password: 'pencil',
-            useDirectTLS: true,
           ),
           (_) async {},
           getNegotiatorNullStub,

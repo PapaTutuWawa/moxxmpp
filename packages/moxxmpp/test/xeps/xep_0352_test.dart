@@ -54,7 +54,6 @@ void main() {
             getConnectionSettings: () => ConnectionSettings(
               jid: JID.fromString('some.user@example.server'),
               password: 'password',
-              useDirectTLS: true,
             ),
             getManagerById: getManagerNullStub,
             getNegotiatorById: getUnsupportedCSINegotiator,
@@ -98,7 +97,6 @@ void main() {
             getConnectionSettings: () => ConnectionSettings(
               jid: JID.fromString('some.user@example.server'),
               password: 'password',
-              useDirectTLS: true,
             ),
             getManagerById: getManagerNullStub,
             getNegotiatorById: getSupportedCSINegotiator,
@@ -174,7 +172,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       );
     final csi = CSIManager();
     await csi.setInactive(sendNonza: false);

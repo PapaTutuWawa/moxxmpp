@@ -31,7 +31,6 @@ Future<bool> testRosterManager(
         getConnectionSettings: () => ConnectionSettings(
           jid: JID.fromString(bareJid),
           password: 'password',
-          useDirectTLS: true,
         ),
         getManagerById: getManagerNullStub,
         getNegotiatorById: getNegotiatorNullStub,
@@ -130,7 +129,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       );
     await conn.registerManagers([
       PresenceManager(),
@@ -186,7 +184,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       );
     await conn.registerManagers([
       PresenceManager(),
@@ -244,7 +241,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       );
     await conn.registerManagers([
       PresenceManager(),
@@ -290,7 +286,6 @@ void main() {
             getConnectionSettings: () => ConnectionSettings(
               jid: JID.fromString('some.user@example.server'),
               password: 'password',
-              useDirectTLS: true,
             ),
             getManagerById: getManagerNullStub,
             getNegotiatorById: getNegotiatorNullStub,
@@ -403,7 +398,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('testuser@example.org'),
         password: 'abc123',
-        useDirectTLS: false,
       );
     await conn.registerManagers([
       PresenceManager(),
@@ -497,7 +491,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('testuser@example.org'),
         password: 'abc123',
-        useDirectTLS: false,
       );
     await conn.registerManagers([
       RosterManager(TestingRosterStateManager('', [])),

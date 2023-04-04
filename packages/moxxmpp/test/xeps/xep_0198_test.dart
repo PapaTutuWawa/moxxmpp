@@ -61,7 +61,6 @@ XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
     getConnectionSettings: () => ConnectionSettings(
       jid: JID.fromString('hallo@example.server'),
       password: 'password',
-      useDirectTLS: true,
     ),
     getFullJID: () => JID.fromString('hallo@example.server/uwu'),
     getSocket: () => StubTCPSocket([]),
@@ -286,7 +285,6 @@ void main() {
       )..connectionSettings = ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
-          useDirectTLS: true,
         );
       final sm = StreamManagementManager();
       await conn.registerManagers([
@@ -410,166 +408,6 @@ void main() {
       )..connectionSettings = ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
-          useDirectTLS: true,
-        );
-      final sm = StreamManagementManager();
-      await conn.registerManagers([
-        PresenceManager(),
-        RosterManager(TestingRosterStateManager('', [])),
-        DiscoManager([]),
-        sm,
-        CarbonsManager()..forceEnable(),
-        //EntityCapabilitiesManager('http://moxxmpp.example'),
-      ]);
-      await conn.registerFeatureNegotiators([
-        SaslPlainNegotiator(),
-        ResourceBindingNegotiator(),
-        StreamManagementNegotiator(),
-      ]);
-
-      await conn.connect(
-        waitUntilLogin: true,
-      );
-      expect(fakeSocket.getState(), 6);
-      expect(await conn.getConnectionState(), XmppConnectionState.connected);
-      expect(
-        conn
-            .getManagerById<StreamManagementManager>(smManager)!
-            .isStreamManagementEnabled(),
-        true,
-      );
-
-      // Await an iq
-      await conn.sendStanza(
-        Stanza.iq(
-          to: 'user@example.com',
-          type: 'get',
-        ),
-        addFrom: StanzaFromType.none,
-      );
-
-      expect(sm.state.s2c, 2);
-    });
-  });
-
-  group('Stream resumption', () {
-    test('Stanza retransmission', () async {
-      var stanzaCount = 0;
-      final attributes = mkAttributes((_) {
-        stanzaCount++;
-      });
-      final manager = StreamManagementManager()..register(attributes);
-
-      await manager.onXmppEvent(
-        StreamManagementEnabledEvent(resource: 'hallo'),
-      );
-
-      // Send 5 stanzas
-      for (var i = 0; i < 5; i++) {
-        await runOutgoingStanzaHandlers(manager, stanza);
-      }
-
-      // Only ack 3
-      // <a h='3' />
-      await manager.runNonzaHandlers(mkAck(3));
-      expect(manager.getUnackedStanzas().length, 2);
-
-      // Lose connection
-      // [ Reconnect ]
-      await manager.onXmppEvent(StreamResumedEvent(h: 3));
-
-      expect(stanzaCount, 2);
-    });
-    test('Resumption with prior state', () async {
-      var stanzaCount = 0;
-      final attributes = mkAttributes((_) {
-        stanzaCount++;
-      });
-      final manager = StreamManagementManager()..register(attributes);
-
-      // [ ... ]
-      await manager.onXmppEvent(
-        StreamManagementEnabledEvent(resource: 'hallo'),
-      );
-      await manager.setState(manager.state.copyWith(c2s: 150, s2c: 70));
-
-      // Send some stanzas but don't ack them
-      for (var i = 0; i < 5; i++) {
-        await runOutgoingStanzaHandlers(manager, stanza);
-      }
-      expect(manager.getUnackedStanzas().length, 5);
-
-      // Lose connection
-      // [ Reconnect ]
-      await manager.onXmppEvent(StreamResumedEvent(h: 150));
-      expect(manager.getUnackedStanzas().length, 0);
-      expect(stanzaCount, 5);
-    });
-  });
-
-  group('Test the negotiator', () {
-    test('Test successful stream enablement', () async {
-      final fakeSocket = StubTCPSocket([
-        StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
-          '''
-<stream:stream
-    xmlns="jabber:client"
-    version="1.0"
-    xmlns:stream="http://etherx.jabber.org/streams"
-    from="test.server"
-    xml:lang="en">
-  <stream:features xmlns="http://etherx.jabber.org/streams">
-    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
-      <mechanism>PLAIN</mechanism>
-    </mechanisms>
-  </stream:features>''',
-        ),
-        StringExpectation(
-          "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHBvbHlub21kaXZpc2lvbgBhYWFh</auth>",
-          '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
-        ),
-        StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
-          '''
-<stream:stream
-    xmlns="jabber:client"
-    version="1.0"
-    xmlns:stream="http://etherx.jabber.org/streams"
-    from="test.server"
-    xml:lang="en">
-  <stream:features xmlns="http://etherx.jabber.org/streams">
-    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
-      <required/>
-    </bind>
-    <session xmlns="urn:ietf:params:xml:ns:xmpp-session">
-      <optional/>
-    </session>
-    <csi xmlns="urn:xmpp:csi:0"/>
-    <sm xmlns="urn:xmpp:sm:3"/>
-  </stream:features>
-''',
-        ),
-        StanzaExpectation(
-          '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
-          '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
-          ignoreId: true,
-        ),
-        StringExpectation(
-          "<enable xmlns='urn:xmpp:sm:3' resume='true' />",
-          '<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true" />',
-        )
-      ]);
-
-      final conn = XmppConnection(
-        TestingReconnectionPolicy(),
-        AlwaysConnectedConnectivityManager(),
-        ClientToServerNegotiator(),
-        fakeSocket,
-      )..connectionSettings = ConnectionSettings(
-          jid: JID.fromString('polynomdivision@test.server'),
-          password: 'aaaa',
-          useDirectTLS: true,
         );
       await conn.registerManagers([
         PresenceManager(),
@@ -662,7 +500,6 @@ void main() {
       )..connectionSettings = ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
-          useDirectTLS: true,
         );
       await conn.registerManagers([
         PresenceManager(),
@@ -752,7 +589,6 @@ void main() {
       )..connectionSettings = ConnectionSettings(
           jid: JID.fromString('polynomdivision@test.server'),
           password: 'aaaa',
-          useDirectTLS: true,
         );
       await conn.registerManagers([
         PresenceManager(),
@@ -839,7 +675,6 @@ void main() {
       ..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([
@@ -937,7 +772,6 @@ void main() {
       ..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([
@@ -1039,7 +873,6 @@ void main() {
       ..connectionSettings = ConnectionSettings(
         jid: JID.fromString('polynomdivision@test.server'),
         password: 'aaaa',
-        useDirectTLS: true,
       )
       ..setResource('test-resource', triggerEvent: false);
     await conn.registerManagers([

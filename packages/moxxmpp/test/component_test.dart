@@ -34,7 +34,6 @@ void main() {
     )..connectionSettings = ConnectionSettings(
         jid: JID.fromString('component.example.org'),
         password: 'abc123',
-        useDirectTLS: true,
       );
     await conn.registerManagers([
       RosterManager(TestingRosterStateManager('', [])),
