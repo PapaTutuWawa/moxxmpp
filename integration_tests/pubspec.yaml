@@ -7,8 +7,8 @@ environment:
 
 dependencies:
   logging: ^1.0.2
-  moxxmpp: 0.2.0
-  moxxmpp_socket_tcp: 0.2.1
+  moxxmpp: 0.3.0
+  moxxmpp_socket_tcp: 0.3.0
   
 dev_dependencies:
   lints: ^2.0.0

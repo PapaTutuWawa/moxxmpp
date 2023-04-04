@@ -9,7 +9,7 @@ Include the following as a dependency in your pubspec file:
 ```
  moxxmpp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
-    version: 0.2.0
+    version: 0.3.0
 ```
 
 You can find the documentation [here](https://moxxy.org/developers/docs/moxxmpp/).
