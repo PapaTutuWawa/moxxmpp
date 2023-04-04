@@ -35,10 +35,6 @@ void main() {
         jid: JID.fromString('component.example.org'),
         password: 'abc123',
       );
-    await conn.registerManagers([
-      RosterManager(TestingRosterStateManager('', [])),
-      DiscoManager([]),
-    ]);
     final result = await conn.connect(
       waitUntilLogin: true,
     );

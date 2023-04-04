@@ -262,26 +262,14 @@ class XmppConnection {
     return getManagerById(presenceManager);
   }
 
-  /// A [DiscoManager] is required so, have a wrapper for getting it.
   /// Returns the registered [DiscoManager].
-  DiscoManager getDiscoManager() {
-    assert(
-      _xmppManagers.containsKey(discoManager),
-      'A DiscoManager is mandatory',
-    );
-
-    return getManagerById(discoManager)!;
+  DiscoManager? getDiscoManager() {
+    return getManagerById<DiscoManager>(discoManager);
   }
 
-  /// A [RosterManager] is required, so have a wrapper for getting it.
   /// Returns the registered [RosterManager].
-  RosterManager getRosterManager() {
-    assert(
-      _xmppManagers.containsKey(rosterManager),
-      'A RosterManager is mandatory',
-    );
-
-    return getManagerById(rosterManager)!;
+  RosterManager? getRosterManager() {
+    return getManagerById<RosterManager>(rosterManager);
   }
 
   /// Returns the registered [StreamManagementManager], if one is registered.
@@ -845,18 +833,6 @@ class XmppConnection {
     }
   }
 
-  /// Make sure that all required managers are registered
-  void _runPreConnectionAssertions() {
-    assert(
-      _xmppManagers.containsKey(rosterManager),
-      'A RosterManager is mandatory',
-    );
-    assert(
-      _xmppManagers.containsKey(discoManager),
-      'A DiscoManager is mandatory',
-    );
-  }
-
   /// The private implementation for [XmppConnection.connect]. The parameters have
   /// the same meaning as with [XmppConnection.connect].
   Future<Result<bool, XmppError>> _connectImpl({
@@ -957,8 +933,6 @@ class XmppConnection {
     bool waitUntilLogin = false,
     bool enableReconnectOnSuccess = true,
   }) async {
-    _runPreConnectionAssertions();
-
     final result = _connectImpl(
       lastResource: lastResource,
       shouldReconnect: shouldReconnect ?? !waitUntilLogin,

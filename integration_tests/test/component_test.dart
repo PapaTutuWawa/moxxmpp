@@ -31,10 +31,6 @@ void main() {
         host: '127.0.0.1',
         port: 8888,
       );
-    await conn.registerManagers([
-      RosterManager(TestingRosterStateManager('', [])),
-      DiscoManager([]),
-    ]);
 
     final result = await conn.connect(
       waitUntilLogin: true,
