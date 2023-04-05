@@ -1,3 +1,7 @@
+## 0.3.1
+
+- Fix some issues with running moxxmpp as a component
+
 ## 0.3.0
 
 - **BREAKING**: Removed `connectAwaitable` and merged it with `connect`.

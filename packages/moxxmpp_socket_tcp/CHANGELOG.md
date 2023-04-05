@@ -1,3 +1,7 @@
+## 0.3.1
+
+- Keep version in sync with moxxmpp
+
 ## 0.1.2+9
 
  - Update a dependency to the latest release.
