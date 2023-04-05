@@ -42,6 +42,9 @@ class ComponentToServerNegotiator extends NegotiationsHandler {
   ComponentToServerState _state = ComponentToServerState.idle;
 
   @override
+  String getStanzaNamespace() => componentAcceptXmlns;
+
+  @override
   void registerNegotiator(XmppFeatureNegotiatorBase negotiator) {}
 
   @override

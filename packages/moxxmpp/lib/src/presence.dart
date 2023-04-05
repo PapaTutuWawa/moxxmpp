@@ -107,11 +107,13 @@ class PresenceManager extends XmppManagerBase {
     }
 
     final attrs = getAttributes();
-    attrs.sendNonza(
+    await attrs.sendStanza(
       Stanza.presence(
         from: attrs.getFullJID().toString(),
         children: children,
       ),
+      awaitable: false,
+      addId: false,
     );
   }
 

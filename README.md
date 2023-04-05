@@ -24,6 +24,15 @@ To run the example, make sure that Flutter is correctly set up and working. If y
 the development shell provided by the NixOS Flake, ensure that `ANDROID_HOME` and
 `ANDROID_AVD_HOME` are pointing to the correct directories.
 
+## Examples
+
+This repository contains 2 types of examples:
+
+- `example_flutter`: An example of using moxxmpp using Flutter
+- `examples_dart`: A collection of pure Dart examples for showing different aspects of moxxmpp
+
+For more information, see the respective README files.
+
 ## License
 
 See `./LICENSE`.

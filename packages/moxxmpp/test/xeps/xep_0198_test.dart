@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
 import '../helpers/logging.dart';
@@ -88,6 +89,7 @@ void main() {
   final stanza = Stanza(
     to: 'some.user@server.example',
     tag: 'message',
+    xmlns: stanzaXmlns,
   );
 
   test('Test stream with SM enablement', () async {
@@ -388,9 +390,13 @@ void main() {
           "<enable xmlns='urn:xmpp:sm:3' resume='true' />",
           '<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true" />',
         ),
-        StringExpectation(
+        StanzaExpectation(
           "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show></presence>",
           '<iq type="result" />',
+        ),
+        StringExpectation(
+          "<r xmlns='urn:xmpp:sm:3' />",
+          "<a xmlns='urn:xmpp:sm:3' h='1' />",
         ),
         StanzaExpectation(
           "<iq to='user@example.com' type='get' id='a' xmlns='jabber:client' />",
@@ -425,7 +431,8 @@ void main() {
         waitUntilLogin: true,
       );
 
-      expect(fakeSocket.getState(), 6);
+      await Future<void>.delayed(const Duration(seconds: 3));
+      expect(fakeSocket.getState(), 7);
       expect(await conn.getConnectionState(), XmppConnectionState.connected);
       expect(
         conn
@@ -502,9 +509,6 @@ void main() {
           password: 'aaaa',
         );
       await conn.registerManagers([
-        PresenceManager(),
-        RosterManager(TestingRosterStateManager('', [])),
-        DiscoManager([]),
         StreamManagementManager(),
       ]);
       await conn.registerFeatureNegotiators([
@@ -523,7 +527,8 @@ void main() {
       await conn.connect(
         waitUntilLogin: true,
       );
-      expect(fakeSocket.getState(), 7);
+
+      expect(fakeSocket.getState(), 6);
       expect(await conn.getConnectionState(), XmppConnectionState.connected);
       expect(
         conn

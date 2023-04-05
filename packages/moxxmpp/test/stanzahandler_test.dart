@@ -3,9 +3,11 @@ import 'package:test/test.dart';
 
 final stanza1 = Stanza.iq(
   children: [XMLNode.xmlns(tag: 'tag', xmlns: 'owo')],
+  xmlns: stanzaXmlns,
 );
 final stanza2 = Stanza.message(
   children: [XMLNode.xmlns(tag: 'some-other-tag', xmlns: 'owo')],
+  xmlns: stanzaXmlns,
 );
 
 void main() {
@@ -19,11 +21,17 @@ void main() {
       ),
     );
 
-    expect(handler.matches(Stanza.iq()), true);
-    expect(handler.matches(Stanza.message()), true);
-    expect(handler.matches(Stanza.presence()), true);
+    expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), true);
+    expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), true);
+    expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), true);
     expect(handler.matches(stanza1), true);
     expect(handler.matches(stanza2), true);
+    expect(
+      handler.matches(
+        XMLNode.xmlns(tag: 'active', xmlns: csiXmlns),
+      ),
+      false,
+    );
   });
   test('xmlns matching', () {
     final handler = StanzaHandler(
@@ -36,12 +44,13 @@ void main() {
       tagXmlns: 'owo',
     );
 
-    expect(handler.matches(Stanza.iq()), false);
-    expect(handler.matches(Stanza.message()), false);
-    expect(handler.matches(Stanza.presence()), false);
+    expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), false);
     expect(handler.matches(stanza1), true);
     expect(handler.matches(stanza2), true);
   });
+
   test('stanzaTag matching', () {
     var run = false;
     final handler = StanzaHandler(
@@ -57,9 +66,9 @@ void main() {
       stanzaTag: 'iq',
     );
 
-    expect(handler.matches(Stanza.iq()), true);
-    expect(handler.matches(Stanza.message()), false);
-    expect(handler.matches(Stanza.presence()), false);
+    expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), true);
+    expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), false);
     expect(handler.matches(stanza1), true);
     expect(handler.matches(stanza2), false);
 
@@ -74,6 +83,7 @@ void main() {
     );
     expect(run, true);
   });
+
   test('tagName matching', () {
     final handler = StanzaHandler(
       callback: (stanza, _) async => StanzaHandlerData(
@@ -85,12 +95,13 @@ void main() {
       tagName: 'tag',
     );
 
-    expect(handler.matches(Stanza.iq()), false);
-    expect(handler.matches(Stanza.message()), false);
-    expect(handler.matches(Stanza.presence()), false);
+    expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), false);
     expect(handler.matches(stanza1), true);
     expect(handler.matches(stanza2), false);
   });
+
   test('combined matching', () {
     final handler = StanzaHandler(
       callback: (stanza, _) async => StanzaHandlerData(
@@ -104,10 +115,29 @@ void main() {
       tagXmlns: 'owo',
     );
 
-    expect(handler.matches(Stanza.iq()), false);
-    expect(handler.matches(Stanza.message()), false);
-    expect(handler.matches(Stanza.presence()), false);
+    expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), false);
     expect(handler.matches(stanza1), true);
+    expect(handler.matches(stanza2), false);
+  });
+
+  test('Test matching stanzas with a different xmlns', () {
+    final handler = StanzaHandler(
+      callback: (stanza, _) async => StanzaHandlerData(
+        true,
+        false,
+        null,
+        stanza,
+      ),
+      xmlns: componentAcceptXmlns,
+    );
+
+    expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), false);
+    expect(handler.matches(Stanza.iq(xmlns: componentAcceptXmlns)), true);
+    expect(handler.matches(stanza1), false);
     expect(handler.matches(stanza2), false);
   });
 

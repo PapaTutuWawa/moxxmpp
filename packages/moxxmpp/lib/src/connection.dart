@@ -446,6 +446,9 @@ class XmppConnection {
           break;
       }
     }
+    stanza_ = stanza_.copyWith(
+      xmlns: _negotiationsHandler.getStanzaNamespace(),
+    );
 
     _log.fine('Running pre stanza handlers..');
     final data = await _runOutgoingPreStanzaHandlers(
@@ -731,6 +734,7 @@ class XmppConnection {
       ),
     );
     if (!incomingHandlers.done) {
+      _log.warning('Returning error for unhandled stanza');
       await handleUnhandledStanza(this, incomingPreHandlers);
     }
   }

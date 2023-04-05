@@ -4,86 +4,106 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
+/// A Handler is responsible for matching any kind of toplevel item in the XML stream
+/// (stanzas and Nonzas). For that, its [matches] method is called. What happens
+/// next depends on the subclass.
+// ignore: one_member_abstracts
 abstract class Handler {
-  const Handler(this.matchStanzas, {this.nonzaTag, this.nonzaXmlns});
-  final String? nonzaTag;
-  final String? nonzaXmlns;
-  final bool matchStanzas;
-
   /// Returns true if the node matches the description provided by this [Handler].
+  bool matches(XMLNode node);
+}
+
+/// A Handler that specialises in matching Nonzas (and stanzas).
+class NonzaHandler extends Handler {
+  NonzaHandler({
+    required this.callback,
+    this.nonzaTag,
+    this.nonzaXmlns,
+  });
+
+  /// The function to call when a nonza matches the description.
+  final Future<bool> Function(XMLNode) callback;
+
+  /// The expected tag of a matching nonza.
+  final String? nonzaTag;
+
+  // The expected xmlns attribute of a matching nonza.
+  final String? nonzaXmlns;
+
+  @override
   bool matches(XMLNode node) {
-    var matches = false;
-
+    var matches = true;
     if (nonzaTag == null && nonzaXmlns == null) {
-      matches = true;
-    }
-
-    if (nonzaXmlns != null && nonzaTag != null) {
-      matches = (node.attributes['xmlns'] ?? '') == nonzaXmlns! &&
-          node.tag == nonzaTag!;
-    }
-
-    if (matchStanzas && nonzaTag == null) {
-      matches = ['iq', 'presence', 'message'].contains(node.tag);
+      return true;
+    } else {
+      if (nonzaXmlns != null) {
+        matches &= node.attributes['xmlns'] == nonzaXmlns;
+      }
+      if (nonzaTag != null) {
+        matches &= node.tag == nonzaTag;
+      }
     }
 
     return matches;
   }
 }
 
-class NonzaHandler extends Handler {
-  NonzaHandler({
-    required this.callback,
-    String? nonzaTag,
-    String? nonzaXmlns,
-  }) : super(
-          false,
-          nonzaTag: nonzaTag,
-          nonzaXmlns: nonzaXmlns,
-        );
-  final Future<bool> Function(XMLNode) callback;
-}
-
+/// A Handler that only matches stanzas.
 class StanzaHandler extends Handler {
   StanzaHandler({
     required this.callback,
     this.tagXmlns,
     this.tagName,
     this.priority = 0,
-    String? stanzaTag,
-  }) : super(
-          true,
-          nonzaTag: stanzaTag,
-          nonzaXmlns: stanzaXmlns,
-        );
+    this.stanzaTag,
+    this.xmlns = stanzaXmlns,
+  });
+
+  /// If specified, then the stanza must contain a direct child with a tag equal to
+  /// [tagName].
   final String? tagName;
+
+  /// If specified, then the stanza must contain a direct child with a xmlns attribute
+  /// equal to [tagXmlns]. If [tagName] is also non-null, then the element must also
+  /// have a tag equal to [tagName].
   final String? tagXmlns;
+
+  /// If specified, the matching stanza must have a tag equal to [stanzaTag].
+  final String? stanzaTag;
+
+  /// If specified, then the stanza must have a xmlns attribute equal to [xmlns].
+  /// This defaults to [stanzaXmlns], but can be set to any other value or null. This
+  /// is useful, for example, for components.
+  final String? xmlns;
+
+  /// The priority after which [StanzaHandler]s are sorted.
   final int priority;
+
+  /// The function to call when a stanza matches the description.
   final Future<StanzaHandlerData> Function(Stanza, StanzaHandlerData) callback;
 
   @override
   bool matches(XMLNode node) {
-    var matches = super.matches(node);
-
-    if (matches == false) {
-      return false;
+    var matches = ['iq', 'message', 'presence'].contains(node.tag);
+    if (stanzaTag != null) {
+      matches &= node.tag == stanzaTag;
+    }
+    if (xmlns != null) {
+      matches &= node.xmlns == xmlns;
     }
 
     if (tagName != null) {
       final firstTag = node.firstTag(tagName!, xmlns: tagXmlns);
+      matches &= firstTag != null;
 
-      matches = firstTag != null;
+      if (tagXmlns != null) {
+        matches &= firstTag?.xmlns == tagXmlns;
+      }
     } else if (tagXmlns != null) {
-      return listContains(
+      matches &= listContains(
         node.children,
-        (XMLNode node_) =>
-            node_.attributes.containsKey('xmlns') &&
-            node_.attributes['xmlns'] == tagXmlns,
+        (XMLNode node_) => node_.attributes['xmlns'] == tagXmlns,
       );
-    }
-
-    if (tagName == null && tagXmlns == null) {
-      matches = true;
     }
 
     return matches;

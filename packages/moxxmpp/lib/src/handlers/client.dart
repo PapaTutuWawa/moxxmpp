@@ -36,6 +36,9 @@ class ClientToServerNegotiator extends NegotiationsHandler {
   XmppFeatureNegotiatorBase? _currentNegotiator;
 
   @override
+  String getStanzaNamespace() => stanzaXmlns;
+
+  @override
   void registerNegotiator(XmppFeatureNegotiatorBase negotiator) {
     negotiators[negotiator.id] = negotiator;
   }

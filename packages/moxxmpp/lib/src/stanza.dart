@@ -33,6 +33,7 @@ class Stanza extends XMLNode {
     List<XMLNode> children = const [],
     required String tag,
     Map<String, String> attributes = const {},
+    String? xmlns,
   }) : super(
           tag: tag,
           attributes: <String, dynamic>{
@@ -45,7 +46,7 @@ class Stanza extends XMLNode {
             ...from != null
                 ? <String, dynamic>{'from': from}
                 : <String, dynamic>{},
-            'xmlns': stanzaXmlns
+            if (xmlns != null) 'xmlns': xmlns,
           },
           children: children,
         );
@@ -57,6 +58,7 @@ class Stanza extends XMLNode {
     String? id,
     List<XMLNode> children = const [],
     Map<String, String>? attributes = const {},
+    String? xmlns,
   }) {
     return Stanza(
       tag: 'iq',
@@ -64,8 +66,9 @@ class Stanza extends XMLNode {
       to: to,
       id: id,
       type: type,
-      attributes: <String, String>{...attributes!, 'xmlns': stanzaXmlns},
+      attributes: <String, String>{...attributes!},
       children: children,
+      xmlns: xmlns,
     );
   }
 
@@ -76,6 +79,7 @@ class Stanza extends XMLNode {
     String? id,
     List<XMLNode> children = const [],
     Map<String, String>? attributes = const {},
+    String? xmlns,
   }) {
     return Stanza(
       tag: 'presence',
@@ -83,8 +87,9 @@ class Stanza extends XMLNode {
       to: to,
       id: id,
       type: type,
-      attributes: <String, String>{...attributes!, 'xmlns': stanzaXmlns},
+      attributes: <String, String>{...attributes!},
       children: children,
+      xmlns: xmlns,
     );
   }
   factory Stanza.message({
@@ -94,6 +99,7 @@ class Stanza extends XMLNode {
     String? id,
     List<XMLNode> children = const [],
     Map<String, String>? attributes = const {},
+    String? xmlns,
   }) {
     return Stanza(
       tag: 'message',
@@ -101,8 +107,9 @@ class Stanza extends XMLNode {
       to: to,
       id: id,
       type: type,
-      attributes: <String, String>{...attributes!, 'xmlns': stanzaXmlns},
+      attributes: <String, String>{...attributes!},
       children: children,
+      xmlns: xmlns,
     );
   }
 
@@ -134,6 +141,7 @@ class Stanza extends XMLNode {
     String? to,
     String? type,
     List<XMLNode>? children,
+    String? xmlns,
   }) {
     return Stanza(
       tag: tag,
@@ -142,6 +150,10 @@ class Stanza extends XMLNode {
       id: id ?? this.id,
       type: type ?? this.type,
       children: children ?? this.children,
+      attributes: {
+        ...attributes.cast<String, String>(),
+      },
+      xmlns: xmlns ?? this.xmlns,
     );
   }
 }

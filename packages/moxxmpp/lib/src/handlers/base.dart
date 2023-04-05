@@ -81,6 +81,9 @@ abstract class NegotiationsHandler {
     log = Logger(toString());
   }
 
+  /// Returns the xmlns attribute that stanzas should have.
+  String getStanzaNamespace();
+
   /// Registers the negotiator [negotiator] against this negotiations handler.
   void registerNegotiator(XmppFeatureNegotiatorBase negotiator);
 

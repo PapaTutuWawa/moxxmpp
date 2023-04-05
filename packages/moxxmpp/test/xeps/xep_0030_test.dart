@@ -56,7 +56,7 @@ void main() {
           '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
           ignoreId: true,
         ),
-        StringExpectation(
+        StanzaExpectation(
           "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='3QvQ2RAy45XBDhArjxy/vEWMl+E=' /></presence>",
           '',
         ),
