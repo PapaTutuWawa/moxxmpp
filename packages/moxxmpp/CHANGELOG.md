@@ -1,3 +1,7 @@
+## 0.3.2
+
+- **BREAKING**: Remove `lastResource` from `XmppConnection`'s `connect` method. Instead, set the `StreamManagementNegotiator`'s `resource` attribute instead. Since the resource can only really be restored by stream management, this is no issue.
+
 ## 0.3.1
 
 - Fix some issues with running moxxmpp as a component
