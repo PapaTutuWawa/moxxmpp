@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
 import 'helpers/logging.dart';
@@ -63,6 +64,8 @@ void main() {
       counter++;
     });
     await policy.setShouldReconnect(true);
+    // ignore: avoid_print
+    print('policy.setShouldReconnect(true) done');
 
     // We have a failure
     expect(
@@ -70,9 +73,13 @@ void main() {
       true,
     );
     await policy.onFailure();
+    // ignore: avoid_print
+    print('policy.onFailure() done');
 
-    await policy.onTimerElapsed();
-    await policy.onTimerElapsed();
+    unawaited(policy.onTimerElapsed());
+    unawaited(policy.onTimerElapsed());
+
+    await Future<void>.delayed(const Duration(seconds: 3));
     expect(counter, 1);
   });
 }

@@ -111,31 +111,47 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
   /// Called when the backoff expired
   @visibleForTesting
   Future<void> onTimerElapsed() async {
-    _log.fine('Timer elapsed. Waiting for lock...');
-    await _timerLock.synchronized(() async {
+    _log.finest('Timer elapsed. Waiting for lock...');
+    final shouldContinue = await _timerLock.synchronized(() async {
+      _log.finest('Timer lock aquired');
+      if (_timer == null) {
+        _log.finest(
+          'The timer is already set to null. Doing nothing.',
+        );
+        return false;
+      }
+
       if (!(await getIsReconnecting())) {
-        return;
+        return false;
       }
 
       if (!(await getShouldReconnect())) {
-        _log.fine(
+        _log.finest(
           'Should not reconnect. Stopping here.',
         );
-        return;
+        return false;
       }
 
-      _log.fine('Triggering reconnect');
       _timer?.cancel();
       _timer = null;
-      await performReconnect!();
+      return true;
     });
+
+    if (!shouldContinue) {
+      return;
+    }
+
+    _log.fine('Triggering reconnect');
+    await performReconnect!();
   }
 
   @override
   Future<void> reset() async {
     _log.finest('Resetting internal state');
-    _timer?.cancel();
-    _timer = null;
+    await _timerLock.synchronized(() {
+      _timer?.cancel();
+      _timer = null;
+    });
     await super.reset();
   }
 
@@ -144,9 +160,11 @@ class RandomBackoffReconnectionPolicy extends ReconnectionPolicy {
     final seconds =
         Random().nextInt(_maxBackoffTime - _minBackoffTime) + _minBackoffTime;
     _log.finest('Failure occured. Starting random backoff with ${seconds}s');
-    _timer?.cancel();
 
-    _timer = Timer(Duration(seconds: seconds), onTimerElapsed);
+    await _timerLock.synchronized(() {
+      _timer?.cancel();
+      _timer = Timer(Duration(seconds: seconds), onTimerElapsed);
+    });
   }
 
   @override

@@ -1,6 +1,5 @@
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
@@ -60,11 +59,7 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
   bool _inlineStreamEnablementRequested = false;
 
   /// Cached resource for stream resumption
-  String _resource = '';
-  @visibleForTesting
-  void setResource(String resource) {
-    _resource = resource;
-  }
+  String resource = '';
 
   @override
   bool canInlineFeature(List<XMLNode> features) {
@@ -90,7 +85,7 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
     if (event is ResourceBoundEvent) {
-      _resource = event.resource;
+      resource = event.resource;
     }
   }
 
@@ -100,7 +95,9 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
 
     if (sm.state.streamResumptionId != null && !_resumeFailed) {
       // We could do Stream resumption
-      return super.matchesFeature(features) && attributes.isAuthenticated();
+      return super.matchesFeature(features) &&
+          attributes.isAuthenticated() &&
+          resource.isNotEmpty;
     } else {
       // We cannot do a stream resumption
       return super.matchesFeature(features) &&
@@ -122,23 +119,23 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
     _resumeFailed = true;
     _isResumed = false;
     _state = _StreamManagementNegotiatorState.ready;
+    resource = '';
+    attributes.setResource('', triggerEvent: false);
   }
 
   Future<void> _onStreamResumptionSuccessful(XMLNode resumed) async {
     assert(resumed.tag == 'resumed', 'The correct element must be passed');
+    assert(
+      resource.isNotEmpty,
+      'The Stream Management Negotiator must know of the previous resource',
+    );
 
     final h = int.parse(resumed.attributes['h']! as String);
     await attributes.sendEvent(StreamResumedEvent(h: h));
 
     _resumeFailed = false;
     _isResumed = true;
-
-    if (attributes.getConnection().resource.isEmpty && _resource.isNotEmpty) {
-      attributes.setResource(_resource);
-    } else if (attributes.getConnection().resource.isNotEmpty &&
-        _resource.isEmpty) {
-      _resource = attributes.getConnection().resource;
-    }
+    attributes.setResource(resource);
   }
 
   Future<void> _onStreamEnablementSuccessful(XMLNode enabled) async {
@@ -152,7 +149,7 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
 
     await attributes.sendEvent(
       StreamManagementEnabledEvent(
-        resource: attributes.getFullJID().resource,
+        resource: resource,
         id: id,
         location: enabled.attributes['location'] as String?,
       ),
@@ -197,10 +194,12 @@ class StreamManagementNegotiator extends Sasl2FeatureNegotiator
           _log.finest('Stream Management resumption successful');
 
           assert(
-            attributes.getFullJID().resource != '',
+            resource.isNotEmpty,
             'Resume only works when we already have a resource bound and know about it',
           );
 
+          // TODO(Unknown): Don't do this here. We trigger an event that the CSIManager
+          //                can consume.
           final csi = attributes.getManagerById(csiManager) as CSIManager?;
           if (csi != null) {
             csi.restoreCSIState();

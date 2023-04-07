@@ -10,6 +10,7 @@ import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/handlers/base.dart';
 import 'package:moxxmpp/src/iq.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
@@ -140,6 +141,8 @@ class XmppConnection {
   RoutingState _routingState = RoutingState.preConnection;
 
   /// The currently bound resource or '' if none has been bound yet.
+  /// NOTE: A Using the empty string is okay since RFC7622 says that
+  ///       the resource MUST NOT be zero octets.
   String _resource = '';
   String get resource => _resource;
 
@@ -170,6 +173,13 @@ class XmppConnection {
 
   bool get isAuthenticated => _isAuthenticated;
 
+  /// Returns the JID we authenticate with and add the resource that we have bound.
+  JID _getJidWithResource() {
+    assert(_resource.isNotEmpty, 'The resource must not be empty');
+
+    return connectionSettings.jid.withResource(_resource);
+  }
+
   /// Registers a list of [XmppManagerBase] sub-classes as managers on this connection.
   Future<void> registerManagers(List<XmppManagerBase> managers) async {
     for (final manager in managers) {
@@ -181,7 +191,7 @@ class XmppConnection {
           sendEvent: _sendEvent,
           getConnectionSettings: () => connectionSettings,
           getManagerById: getManagerById,
-          getFullJID: () => connectionSettings.jid.withResource(_resource),
+          getFullJID: _getJidWithResource,
           getSocket: () => _socket,
           getConnection: () => this,
           getNegotiatorById: _negotiationsHandler.getNegotiatorById,
@@ -232,7 +242,7 @@ class XmppConnection {
           _sendEvent,
           _negotiationsHandler.getNegotiatorById,
           getManagerById,
-          () => connectionSettings.jid.withResource(_resource),
+          _getJidWithResource,
           () => _socket,
           () => _isAuthenticated,
           _setAuthenticated,
@@ -295,8 +305,11 @@ class XmppConnection {
     // Connect again
     // ignore: cascade_invocations
     _log.finest('Calling _connectImpl() from _attemptReconnection');
-    await _connectImpl(
-      waitForConnection: true,
+    unawaited(
+      _connectImpl(
+        waitForConnection: true,
+        shouldReconnect: false,
+      ),
     );
   }
 
@@ -431,7 +444,7 @@ class XmppConnection {
         case StanzaFromType.full:
           {
             stanza_ = stanza_.copyWith(
-              from: connectionSettings.jid.withResource(_resource).toString(),
+              from: _getJidWithResource().toString(),
             );
           }
           break;
@@ -840,7 +853,6 @@ class XmppConnection {
   /// The private implementation for [XmppConnection.connect]. The parameters have
   /// the same meaning as with [XmppConnection.connect].
   Future<Result<bool, XmppError>> _connectImpl({
-    String? lastResource,
     bool waitForConnection = false,
     bool shouldReconnect = true,
     bool waitUntilLogin = false,
@@ -863,11 +875,9 @@ class XmppConnection {
       _connectionCompleter = Completer();
     }
 
-    if (lastResource != null) {
-      setResource(lastResource, triggerEvent: false);
-    } else {
-      setResource('', triggerEvent: false);
-    }
+    // Reset the resource. If we use stream resumption from XEP-0198, then the
+    // manager will set it on successful resumption.
+    setResource('', triggerEvent: false);
 
     // If requested, wait until we have a network connection
     if (waitForConnection) {
@@ -914,9 +924,6 @@ class XmppConnection {
 
   /// Start the connection process using the provided connection settings.
   ///
-  /// If [lastResource] is set, then its value is used as the connection's resource.
-  /// Useful for stream resumption.
-  ///
   /// [shouldReconnect] indicates whether the reconnection attempts should be
   /// automatically performed after a fatal failure of any kind occurs.
   ///
@@ -931,14 +938,12 @@ class XmppConnection {
   /// [enableReconnectOnSuccess] indicates that automatic reconnection is to be
   /// enabled once the connection has been successfully established.
   Future<Result<bool, XmppError>> connect({
-    String? lastResource,
     bool? shouldReconnect,
     bool waitForConnection = false,
     bool waitUntilLogin = false,
     bool enableReconnectOnSuccess = true,
   }) async {
     final result = _connectImpl(
-      lastResource: lastResource,
       shouldReconnect: shouldReconnect ?? !waitUntilLogin,
       waitForConnection: waitForConnection,
       waitUntilLogin: waitUntilLogin,

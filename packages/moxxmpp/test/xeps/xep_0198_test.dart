@@ -514,7 +514,7 @@ void main() {
       await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
         ResourceBindingNegotiator(),
-        StreamManagementNegotiator(),
+        StreamManagementNegotiator()..resource = 'test-resource',
       ]);
       await conn.getManagerById<StreamManagementManager>(smManager)!.setState(
             StreamManagementState(
@@ -535,6 +535,15 @@ void main() {
             .getManagerById<StreamManagementManager>(smManager)!
             .isStreamManagementEnabled(),
         true,
+      );
+      expect(conn.resource, 'MU29eEZn');
+      expect(
+        conn
+            .getNegotiatorById<StreamManagementNegotiator>(
+              streamManagementNegotiator,
+            )!
+            .resource,
+        'MU29eEZn',
       );
     });
 
@@ -604,7 +613,7 @@ void main() {
       await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
         ResourceBindingNegotiator(),
-        StreamManagementNegotiator(),
+        StreamManagementNegotiator()..resource = 'abc123',
       ]);
       await conn.getManagerById<StreamManagementManager>(smManager)!.setState(
             StreamManagementState(
@@ -615,7 +624,6 @@ void main() {
           );
 
       await conn.connect(
-        lastResource: 'abc123',
         waitUntilLogin: true,
       );
       expect(fakeSocket.getState(), 4);
@@ -690,7 +698,7 @@ void main() {
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
-      StreamManagementNegotiator()..setResource('test-resource'),
+      StreamManagementNegotiator()..resource = 'test-resource',
       Sasl2Negotiator(
         userAgent: const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
@@ -787,7 +795,7 @@ void main() {
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
-      StreamManagementNegotiator()..setResource('test-resource'),
+      StreamManagementNegotiator()..resource = 'test-resource',
       Bind2Negotiator(),
       Sasl2Negotiator(
         userAgent: const UserAgent(
