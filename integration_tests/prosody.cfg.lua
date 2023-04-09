@@ -58,3 +58,5 @@ VirtualHost "localhost"
 
 Component "component.localhost"
     component_secret = "abc123"
+
+Component "muc.localhost" "muc"
