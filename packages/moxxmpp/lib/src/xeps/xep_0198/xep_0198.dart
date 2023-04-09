@@ -313,7 +313,7 @@ class StreamManagementManager extends XmppManagerBase {
         if (_pendingAcks == 0) {
           _stopAckTimer();
         }
-        
+
         logger.fine('_pendingAcks is now at $_pendingAcks');
       });
     });
