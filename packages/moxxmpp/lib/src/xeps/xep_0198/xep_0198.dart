@@ -11,6 +11,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/state.dart';
@@ -45,10 +46,10 @@ class StreamManagementManager extends XmppManagerBase {
   @internal
   final Duration ackTimeout;
 
-  /// The time at which the last ack has been sent
+  /// The time at which the last ack has been received
   int _lastAckTimestamp = -1;
 
-  /// The timer to see if we timed the connection out
+  /// The timer to see if the connection timed out
   Timer? _ackTimer;
 
   /// Counts how many acks we're waiting for
@@ -194,6 +195,7 @@ class StreamManagementManager extends XmppManagerBase {
           _stopAckTimer();
           break;
         case XmppConnectionState.connecting:
+          _stopAckTimer();
           // NOOP
           break;
       }
@@ -214,25 +216,34 @@ class StreamManagementManager extends XmppManagerBase {
 
   /// Stops the timer, if it is running.
   void _stopAckTimer() {
-    if (_ackTimer == null) return;
-
     logger.fine('Stopping ack timer');
-    _ackTimer!.cancel();
+    _ackTimer?.cancel();
     _ackTimer = null;
+  }
+
+  @visibleForTesting
+  Future<void> handleAckTimeout() async {
+    _stopAckTimer();
+    await getAttributes()
+        .getConnection()
+        .handleError(StreamManagementAckTimeoutError());
   }
 
   /// Timer callback that checks if all acks have been answered. If not and the last
   /// response has been more that [ackTimeout] in the past, declare the session dead.
-  void _ackTimerCallback(Timer timer) {
-    _ackLock.synchronized(() async {
+  Future<void> _ackTimerCallback(Timer timer) async {
+    logger.finest('Ack timer callback called');
+    final shouldTimeout = await _ackLock.synchronized(() {
       final now = DateTime.now().millisecondsSinceEpoch;
 
-      if (now - _lastAckTimestamp >= ackTimeout.inMilliseconds &&
-          _pendingAcks > 0) {
-        _stopAckTimer();
-        await getAttributes().getConnection().reconnectionPolicy.onFailure();
-      }
+      return now - _lastAckTimestamp >= ackTimeout.inMilliseconds &&
+          _pendingAcks > 0;
     });
+
+    logger.finest('Should timeout: $shouldTimeout');
+    if (shouldTimeout) {
+      await handleAckTimeout();
+    }
   }
 
   /// Wrapper around sending an <r /> nonza that starts the ack timeout timer.
@@ -240,9 +251,7 @@ class StreamManagementManager extends XmppManagerBase {
     logger.fine('_sendAckRequest: Waiting to acquire lock...');
     await _ackLock.synchronized(() async {
       logger.fine('_sendAckRequest: Done...');
-      final now = DateTime.now().millisecondsSinceEpoch;
 
-      _lastAckTimestamp = now;
       _pendingAcks++;
       _startAckTimer();
 
@@ -287,16 +296,24 @@ class StreamManagementManager extends XmppManagerBase {
   Future<bool> _handleAckResponse(XMLNode nonza) async {
     final h = int.parse(nonza.attributes['h']! as String);
 
+    _lastAckTimestamp = DateTime.now().millisecondsSinceEpoch;
     await _ackLock.synchronized(() async {
       await _stateLock.synchronized(() async {
         if (_pendingAcks > 0) {
           // Prevent diff from becoming negative
           final diff = max(_state.c2s - h, 0);
           _pendingAcks = diff;
-        } else {
-          _stopAckTimer();
+
+          // Reset the timer
+          if (_pendingAcks > 0) {
+            _startAckTimer();
+          }
         }
 
+        if (_pendingAcks == 0) {
+          _stopAckTimer();
+        }
+        
         logger.fine('_pendingAcks is now at $_pendingAcks');
       });
     });

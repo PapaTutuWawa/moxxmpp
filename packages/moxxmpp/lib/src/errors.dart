@@ -7,13 +7,6 @@ abstract class XmppError {
   bool isRecoverable();
 }
 
-/// Returned if we could not establish a TCP connection
-/// to the server.
-class NoConnectionError extends XmppError {
-  @override
-  bool isRecoverable() => true;
-}
-
 /// Returned if a socket error occured
 class SocketError extends XmppError {
   SocketError(this.event);

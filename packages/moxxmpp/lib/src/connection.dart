@@ -308,7 +308,6 @@ class XmppConnection {
     unawaited(
       _connectImpl(
         waitForConnection: true,
-        shouldReconnect: false,
       ),
     );
   }
@@ -902,7 +901,7 @@ class XmppConnection {
       port: port,
     );
     if (!result) {
-      await handleError(NoConnectionError());
+      await handleError(NoConnectionPossibleError());
 
       return Result(NoConnectionPossibleError());
     } else {
