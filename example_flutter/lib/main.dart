@@ -111,7 +111,6 @@ class _MyHomePageState extends State<MyHomePage> {
     connection.connectionSettings = ConnectionSettings(
       jid: JID.fromString(jidController.text),
       password: passwordController.text,
-      useDirectTLS: true,
     );
     final result = await connection.connect(waitUntilLogin: true);
     setState(() {
