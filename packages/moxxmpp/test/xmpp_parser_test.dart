@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:moxxmpp/src/buffer.dart';
+import 'package:moxxmpp/src/parser.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -7,12 +7,12 @@ void main() {
     var childa = false;
     var childb = false;
 
-    final buffer = XmlStreamBuffer();
+    final parser = XMPPStreamParser();
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(buffer).forEach((event) {
-        if (event is! XmlStreamBufferElement) return;
+      controller.stream.transform(parser).forEach((event) {
+        if (event is! XMPPStreamElement) return;
         final node = event.node;
 
         if (node.tag == 'childa') {
@@ -32,12 +32,12 @@ void main() {
     var childa = false;
     var childb = false;
 
-    final buffer = XmlStreamBuffer();
+    final parser = XMPPStreamParser();
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(buffer).forEach((event) {
-        if (event is! XmlStreamBufferElement) return;
+      controller.stream.transform(parser).forEach((event) {
+        if (event is! XMPPStreamElement) return;
         final node = event.node;
 
         if (node.tag == 'childa') {
@@ -60,12 +60,12 @@ void main() {
     var childa = false;
     var childb = false;
 
-    final buffer = XmlStreamBuffer();
+    final parser = XMPPStreamParser();
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(buffer).forEach((event) {
-        if (event is! XmlStreamBufferElement) return;
+      controller.stream.transform(parser).forEach((event) {
+        if (event is! XMPPStreamElement) return;
         final node = event.node;
 
         if (node.tag == 'childa') {
@@ -89,16 +89,16 @@ void main() {
     var childa = false;
     Map<String, String>? attrs;
 
-    final buffer = XmlStreamBuffer();
+    final parser = XMPPStreamParser();
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(buffer).forEach((node) {
-        if (node is XmlStreamBufferElement) {
+      controller.stream.transform(parser).forEach((node) {
+        if (node is XMPPStreamElement) {
           if (node.node.tag == 'childa') {
             childa = true;
           }
-        } else if (node is XmlStreamBufferHeader) {
+        } else if (node is XMPPStreamHeader) {
           attrs = node.attributes;
         }
       }),
@@ -110,5 +110,51 @@ void main() {
     await Future<void>.delayed(const Duration(seconds: 2));
     expect(childa, true);
     expect(attrs!['id'], 'abc123');
+  });
+
+  test('Test restarting a broken XML stream', () async {
+    final parser = XMPPStreamParser();
+    final controller = StreamController<String>();
+    var gotFeatures = false;
+    unawaited(
+      controller.stream.transform(parser).forEach(
+        (event) {
+          if (event is! XMPPStreamElement) return;
+
+          if (event.node.tag == 'stream:features') {
+            gotFeatures = true;
+          }
+        },
+      ),
+    );
+
+    // Begin the stream with invalid XML
+    controller.add('<stream:stream xmlns="jabber:client');
+
+    // Let it marinate
+    await Future<void>.delayed(const Duration(seconds: 1));
+    expect(gotFeatures, false);
+
+    // Start a new stream
+    parser.reset();
+    controller.add(
+      '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+  </stream:features>
+      ''',
+    );
+
+    // Let it marinate
+    await Future<void>.delayed(const Duration(seconds: 1));
+    expect(gotFeatures, true);
   });
 }

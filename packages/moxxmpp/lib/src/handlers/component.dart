@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:hex/hex.dart';
-import 'package:moxxmpp/src/buffer.dart';
 import 'package:moxxmpp/src/connection_errors.dart';
 import 'package:moxxmpp/src/handlers/base.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/parser.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 /// Nonza describing the XMPP stream header.
@@ -70,10 +70,10 @@ class ComponentToServerNegotiator extends NegotiationsHandler {
   }
 
   @override
-  Future<void> negotiate(XmlStreamBufferObject event) async {
+  Future<void> negotiate(XMPPStreamObject event) async {
     switch (_state) {
       case ComponentToServerState.idle:
-        if (event is XmlStreamBufferHeader) {
+        if (event is XMPPStreamHeader) {
           streamId = event.attributes['id'];
           assert(
             streamId != null,
@@ -93,7 +93,7 @@ class ComponentToServerNegotiator extends NegotiationsHandler {
         }
         break;
       case ComponentToServerState.handshakeSent:
-        if (event is XmlStreamBufferElement) {
+        if (event is XMPPStreamElement) {
           if (event.node.tag == 'handshake' &&
               event.node.children.isEmpty &&
               event.node.attributes.isEmpty) {

@@ -3,7 +3,6 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/awaiter.dart';
-import 'package:moxxmpp/src/buffer.dart';
 import 'package:moxxmpp/src/connection_errors.dart';
 import 'package:moxxmpp/src/connectivity.dart';
 import 'package:moxxmpp/src/errors.dart';
@@ -18,6 +17,7 @@ import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/parser.dart';
 import 'package:moxxmpp/src/presence.dart';
 import 'package:moxxmpp/src/reconnect.dart';
 import 'package:moxxmpp/src/roster/roster.dart';
@@ -88,7 +88,7 @@ class XmppConnection {
 
     _socketStream = _socket.getDataStream();
     // TODO(Unknown): Handle on done
-    _socketStream.transform(_streamBuffer).forEach(handleXmlStream);
+    _socketStream.transform(_streamParser).forEach(handleXmlStream);
     _socket.getEventStream().listen(_handleSocketEvent);
   }
 
@@ -128,8 +128,8 @@ class XmppConnection {
       StreamController.broadcast();
   final Map<String, XmppManagerBase> _xmppManagers = {};
 
-  /// The buffer object to keep split up stanzas together
-  final XmlStreamBuffer _streamBuffer = XmlStreamBuffer();
+  /// The parser for the entire XMPP XML stream.
+  final XMPPStreamParser _streamParser = XMPPStreamParser();
 
   /// UUID object to generate stanza and origin IDs
   final Uuid _uuid = const Uuid();
@@ -752,17 +752,17 @@ class XmppConnection {
   }
 
   /// Called whenever we receive data that has been parsed as XML.
-  Future<void> handleXmlStream(XmlStreamBufferObject event) async {
-    if (event is XmlStreamBufferHeader) {
+  Future<void> handleXmlStream(XMPPStreamObject event) async {
+    if (event is XMPPStreamHeader) {
       await _negotiationsHandler.negotiate(event);
       return;
     }
 
     assert(
-      event is XmlStreamBufferElement,
-      'The event must be a XmlStreamBufferElement',
+      event is XMPPStreamElement,
+      'The event must be a XMPPStreamElement',
     );
-    final node = (event as XmlStreamBufferElement).node;
+    final node = (event as XMPPStreamElement).node;
 
     // Check if we received a stream error
     if (node.tag == 'stream:error') {
@@ -884,6 +884,9 @@ class XmppConnection {
       await _connectivityManager.waitForConnection();
       _log.info('Got okay from connectivityManager');
     }
+
+    // Reset the stream parser
+    _streamParser.reset();
 
     final smManager = getStreamManagementManager();
     var host = connectionSettings.host;

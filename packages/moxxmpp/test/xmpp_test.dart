@@ -526,4 +526,103 @@ void main() {
       true,
     );
   });
+
+  test('Test an invalid XML continuation', () async {
+    final fakeSocket = StubTCPSocket(
+      [
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' from='testuser@example.org' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms''',
+        ),
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' from='testuser@example.org' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+  </stream:features>''',
+        ),
+        StringExpectation(
+          "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHRlc3R1c2VyAGFiYzEyMw==</auth>",
+          '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
+        ),
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='example.org' from='testuser@example.org' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+  </stream:features>''',
+        ),
+        StanzaExpectation(
+          '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+          '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>testuser@example.org/MU29eEZn</jid></bind></iq>',
+          ignoreId: true,
+        ),
+      ],
+    );
+
+    final conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
+      fakeSocket,
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('testuser@example.org'),
+        password: 'abc123',
+      );
+    await conn.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+    ]);
+
+    final result1 = conn.connect(
+      waitUntilLogin: true,
+    );
+    await Future<void>.delayed(const Duration(seconds: 2));
+
+    // Inject a fault
+    fakeSocket.injectSocketFault();
+    expect(
+      (await result1).isType<bool>(),
+      false,
+    );
+
+    // Try to connect again
+    final result2 = await conn.connect(
+      waitUntilLogin: true,
+    );
+    expect(
+      fakeSocket.getState(),
+      5,
+    );
+    expect(
+      result2.isType<bool>(),
+      true,
+    );
+  });
 }

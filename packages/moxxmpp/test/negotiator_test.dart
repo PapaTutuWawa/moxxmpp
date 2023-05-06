@@ -1,5 +1,5 @@
 import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp/src/buffer.dart';
+import 'package:moxxmpp/src/parser.dart';
 import 'package:test/test.dart';
 import 'helpers/logging.dart';
 
@@ -83,7 +83,7 @@ void main() {
     await negotiator.runPostRegisterCallback();
 
     await negotiator.negotiate(
-      XmlStreamBufferElement(
+      XMPPStreamElement(
         XMLNode.fromString(
           '''
 <stream:features xmlns="http://etherx.jabber.org/streams">

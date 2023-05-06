@@ -1,10 +1,10 @@
 import 'package:meta/meta.dart';
-import 'package:moxxmpp/src/buffer.dart';
 import 'package:moxxmpp/src/connection_errors.dart';
 import 'package:moxxmpp/src/handlers/base.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/parser.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 /// "Nonza" describing the XMPP stream header of a client-to-server connection.
@@ -211,8 +211,8 @@ class ClientToServerNegotiator extends NegotiationsHandler {
   }
 
   @override
-  Future<void> negotiate(XmlStreamBufferObject event) async {
-    if (event is XmlStreamBufferElement) {
+  Future<void> negotiate(XMPPStreamObject event) async {
+    if (event is XMPPStreamElement) {
       if (event.node.tag == 'stream:features') {
         // Store the received stream features
         _streamFeatures

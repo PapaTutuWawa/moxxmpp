@@ -1,9 +1,9 @@
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:moxxmpp/src/buffer.dart';
 import 'package:moxxmpp/src/errors.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
+import 'package:moxxmpp/src/parser.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
@@ -116,8 +116,8 @@ abstract class NegotiationsHandler {
   }
 
   /// Called whenever the stream buffer outputs a new event [event].
-  Future<void> negotiate(XmlStreamBufferObject event) async {
-    if (event is XmlStreamBufferHeader) {
+  Future<void> negotiate(XMPPStreamObject event) async {
+    if (event is XMPPStreamHeader) {
       streamId = event.attributes['id'];
     }
   }
