@@ -1,5 +1,6 @@
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/managers/data.dart';
+import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
@@ -55,6 +56,7 @@ class StanzaHandler extends Handler {
     this.tagName,
     this.priority = 0,
     this.stanzaTag,
+    this.xmlns,
   });
   
   /// If specified, then the stanza must contain a direct child with a tag equal to
@@ -69,6 +71,11 @@ class StanzaHandler extends Handler {
   /// If specified, the matching stanza must have a tag equal to [stanzaTag].
   final String? stanzaTag;
 
+  /// If specified, then the stanza must have a xmlns attribute equal to [xmlns].
+  /// This defaults to [stanzaXmlns], but can be set to any other value or null. This
+  /// is useful, for example, for components.
+  final String? xmlns;
+
   /// The priority after which [StanzaHandler]s are sorted.
   final int priority;
 
@@ -81,11 +88,9 @@ class StanzaHandler extends Handler {
     if (stanzaTag != null) {
       matches &= node.tag == stanzaTag;
     }
-    // if (xmlns != null) {
-    //   matches &= node.xmlns == xmlns;
-    //   if (flag != null)
-    //     print('${node.xmlns} == $xmlns');
-    // }
+    if (xmlns != null) {
+      matches &= node.xmlns == xmlns;
+    }
 
     if (tagName != null) {
       final firstTag = node.firstTag(tagName!, xmlns: tagXmlns);
