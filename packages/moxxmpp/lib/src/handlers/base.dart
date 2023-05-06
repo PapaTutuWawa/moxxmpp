@@ -56,7 +56,7 @@ abstract class NegotiationsHandler {
 
   @protected
   late final ResetStreamParserFunction resetStreamParser;
-  
+
   /// The id included in the last stream header.
   @protected
   String? streamId;

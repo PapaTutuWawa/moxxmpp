@@ -58,7 +58,7 @@ class StanzaHandler extends Handler {
     this.stanzaTag,
     this.xmlns,
   });
-  
+
   /// If specified, then the stanza must contain a direct child with a tag equal to
   /// [tagName].
   final String? tagName;

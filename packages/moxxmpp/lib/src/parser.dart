@@ -71,9 +71,13 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
 
   /// The selectors.
   _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent> _childSelector =
-      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName != 'stream:stream'));
+      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(
+    XmlSubtreeSelector((event) => event.qualifiedName != 'stream:stream'),
+  );
   _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent> _streamHeaderSelector =
-      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName == 'stream:stream'));
+      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(
+    XmlSubtreeSelector((event) => event.qualifiedName == 'stream:stream'),
+  );
 
   void reset() {
     try {
@@ -104,9 +108,12 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
     _childBuffer = _ChunkedConversionBuffer<List<XmlEvent>, XmlNode>(
       const XmlNodeDecoder(),
     );
-    _childSelector = _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName != 'stream:stream'));
-    _streamHeaderSelector =
-      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName == 'stream:stream'));
+    _childSelector = _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(
+      XmlSubtreeSelector((event) => event.qualifiedName != 'stream:stream'),
+    );
+    _streamHeaderSelector = _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(
+      XmlSubtreeSelector((event) => event.qualifiedName == 'stream:stream'),
+    );
   }
 
   @override

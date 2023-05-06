@@ -703,7 +703,7 @@ class XmppConnection {
     // Process nonzas separately
     if (!['message', 'iq', 'presence'].contains(nonza.tag)) {
       _log.finest('<== ${nonza.toXml()}');
-      
+
       var nonzaHandled = false;
       await Future.forEach(_xmppManagers.values,
           (XmppManagerBase manager) async {
@@ -750,7 +750,9 @@ class XmppConnection {
       ),
     );
     if (!incomingHandlers.done) {
-      _log.warning('Returning error for unhandled stanza ${incomingPreHandlers.stanza.tag}');
+      _log.warning(
+        'Returning error for unhandled stanza ${incomingPreHandlers.stanza.tag}',
+      );
       await handleUnhandledStanza(this, incomingPreHandlers);
     }
   }
