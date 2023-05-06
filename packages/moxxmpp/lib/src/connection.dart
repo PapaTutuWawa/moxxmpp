@@ -84,6 +84,10 @@ class XmppConnection {
       () => _isAuthenticated,
       sendRawXML,
       () => connectionSettings,
+      () {
+        _log.finest('Resetting stream parser');
+        _streamParser.reset();
+      },
     );
 
     _socketStream = _socket.getDataStream();
@@ -699,7 +703,7 @@ class XmppConnection {
     // Process nonzas separately
     if (!['message', 'iq', 'presence'].contains(nonza.tag)) {
       _log.finest('<== ${nonza.toXml()}');
-
+      
       var nonzaHandled = false;
       await Future.forEach(_xmppManagers.values,
           (XmppManagerBase manager) async {
@@ -746,7 +750,7 @@ class XmppConnection {
       ),
     );
     if (!incomingHandlers.done) {
-      _log.warning('Returning error for unhandled stanza');
+      _log.warning('Returning error for unhandled stanza ${incomingPreHandlers.stanza.tag}');
       await handleUnhandledStanza(this, incomingPreHandlers);
     }
   }
@@ -809,8 +813,6 @@ class XmppConnection {
 
   /// Sends an event to the connection's event stream.
   Future<void> _sendEvent(XmppEvent event) async {
-    _log.finest('Event: ${event.toString()}');
-
     for (final manager in _xmppManagers.values) {
       await manager.onXmppEvent(event);
     }

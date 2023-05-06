@@ -59,6 +59,7 @@ void main() {
           jid: JID.fromString('test'),
           password: 'abc123',
         ),
+        () {},
       )
       ..registerNegotiator(StubNegotiator1())
       ..registerNegotiator(StubNegotiator2());
@@ -77,6 +78,7 @@ void main() {
           jid: JID.fromString('test'),
           password: 'abc123',
         ),
+        () {},
       )
       ..registerNegotiator(StubNegotiator1())
       ..registerNegotiator(StubNegotiator2());

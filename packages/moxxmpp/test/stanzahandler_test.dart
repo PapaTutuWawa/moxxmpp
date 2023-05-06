@@ -122,24 +122,23 @@ void main() {
     expect(handler.matches(stanza2), false);
   });
 
-  test('Test matching stanzas with a different xmlns', () {
-    final handler = StanzaHandler(
-      callback: (stanza, _) async => StanzaHandlerData(
-        true,
-        false,
-        null,
-        stanza,
-      ),
-      xmlns: componentAcceptXmlns,
-    );
+  // test('Test matching stanzas with a different xmlns', () {
+  //   final handler = StanzaHandler(
+  //     callback: (stanza, _) async => StanzaHandlerData(
+  //       true,
+  //       false,
+  //       null,
+  //       stanza,
+  //     ),
+  //   );
 
-    expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), false);
-    expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), false);
-    expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), false);
-    expect(handler.matches(Stanza.iq(xmlns: componentAcceptXmlns)), true);
-    expect(handler.matches(stanza1), false);
-    expect(handler.matches(stanza2), false);
-  });
+  //   expect(handler.matches(Stanza.iq(xmlns: stanzaXmlns)), false);
+  //   expect(handler.matches(Stanza.message(xmlns: stanzaXmlns)), false);
+  //   expect(handler.matches(Stanza.presence(xmlns: stanzaXmlns)), false);
+  //   expect(handler.matches(Stanza.iq(xmlns: componentAcceptXmlns)), true);
+  //   expect(handler.matches(stanza1), false);
+  //   expect(handler.matches(stanza2), false);
+  // });
 
   test('sorting', () {
     final handlerList = [

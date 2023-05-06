@@ -22,6 +22,9 @@ typedef SendNonzaFunction = void Function(XMLNode);
 /// Returns the connection settings.
 typedef GetConnectionSettingsFunction = ConnectionSettings Function();
 
+/// Resets the stream parser's state.
+typedef ResetStreamParserFunction = void Function();
+
 /// This class implements the stream feature negotiation for XmppConnection.
 abstract class NegotiationsHandler {
   @protected
@@ -51,6 +54,9 @@ abstract class NegotiationsHandler {
   @protected
   late final GetConnectionSettingsFunction getConnectionSettings;
 
+  @protected
+  late final ResetStreamParserFunction resetStreamParser;
+  
   /// The id included in the last stream header.
   @protected
   String? streamId;
@@ -72,12 +78,14 @@ abstract class NegotiationsHandler {
     IsAuthenticatedFunction isAuthenticated,
     SendNonzaFunction sendNonza,
     GetConnectionSettingsFunction getConnectionSettings,
+    ResetStreamParserFunction resetStreamParser,
   ) {
     this.onNegotiationsDone = onNegotiationsDone;
     this.handleError = handleError;
     this.isAuthenticated = isAuthenticated;
     this.sendNonza = sendNonza;
     this.getConnectionSettings = getConnectionSettings;
+    this.resetStreamParser = resetStreamParser;
     log = Logger(toString());
   }
 

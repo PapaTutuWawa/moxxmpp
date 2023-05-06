@@ -69,6 +69,12 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
   _ChunkedConversionBuffer<List<XmlEvent>, XmlNode> _childBuffer =
       _ChunkedConversionBuffer<List<XmlEvent>, XmlNode>(const XmlNodeDecoder());
 
+  /// The selectors.
+  _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent> _childSelector =
+      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName != 'stream:stream'));
+  _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent> _streamHeaderSelector =
+      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName == 'stream:stream'));
+
   void reset() {
     try {
       _eventBuffer.close();
@@ -81,6 +87,16 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
     } catch (_) {
       // Do nothing.
     }
+    try {
+      _childSelector.close();
+    } catch (_) {
+      // Do nothing.
+    }
+    try {
+      _streamHeaderSelector.close();
+    } catch (_) {
+      // Do nothing.
+    }
 
     // Recreate the buffers.
     _eventBuffer =
@@ -88,6 +104,9 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
     _childBuffer = _ChunkedConversionBuffer<List<XmlEvent>, XmlNode>(
       const XmlNodeDecoder(),
     );
+    _childSelector = _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName != 'stream:stream'));
+    _streamHeaderSelector =
+      _ChunkedConversionBuffer<List<XmlEvent>, XmlEvent>(XmlSubtreeSelector((event) => event.qualifiedName == 'stream:stream'));
   }
 
   @override
@@ -95,14 +114,9 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
     // We do not want to use xml's toXmlEvents and toSubtreeEvents methods as they
     // create streams we cannot close. We need to be able to destroy and recreate an
     // XML parser whenever we start a new connection.
-    final childSelector =
-        XmlSubtreeSelector((event) => event.qualifiedName != 'stream:stream');
-    final streamHeaderSelector =
-        XmlSubtreeSelector((event) => event.qualifiedName == 'stream:stream');
-
     stream.listen((input) {
       final events = _eventBuffer.convert(input);
-      final streamHeaderEvents = streamHeaderSelector.convert(events);
+      final streamHeaderEvents = _streamHeaderSelector.convert(events);
 
       // Process the stream header separately.
       for (final event in streamHeaderEvents) {
@@ -126,7 +140,7 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
       }
 
       // Process the children of the <stream:stream> element.
-      final childEvents = childSelector.convert(events);
+      final childEvents = _childSelector.convert(events);
       final children = _childBuffer.convert(childEvents);
       for (final node in children) {
         if (node.nodeType == XmlNodeType.ELEMENT) {

@@ -60,6 +60,7 @@ class ClientToServerNegotiator extends NegotiationsHandler {
 
   @override
   void sendStreamHeader() {
+    resetStreamParser();
     sendNonza(
       XMLNode(
         tag: 'xml',

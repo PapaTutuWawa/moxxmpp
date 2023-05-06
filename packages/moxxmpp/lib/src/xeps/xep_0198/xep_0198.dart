@@ -255,7 +255,7 @@ class StreamManagementManager extends XmppManagerBase {
       _pendingAcks++;
       _startAckTimer();
 
-      logger.fine('_pendingAcks is now at $_pendingAcks');
+      logger.fine('_pendingAcks is now at $_pendingAcks (caused by <r/>)');
 
       getAttributes().sendNonza(StreamManagementRequestNonza());
 
@@ -294,6 +294,7 @@ class StreamManagementManager extends XmppManagerBase {
   /// Called when we receive an <a /> nonza from the server.
   /// This is a response to the question "How many of my stanzas have you handled".
   Future<bool> _handleAckResponse(XMLNode nonza) async {
+    logger.finest('Received ack');
     final h = int.parse(nonza.attributes['h']! as String);
 
     _lastAckTimestamp = DateTime.now().millisecondsSinceEpoch;
@@ -306,6 +307,7 @@ class StreamManagementManager extends XmppManagerBase {
 
           // Reset the timer
           if (_pendingAcks > 0) {
+            _stopAckTimer();
             _startAckTimer();
           }
         }
@@ -314,7 +316,7 @@ class StreamManagementManager extends XmppManagerBase {
           _stopAckTimer();
         }
 
-        logger.fine('_pendingAcks is now at $_pendingAcks');
+        logger.fine('_pendingAcks is now at $_pendingAcks (caused by <a/>)');
       });
     });
 
