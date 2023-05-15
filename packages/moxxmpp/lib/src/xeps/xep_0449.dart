@@ -217,11 +217,11 @@ class StickerPack {
 
     // Calculate the hash
     final rawHash = await CryptographicHashManager.hashFromData(
+      hashFunction,
       [
         ...metaString,
         ...stickersString,
       ],
-      hashFunction,
     );
     return base64.encode(rawHash).substring(0, 24);
   }
