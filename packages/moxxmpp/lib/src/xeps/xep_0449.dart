@@ -87,7 +87,7 @@ class StickerPack {
     var hashValue = '';
     if (hashAvailable) {
       final hash = node.firstTag('hash', xmlns: hashXmlns)!;
-      hashAlgorithm = hashFunctionFromName(hash.attributes['algo']! as String);
+      hashAlgorithm = HashFunction.fromName(hash.attributes['algo']! as String);
       hashValue = hash.innerText();
     }
 
@@ -144,7 +144,7 @@ class StickerPack {
           text: summary,
         ),
         constructHashElement(
-          hashAlgorithm.toName(),
+          hashAlgorithm,
           hashValue,
         ),
 
@@ -193,7 +193,7 @@ class StickerPack {
       final hashes = List<List<int>>.empty(growable: true);
       for (final hash in sticker.metadata.hashes.keys) {
         hashes.add([
-          ...utf8.encode(hash),
+          ...utf8.encode(hash.toName()),
           0x1f,
           ...utf8.encode(sticker.metadata.hashes[hash]!),
           0x1f,

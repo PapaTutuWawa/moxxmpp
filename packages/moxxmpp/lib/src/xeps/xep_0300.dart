@@ -4,25 +4,57 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
-XMLNode constructHashElement(String algo, String base64Hash) {
+XMLNode constructHashElement(HashFunction hash, String value) {
   return XMLNode.xmlns(
     tag: 'hash',
     xmlns: hashXmlns,
-    attributes: {'algo': algo},
-    text: base64Hash,
+    attributes: {'algo': hash.toName()},
+    text: value,
   );
 }
 
 enum HashFunction {
+  /// SHA-256
   sha256,
-  sha512,
-  sha3_256,
-  sha3_512,
-  blake2b256,
-  blake2b512,
-}
 
-extension HashNameToEnumExtension on HashFunction {
+  /// SHA-256
+  sha512,
+
+  /// SHA3-256
+  sha3_256,
+
+  /// SHA3-512
+  sha3_512,
+
+  /// BLAKE2b-256
+  blake2b256,
+
+  /// BLAKE2b-512
+  blake2b512;
+
+  /// Get a HashFunction from its name [name] according to either
+  /// - IANA's hash name register (http://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xhtml)
+  /// - XEP-0300
+  factory HashFunction.fromName(String name) {
+    switch (name) {
+      case hashSha256:
+        return HashFunction.sha256;
+      case hashSha512:
+        return HashFunction.sha512;
+      case hashSha3256:
+        return HashFunction.sha3_256;
+      case hashSha3512:
+        return HashFunction.sha3_512;
+      case hashBlake2b256:
+        return HashFunction.blake2b256;
+      case hashBlake2b512:
+        return HashFunction.blake2b512;
+    }
+
+    throw Exception();
+  }
+
+  /// Return the hash function's name according to IANA's hash name register or XEP-0300.
   String toName() {
     switch (this) {
       case HashFunction.sha256:
@@ -39,25 +71,6 @@ extension HashNameToEnumExtension on HashFunction {
         return hashBlake2b512;
     }
   }
-}
-
-HashFunction hashFunctionFromName(String name) {
-  switch (name) {
-    case hashSha256:
-      return HashFunction.sha256;
-    case hashSha512:
-      return HashFunction.sha512;
-    case hashSha3256:
-      return HashFunction.sha3_256;
-    case hashSha3512:
-      return HashFunction.sha3_512;
-    case hashBlake2b256:
-      return HashFunction.blake2b256;
-    case hashBlake2b512:
-      return HashFunction.blake2b512;
-  }
-
-  throw Exception();
 }
 
 class CryptographicHashManager extends XmppManagerBase {

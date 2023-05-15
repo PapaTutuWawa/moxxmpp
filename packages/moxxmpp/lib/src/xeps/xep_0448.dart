@@ -8,10 +8,21 @@ import 'package:moxxmpp/src/xeps/xep_0447.dart';
 enum SFSEncryptionType {
   aes128GcmNoPadding,
   aes256GcmNoPadding,
-  aes256CbcPkcs7,
-}
+  aes256CbcPkcs7;
 
-extension SFSEncryptionTypeNamespaceExtension on SFSEncryptionType {
+  factory SFSEncryptionType.fromNamespace(String xmlns) {
+    switch (xmlns) {
+      case sfsEncryptionAes128GcmNoPaddingXmlns:
+        return SFSEncryptionType.aes128GcmNoPadding;
+      case sfsEncryptionAes256GcmNoPaddingXmlns:
+        return SFSEncryptionType.aes256GcmNoPadding;
+      case sfsEncryptionAes256CbcPkcs7Xmlns:
+        return SFSEncryptionType.aes256CbcPkcs7;
+    }
+
+    throw Exception();
+  }
+
   String toNamespace() {
     switch (this) {
       case SFSEncryptionType.aes128GcmNoPadding:
@@ -22,19 +33,6 @@ extension SFSEncryptionTypeNamespaceExtension on SFSEncryptionType {
         return sfsEncryptionAes256CbcPkcs7Xmlns;
     }
   }
-}
-
-SFSEncryptionType encryptionTypeFromNamespace(String xmlns) {
-  switch (xmlns) {
-    case sfsEncryptionAes128GcmNoPaddingXmlns:
-      return SFSEncryptionType.aes128GcmNoPadding;
-    case sfsEncryptionAes256GcmNoPaddingXmlns:
-      return SFSEncryptionType.aes256GcmNoPadding;
-    case sfsEncryptionAes256CbcPkcs7Xmlns:
-      return SFSEncryptionType.aes256CbcPkcs7;
-  }
-
-  throw Exception();
 }
 
 class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
@@ -63,13 +61,15 @@ class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
     )!;
 
     // Find hashes
-    final hashes = <String, String>{};
+    final hashes = <HashFunction, String>{};
     for (final hash in element.findTags('hash', xmlns: hashXmlns)) {
-      hashes[hash.attributes['algo']! as String] = hash.text!;
+      final hashFunction =
+          HashFunction.fromName(hash.attributes['algo']! as String);
+      hashes[hashFunction] = hash.text!;
     }
 
     return StatelessFileSharingEncryptedSource(
-      encryptionTypeFromNamespace(element.attributes['cipher']! as String),
+      SFSEncryptionType.fromNamespace(element.attributes['cipher']! as String),
       key,
       iv,
       hashes,
@@ -80,7 +80,7 @@ class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
   final List<int> key;
   final List<int> iv;
   final SFSEncryptionType encryption;
-  final Map<String, String> hashes;
+  final Map<HashFunction, String> hashes;
   final StatelessFileSharingUrlSource source;
 
   @override

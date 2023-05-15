@@ -13,7 +13,7 @@ class FileMetadataData {
     this.name,
     this.size,
     required this.thumbnails,
-    Map<String, String>? hashes,
+    Map<HashFunction, String>? hashes,
   }) : hashes = hashes ?? const {};
 
   /// Parse [node] as a FileMetadataData element.
@@ -31,9 +31,11 @@ class FileMetadataData {
     final size =
         sizeElement != null ? int.parse(sizeElement.innerText()) : null;
 
-    final hashes = <String, String>{};
+    final hashes = <HashFunction, String>{};
     for (final e in node.findTags('hash')) {
-      hashes[e.attributes['algo']! as String] = e.innerText();
+      final hashFunction =
+          HashFunction.fromName(e.attributes['algo']! as String);
+      hashes[hashFunction] = e.innerText();
     }
 
     // Thumbnails
@@ -75,7 +77,7 @@ class FileMetadataData {
   final int? height;
   final List<Thumbnail> thumbnails;
   final String? desc;
-  final Map<String, String> hashes;
+  final Map<HashFunction, String> hashes;
   final int? length;
   final String? name;
   final int? size;
