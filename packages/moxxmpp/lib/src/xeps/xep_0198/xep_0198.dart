@@ -188,7 +188,9 @@ class StreamManagementManager extends XmppManagerBase {
       switch (event.state) {
         case XmppConnectionState.connected:
           // Push out all pending stanzas
-          await onStreamResumed(0);
+          if (!_streamResumed) {
+            await _resendStanzas();
+          }
           break;
         case XmppConnectionState.error:
         case XmppConnectionState.notConnected:
@@ -407,20 +409,23 @@ class StreamManagementManager extends XmppManagerBase {
     return state;
   }
 
+  Future<void> _resendStanzas() async {
+    final stanzas = _unackedStanzas.values.toList();
+    _unackedStanzas.clear();
+
+    for (final stanza in stanzas) {
+      await getAttributes().sendStanza(stanza, awaitable: false);
+    }
+  }
+
   /// To be called when the stream has been resumed
   @visibleForTesting
   Future<void> onStreamResumed(int h) async {
     _streamResumed = true;
     await _handleAckResponse(StreamManagementAckNonza(h));
 
-    final stanzas = _unackedStanzas.values.toList();
-    _unackedStanzas.clear();
-
     // Retransmit the rest of the queue
-    final attrs = getAttributes();
-    for (final stanza in stanzas) {
-      await attrs.sendStanza(stanza, awaitable: false);
-    }
+    await _resendStanzas();
   }
 
   /// Pings the connection open by send an ack request

@@ -733,6 +733,15 @@ void main() {
         "<resume xmlns='urn:xmpp:sm:3' previd='id-1' h='10' />",
         "<resumed xmlns='urn:xmpp:sm:3' h='id-1' h='12' />",
       ),
+      StanzaExpectation(
+        "<iq to='localhost' type='get' from='polynomdivision@test.server/abc123' xmlns='jabber:client' />",
+        '',
+        ignoreId: true,
+      ),
+      StanzaExpectation(
+        "<r xmlns='urn:xmpp:sm:3' />",
+        '',
+      ),
     ]);
 
     final conn = XmppConnection(
@@ -780,7 +789,7 @@ void main() {
 
     // Wait for reconnect
     await Future<void>.delayed(const Duration(seconds: 5));
-    expect(fakeSocket.getState(), 14);
+    expect(fakeSocket.getState(), 12);
   });
 
   test('Test SASL2 inline stream resumption', () async {
