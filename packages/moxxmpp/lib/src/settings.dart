@@ -19,4 +19,7 @@ class ConnectionSettings {
 
   /// The port to connect to. Skips DNS resolution if specified.
   final int? port;
+
+  /// The JID of the server we're connected to.
+  JID get serverJid => JID('', jid.domain, '');
 }
