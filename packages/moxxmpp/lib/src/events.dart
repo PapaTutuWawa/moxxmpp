@@ -22,10 +22,9 @@ abstract class XmppEvent {}
 /// Triggered when the connection state of the XmppConnection has
 /// changed.
 class ConnectionStateChangedEvent extends XmppEvent {
-  ConnectionStateChangedEvent(this.state, this.before, this.resumed);
+  ConnectionStateChangedEvent(this.state, this.before);
   final XmppConnectionState before;
   final XmppConnectionState state;
-  final bool resumed;
 
   /// Indicates whether the connection state switched from a not connected state to a
   /// connected state.

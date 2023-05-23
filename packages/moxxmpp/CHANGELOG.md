@@ -5,6 +5,7 @@
 - **BREAKING**: Removed support for XEP-0414, as the (supported) hash computations are already implemented by `CryptographicHashManager.hashFromData`.
 - The `DiscoManager` now only handled entity capabilities if a `EntityCapabilityManager` is registered.
 - The `EntityCapabilityManager` now verifies and validates its data before caching.
+- **BREAKING**: Added the `resumed` parameter to `StreamNegotiationsDoneEvent`. Use this to check if the current stream is new or resumed instead of using the `ConnectionStateChangedEvent`.
 
 ## 0.3.1
 

@@ -15,7 +15,6 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
-import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/parser.dart';
 import 'package:moxxmpp/src/presence.dart';
@@ -28,7 +27,6 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
-import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
 import 'package:synchronized/synchronized.dart';
@@ -611,15 +609,10 @@ class XmppConnection {
       _destroyConnectingTimer();
     }
 
-    final sm =
-        _negotiationsHandler.getNegotiatorById<StreamManagementNegotiator>(
-      streamManagementNegotiator,
-    );
     await _sendEvent(
       ConnectionStateChangedEvent(
         state,
         oldState,
-        sm?.isResumed ?? false,
       ),
     );
   }
