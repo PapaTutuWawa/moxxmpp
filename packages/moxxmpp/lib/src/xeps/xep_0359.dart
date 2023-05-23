@@ -68,7 +68,7 @@ class StableIdManager extends XmppManagerBase {
       logger.finest('Found stanza Id tag');
       final attrs = getAttributes();
       final disco = attrs.getManagerById<DiscoManager>(discoManager)!;
-      final result = await disco.discoInfoQuery(from.toString());
+      final result = await disco.discoInfoQuery(from);
       if (result.isType<DiscoInfo>()) {
         final info = result.get<DiscoInfo>();
         logger.finest('Got info for ${from.toString()}');

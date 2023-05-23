@@ -95,14 +95,12 @@ void main() {
     await Future<void>.delayed(const Duration(seconds: 3));
 
     final jid = JID.fromString('romeo@montague.lit/orchard');
-    final result1 = disco.discoInfoQuery(jid.toString());
-    final result2 = disco.discoInfoQuery(jid.toString());
+    final result1 = disco.discoInfoQuery(jid);
+    final result2 = disco.discoInfoQuery(jid);
 
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(
-      disco.infoTracker
-          .getRunningTasks(DiscoCacheKey(jid.toString(), null))
-          .length,
+      disco.infoTracker.getRunningTasks(DiscoCacheKey(jid, null)).length,
       1,
     );
     fakeSocket.injectRawXml(
@@ -140,7 +138,7 @@ void main() {
       );
 
       // Query Alice's device
-      final result = await dm.discoInfoQuery(aliceJid.toString());
+      final result = await dm.discoInfoQuery(aliceJid);
       expect(result.isType<DiscoError>(), false);
       expect(tm.sentStanzas, 0);
     });

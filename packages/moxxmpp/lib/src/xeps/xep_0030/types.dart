@@ -108,13 +108,13 @@ class DiscoInfo {
 @immutable
 class DiscoItem {
   const DiscoItem({required this.jid, this.node, this.name});
-  final String jid;
+  final JID jid;
   final String? node;
   final String? name;
 
   XMLNode toXml() {
     final attributes = {
-      'jid': jid,
+      'jid': jid.toString(),
     };
     if (node != null) {
       attributes['node'] = node!;

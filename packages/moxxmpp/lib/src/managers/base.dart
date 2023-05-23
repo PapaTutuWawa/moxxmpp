@@ -45,7 +45,7 @@ abstract class XmppManagerBase {
     );
 
     final result = await dm!.discoInfoQuery(
-      _managerAttributes.getConnectionSettings().jid.domain,
+      _managerAttributes.getConnectionSettings().jid.toDomain(),
       shouldEncrypt: false,
     );
     if (result.isType<DiscoError>()) {

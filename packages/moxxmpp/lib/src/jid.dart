@@ -63,6 +63,11 @@ class JID {
   /// Converts the JID into one with a resource part of [resource].
   JID withResource(String resource) => JID(local, domain, resource);
 
+  /// Convert the JID into the JID of the domain. For example, converts alice@example.org/abc123 to example.org.
+  JID toDomain() {
+    return JID('', domain, '');
+  }
+
   /// Compares the JID with [other]. This function assumes that JID and [other]
   /// are bare, i.e. only the domain- and localparts are compared. If [ensureBare]
   /// is optionally set to true, then [other] MUST be bare. Otherwise, false is returned.

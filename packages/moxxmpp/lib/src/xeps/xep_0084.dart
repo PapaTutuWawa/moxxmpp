@@ -1,4 +1,5 @@
 import 'package:moxxmpp/src/events.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
@@ -106,7 +107,7 @@ class UserAvatarManager extends XmppManagerBase {
   ) async {
     final pubsub = _getPubSubManager();
     final result = await pubsub.publish(
-      getAttributes().getFullJID().toBare().toString(),
+      getAttributes().getFullJID().toBare(),
       userAvatarDataXmlns,
       XMLNode.xmlns(
         tag: 'data',
@@ -133,7 +134,7 @@ class UserAvatarManager extends XmppManagerBase {
   ) async {
     final pubsub = _getPubSubManager();
     final result = await pubsub.publish(
-      getAttributes().getFullJID().toBare().toString(),
+      getAttributes().getFullJID().toBare(),
       userAvatarMetadataXmlns,
       XMLNode.xmlns(
         tag: 'metadata',
@@ -178,7 +179,7 @@ class UserAvatarManager extends XmppManagerBase {
   /// Returns the PubSub Id of an avatar after doing a disco#items query.
   /// Note that this assumes that there is only one (1) item published on
   /// the node.
-  Future<Result<AvatarError, String>> getAvatarId(String jid) async {
+  Future<Result<AvatarError, String>> getAvatarId(JID jid) async {
     final disco = getAttributes().getManagerById(discoManager)! as DiscoManager;
     final response = await disco.discoItemsQuery(
       jid,

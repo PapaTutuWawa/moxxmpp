@@ -1,12 +1,13 @@
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 // TODO(PapaTutuWawa): Move types into types.dart
 
-Stanza buildDiscoInfoQueryStanza(String entity, String? node) {
+Stanza buildDiscoInfoQueryStanza(JID entity, String? node) {
   return Stanza.iq(
-    to: entity,
+    to: entity.toString(),
     type: 'get',
     children: [
       XMLNode.xmlns(
@@ -18,9 +19,9 @@ Stanza buildDiscoInfoQueryStanza(String entity, String? node) {
   );
 }
 
-Stanza buildDiscoItemsQueryStanza(String entity, {String? node}) {
+Stanza buildDiscoItemsQueryStanza(JID entity, {String? node}) {
   return Stanza.iq(
-    to: entity,
+    to: entity.toString(),
     type: 'get',
     children: [
       XMLNode.xmlns(

@@ -253,7 +253,7 @@ class DiscoManager extends XmppManagerBase {
   /// [shouldCache] indicates whether the successful result of the disco#info query
   /// should be cached (true) or not(false).
   Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
-    String entity, {
+    JID entity, {
     String? node,
     bool shouldEncrypt = true,
     bool shouldCache = true,
@@ -272,7 +272,7 @@ class DiscoManager extends XmppManagerBase {
       } else {
         // Check if we know entity capabilities
         if (ecm != null && node == null) {
-          info = await ecm.getCachedDiscoInfoFromJid(JID.fromString(entity));
+          info = await ecm.getCachedDiscoInfoFromJid(entity);
           if (info != null) {
             return null;
           }
@@ -312,7 +312,7 @@ class DiscoManager extends XmppManagerBase {
     final result = Result<DiscoError, DiscoInfo>(
       DiscoInfo.fromQuery(
         query,
-        JID.fromString(entity),
+        entity,
       ),
     );
     await _exitDiscoInfoCriticalSection(cacheKey, result, shouldCache);
@@ -321,7 +321,7 @@ class DiscoManager extends XmppManagerBase {
 
   /// Sends a disco items query to the (full) jid [entity], optionally with node=[node].
   Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(
-    String entity, {
+    JID entity, {
     String? node,
     bool shouldEncrypt = true,
   }) async {
@@ -357,7 +357,7 @@ class DiscoManager extends XmppManagerBase {
         .findTags('item')
         .map(
           (node) => DiscoItem(
-            jid: node.attributes['jid']! as String,
+            jid: JID.fromString(node.attributes['jid']! as String),
             node: node.attributes['node'] as String?,
             name: node.attributes['name'] as String?,
           ),
@@ -369,18 +369,9 @@ class DiscoManager extends XmppManagerBase {
     return result;
   }
 
-  /// Queries information about a jid based on its node and capability hash.
-  Future<Result<DiscoError, DiscoInfo>> discoInfoCapHashQuery(
-    String jid,
-    String node,
-    String ver,
-  ) async {
-    return discoInfoQuery(jid, node: '$node#$ver');
-  }
-
   Future<Result<DiscoError, List<DiscoInfo>>> performDiscoSweep() async {
     final attrs = getAttributes();
-    final serverJid = attrs.getConnectionSettings().jid.domain;
+    final serverJid = attrs.getConnectionSettings().jid.toDomain();
     final infoResults = List<DiscoInfo>.empty(growable: true);
     final result = await discoInfoQuery(serverJid);
     if (result.isType<DiscoInfo>()) {
@@ -423,7 +414,7 @@ class DiscoManager extends XmppManagerBase {
   /// A wrapper function around discoInfoQuery: Returns true if the entity with JID
   /// [entity] supports the disco feature [feature]. If not, returns false.
   Future<bool> supportsFeature(JID entity, String feature) async {
-    final info = await discoInfoQuery(entity.toString());
+    final info = await discoInfoQuery(entity);
     if (info.isType<DiscoError>()) return false;
 
     return info.get<DiscoInfo>().features.contains(feature);

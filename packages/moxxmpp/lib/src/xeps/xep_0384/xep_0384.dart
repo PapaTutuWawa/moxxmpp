@@ -609,7 +609,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       );
 
       final deviceListPublish = await pm.publish(
-        bareJid.toString(),
+        bareJid,
         omemoDevicesXmlns,
         newDeviceList,
         id: 'current',
@@ -621,7 +621,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     }
 
     final deviceBundlePublish = await pm.publish(
-      bareJid.toString(),
+      bareJid,
       omemoBundlesXmlns,
       bundleToXML(bundle),
       id: '${bundle.id}',
@@ -646,7 +646,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   /// On failure, returns an OmemoError.
   Future<Result<OmemoError, bool>> supportsOmemo(JID jid) async {
     final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
-    final items = await dm.discoItemsQuery(jid.toBare().toString());
+    final items = await dm.discoItemsQuery(jid.toBare());
 
     if (items.isType<DiscoError>()) return Result(UnknownOmemoError());
 
@@ -686,7 +686,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
           .toList(),
     );
     final publishResult = await pm.publish(
-      jid.toString(),
+      jid,
       omemoDevicesXmlns,
       newPayload,
       id: 'current',

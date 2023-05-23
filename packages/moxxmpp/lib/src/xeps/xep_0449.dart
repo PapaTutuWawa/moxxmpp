@@ -267,7 +267,7 @@ class StickersManager extends XmppManagerBase {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
 
     return pm.publish(
-      jid.toBare().toString(),
+      jid.toBare(),
       stickersXmlns,
       pack.toXML(),
       id: pack.id,

@@ -117,7 +117,7 @@ class PubSubManager extends XmppManagerBase {
     return state.copyWith(done: true);
   }
 
-  Future<int> _getNodeItemCount(String jid, String node) async {
+  Future<int> _getNodeItemCount(JID jid, String node) async {
     final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
     final response = await dm.discoItemsQuery(jid, node: node);
     var count = 0;
@@ -136,7 +136,7 @@ class PubSubManager extends XmppManagerBase {
   //                     with the requested configuration.
   @visibleForTesting
   Future<PubSubPublishOptions> preprocessPublishOptions(
-    String jid,
+    JID jid,
     String node,
     PubSubPublishOptions options,
   ) async {
@@ -264,7 +264,7 @@ class PubSubManager extends XmppManagerBase {
   /// Publish [payload] to the PubSub node [node] on JID [jid]. Returns true if it
   /// was successful. False otherwise.
   Future<Result<PubSubError, bool>> publish(
-    String jid,
+    JID jid,
     String node,
     XMLNode payload, {
     String? id,
@@ -280,7 +280,7 @@ class PubSubManager extends XmppManagerBase {
   }
 
   Future<Result<PubSubError, bool>> _publish(
-    String jid,
+    JID jid,
     String node,
     XMLNode payload, {
     String? id,
@@ -296,7 +296,7 @@ class PubSubManager extends XmppManagerBase {
     final result = await getAttributes().sendStanza(
       Stanza.iq(
         type: 'set',
-        to: jid,
+        to: jid.toString(),
         children: [
           XMLNode.xmlns(
             tag: 'pubsub',
@@ -481,7 +481,7 @@ class PubSubManager extends XmppManagerBase {
   }
 
   Future<Result<PubSubError, bool>> configure(
-    String jid,
+    JID jid,
     String node,
     PubSubPublishOptions options,
   ) async {
@@ -491,7 +491,7 @@ class PubSubManager extends XmppManagerBase {
     final form = await attrs.sendStanza(
       Stanza.iq(
         type: 'get',
-        to: jid,
+        to: jid.toString(),
         children: [
           XMLNode.xmlns(
             tag: 'pubsub',
@@ -515,7 +515,7 @@ class PubSubManager extends XmppManagerBase {
     final submit = await attrs.sendStanza(
       Stanza.iq(
         type: 'set',
-        to: jid,
+        to: jid.toString(),
         children: [
           XMLNode.xmlns(
             tag: 'pubsub',

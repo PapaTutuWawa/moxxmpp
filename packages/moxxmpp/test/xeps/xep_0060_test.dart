@@ -12,7 +12,7 @@ class StubbedDiscoManager extends DiscoManager {
 
   @override
   Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
-    String entity, {
+    JID entity, {
     String? node,
     bool shouldEncrypt = true,
     bool shouldCache = true,
@@ -32,7 +32,7 @@ class StubbedDiscoManager extends DiscoManager {
 
   @override
   Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(
-    String entity, {
+    JID entity, {
     String? node,
     bool shouldEncrypt = true,
   }) async {
@@ -59,7 +59,7 @@ void main() {
     await tm.register(manager);
 
     final result = await manager.preprocessPublishOptions(
-      'pubsub.server.example.org',
+      JID.fromString('pubsub.server.example.org'),
       'urn:xmpp:omemo:2:bundles',
       const PubSubPublishOptions(maxItems: 'max'),
     );
@@ -76,7 +76,7 @@ void main() {
     await tm.register(manager);
 
     final result = await manager.preprocessPublishOptions(
-      'pubsub.server.example.org',
+      JID.fromString('pubsub.server.example.org'),
       'urn:xmpp:omemo:2:bundles',
       const PubSubPublishOptions(maxItems: 'max'),
     );
@@ -182,7 +182,7 @@ void main() {
     final item = XMLNode(tag: 'test-item');
     final result =
         await connection.getManagerById<PubSubManager>(pubsubManager)!.publish(
-              'pubsub.server.example.org',
+              JID.fromString('pubsub.server.example.org'),
               'princely_musings',
               item,
               id: 'current',

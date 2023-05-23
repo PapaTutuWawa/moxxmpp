@@ -181,7 +181,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
 
     final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
     final discoRequest = await dm.discoInfoQuery(
-      event.jid.toString(),
+      event.jid,
       node: capabilityNode,
     );
     if (discoRequest.isType<DiscoError>()) {
@@ -194,7 +194,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
       await dm.addCachedDiscoInfo(
         MapEntry<DiscoCacheKey, DiscoInfo>(
           DiscoCacheKey(
-            event.jid.toString(),
+            event.jid,
             null,
           ),
           discoInfo,

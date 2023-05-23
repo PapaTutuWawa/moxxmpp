@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:moxxmpp/src/jid.dart';
 
 @internal
 @immutable
@@ -6,8 +7,7 @@ class DiscoCacheKey {
   const DiscoCacheKey(this.jid, this.node);
 
   /// The JID we're requesting disco data from.
-  // TODO(Unknown): Replace with JID
-  final String jid;
+  final JID jid;
 
   /// Optionally the node we are requesting from.
   final String? node;

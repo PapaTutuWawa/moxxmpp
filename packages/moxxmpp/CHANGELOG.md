@@ -6,6 +6,9 @@
 - The `DiscoManager` now only handled entity capabilities if a `EntityCapabilityManager` is registered.
 - The `EntityCapabilityManager` now verifies and validates its data before caching.
 - **BREAKING**: Added the `resumed` parameter to `StreamNegotiationsDoneEvent`. Use this to check if the current stream is new or resumed instead of using the `ConnectionStateChangedEvent`.
+- **BREAKING**: Remove `DiscoManager.discoInfoCapHashQuery`.
+- **BREAKING**: The entity argument of `DiscoManager.discoInfoQuery` and `DiscoManager.discoItemsQuery` are now `JID` instead of `String`.
+- **BREAKING**: `PubSubManager` and `UserAvatarManager` now use `JID` instead of `String`.
 
 ## 0.3.1
 

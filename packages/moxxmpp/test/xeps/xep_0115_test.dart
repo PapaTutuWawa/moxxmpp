@@ -27,7 +27,7 @@ class StubbedDiscoManager extends DiscoManager {
 
   @override
   Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
-    String entity, {
+    JID entity, {
     String? node,
     bool shouldEncrypt = true,
     bool shouldCache = true,
