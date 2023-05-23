@@ -257,4 +257,10 @@ class NonRecoverableErrorEvent extends XmppEvent {
 }
 
 /// Triggered when the stream negotiations are done.
-class StreamNegotiationsDoneEvent extends XmppEvent {}
+class StreamNegotiationsDoneEvent extends XmppEvent {
+  StreamNegotiationsDoneEvent(this.resumed);
+
+  /// Flag indicating whether we resumed a previous stream (true) or are in a completely
+  /// new stream (false).
+  final bool resumed;
+}

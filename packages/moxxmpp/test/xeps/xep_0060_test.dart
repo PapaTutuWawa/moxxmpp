@@ -15,6 +15,7 @@ class StubbedDiscoManager extends DiscoManager {
     String entity, {
     String? node,
     bool shouldEncrypt = true,
+    bool shouldCache = true,
   }) async {
     final result = DiscoInfo.fromQuery(
       XMLNode.fromString('''

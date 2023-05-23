@@ -3,6 +3,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
 import 'package:test/test.dart';
 
 import '../helpers/logging.dart';
+import '../helpers/manager.dart';
 import '../helpers/xmpp.dart';
 
 void main() {
@@ -113,5 +114,35 @@ void main() {
     expect(fakeSocket.getState(), 6);
     expect(await result1, await result2);
     expect(disco.infoTracker.hasTasksRunning(), false);
+  });
+
+  group('Interactions with Entity Capabilities', () {
+    test('Do not query when the capability hash is cached', () async {
+      final tm = TestingManagerHolder();
+      final ecm = EntityCapabilitiesManager('');
+      final dm = DiscoManager([]);
+
+      await tm.register(dm);
+      await tm.register(ecm);
+
+      // Inject a capability hash into the cache
+      final aliceJid = JID.fromString('alice@example.org/abc123');
+      ecm.injectIntoCache(
+        aliceJid,
+        'AAAAAAAAAAAAA',
+        DiscoInfo(
+          const [],
+          const [],
+          const [],
+          '',
+          aliceJid,
+        ),
+      );
+
+      // Query Alice's device
+      final result = await dm.discoInfoQuery(aliceJid.toString());
+      expect(result.isType<DiscoError>(), false);
+      expect(tm.sentStanzas, 0);
+    });
   });
 }

@@ -2,6 +2,9 @@
 
 - **BREAKING**: Remove `lastResource` from `XmppConnection`'s `connect` method. Instead, set the `StreamManagementNegotiator`'s `resource` attribute instead. Since the resource can only really be restored by stream management, this is no issue.
 - **BREAKING**: Changed order of parameters of `CryptographicHashManager.hashFromData`
+- **BREAKING**: Removed support for XEP-0414, as the (supported) hash computations are already implemented by `CryptographicHashManager.hashFromData`.
+- The `DiscoManager` now only handled entity capabilities if a `EntityCapabilityManager` is registered.
+- The `EntityCapabilityManager` now verifies and validates its data before caching.
 
 ## 0.3.1
 

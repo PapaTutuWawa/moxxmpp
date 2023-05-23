@@ -1,37 +1,35 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:cryptography/cryptography.dart';
 import 'package:meta/meta.dart';
+import 'package:moxxmpp/src/events.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/presence.dart';
 import 'package:moxxmpp/src/rfcs/rfc_4790.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/list.dart';
+import 'package:moxxmpp/src/xeps/xep_0004.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
-import 'package:moxxmpp/src/xeps/xep_0414.dart';
+import 'package:moxxmpp/src/xeps/xep_0300.dart';
+import 'package:synchronized/synchronized.dart';
 
-@immutable
-class CapabilityHashInfo {
-  const CapabilityHashInfo(this.ver, this.node, this.hash);
-  final String ver;
-  final String node;
-  final String hash;
-}
+/// Given an identity [i], compute the string according to XEP-0115 § 5.1 step 2.
+String _identityString(Identity i) =>
+    '${i.category}/${i.type}/${i.lang ?? ""}/${i.name ?? ""}';
 
 /// Calculates the Entitiy Capability hash according to XEP-0115 based on the
 /// disco information.
 Future<String> calculateCapabilityHash(
+  HashFunction algorithm,
   DiscoInfo info,
-  HashAlgorithm algorithm,
 ) async {
   final buffer = StringBuffer();
-  final identitiesSorted = info.identities
-      .map(
-        (Identity i) =>
-            '${i.category}/${i.type}/${i.lang ?? ""}/${i.name ?? ""}',
-      )
-      .toList();
+  final identitiesSorted = info.identities.map(_identityString).toList();
   // ignore: cascade_invocations
   identitiesSorted.sort(ioctetSortComparator);
   buffer.write('${identitiesSorted.join("<")}<');
@@ -72,8 +70,11 @@ Future<String> calculateCapabilityHash(
     }
   }
 
-  return base64
-      .encode((await algorithm.hash(utf8.encode(buffer.toString()))).bytes);
+  final rawHash = await CryptographicHashManager.hashFromData(
+    algorithm,
+    utf8.encode(buffer.toString()),
+  );
+  return base64.encode(rawHash);
 }
 
 /// A manager implementing the advertising of XEP-0115. It responds to the
@@ -91,6 +92,15 @@ class EntityCapabilitiesManager extends XmppManagerBase {
   /// The cached capability hash.
   String? _capabilityHash;
 
+  /// Cache the mapping between the full JID and the capability hash string.
+  final Map<String, String> _jidToCapHashCache = {};
+
+  /// Cache the mapping between capability hash string and the resulting disco#info.
+  final Map<String, DiscoInfo> _capHashCache = {};
+
+  /// A lock guarding access to the capability hash cache.
+  final Lock _cacheLock = Lock();
+
   @override
   Future<bool> isSupported() async => true;
 
@@ -101,10 +111,10 @@ class EntityCapabilitiesManager extends XmppManagerBase {
   /// the DiscoManager.
   Future<String> getCapabilityHash() async {
     _capabilityHash ??= await calculateCapabilityHash(
+      HashFunction.sha1,
       getAttributes()
           .getManagerById<DiscoManager>(discoManager)!
           .getDiscoInfo(null),
-      getHashByName('sha-1')!,
     );
 
     return _capabilityHash!;
@@ -135,20 +145,198 @@ class EntityCapabilitiesManager extends XmppManagerBase {
     ];
   }
 
+  /// If we know of [jid]'s capability hash, look up the [DiscoInfo] associated with
+  /// that capability hash. If we don't know of [jid]'s capability hash, return null.
+  Future<DiscoInfo?> getCachedDiscoInfoFromJid(JID jid) async {
+    return _cacheLock.synchronized(() {
+      final capHash = _jidToCapHashCache[jid.toString()];
+      if (capHash == null) {
+        return null;
+      }
+
+      return _capHashCache[capHash];
+    });
+  }
+
+  @visibleForTesting
+  Future<void> onPresence(PresenceReceivedEvent event) async {
+    final c = event.presence.firstTag('c', xmlns: capsXmlns);
+    if (c == null) {
+      return;
+    }
+
+    final hashFunctionName = c.attributes['hash'] as String?;
+    final capabilityNode = c.attributes['node'] as String?;
+    final ver = c.attributes['ver'] as String?;
+    if (hashFunctionName == null || capabilityNode == null || ver == null) {
+      return;
+    }
+
+    // Check if we know of the hash
+    final isCached =
+        await _cacheLock.synchronized(() => _capHashCache.containsKey(ver));
+    if (isCached) {
+      return;
+    }
+
+    final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
+    final discoRequest = await dm.discoInfoQuery(
+      event.jid.toString(),
+      node: capabilityNode,
+    );
+    if (discoRequest.isType<DiscoError>()) {
+      return;
+    }
+    final discoInfo = discoRequest.get<DiscoInfo>();
+
+    final hashFunction = HashFunction.maybeFromName(hashFunctionName);
+    if (hashFunction == null) {
+      await dm.addCachedDiscoInfo(
+        MapEntry<DiscoCacheKey, DiscoInfo>(
+          DiscoCacheKey(
+            event.jid.toString(),
+            null,
+          ),
+          discoInfo,
+        ),
+      );
+      return;
+    }
+
+    // Validate the disco#info result according to XEP-0115 § 5.4
+    // > If the response includes more than one service discovery identity with the
+    // > same category/type/lang/name, consider the entire response to be ill-formed.
+    for (final identity in discoInfo.identities) {
+      final identityString = _identityString(identity);
+      if (discoInfo.identities
+              .count((i) => _identityString(i) == identityString) >
+          1) {
+        logger.warning(
+          'Malformed disco#info response: More than one equal identity',
+        );
+        return;
+      }
+    }
+
+    // > If the response includes more than one service discovery feature with the same
+    // > XML character data, consider the entire response to be ill-formed.
+    for (final feature in discoInfo.features) {
+      if (discoInfo.features.count((f) => f == feature) > 1) {
+        logger.warning(
+          'Malformed disco#info response: More than one equal feature',
+        );
+        return;
+      }
+    }
+
+    // > If the response includes more than one extended service discovery information
+    // > form with the same FORM_TYPE or the FORM_TYPE field contains more than one
+    // > <value/> element with different XML character data, consider the entire response
+    // > to be ill-formed.
+    // >
+    // > If the response includes an extended service discovery information form where
+    // > the FORM_TYPE field is not of type "hidden" or the form does not include a
+    // > FORM_TYPE field, ignore the form but continue processing.
+    final validExtendedInfoItems = List<DataForm>.empty(growable: true);
+    for (final extendedInfo in discoInfo.extendedInfo) {
+      final formType = extendedInfo.getFieldByVar('FORM_TYPE');
+
+      // Form should have a FORM_TYPE field
+      if (formType == null) {
+        logger.fine('Skipping extended info as it contains no FORM_TYPE field');
+        continue;
+      }
+
+      // Check if we only have one unique FORM_TYPE value
+      if (formType.values.length > 1) {
+        if (Set<String>.from(formType.values).length > 1) {
+          logger.warning(
+            'Malformed disco#info response: Extended Info FORM_TYPE contains more than one value(s) of different value.',
+          );
+          return;
+        }
+      }
+
+      // Check if we have more than one extended info forms of the same type
+      final sameFormTypeFormsNumber = discoInfo.extendedInfo.count((form) {
+        final type = form.getFieldByVar('FORM_TYPE')?.values.first;
+        if (type == null) return false;
+
+        return type == formType.values.first;
+      });
+      if (sameFormTypeFormsNumber > 1) {
+        logger.warning(
+          'Malformed disco#info response: More than one Extended Disco Info forms with the same FORM_TYPE value',
+        );
+        return;
+      }
+
+      // Check if the field type is hidden
+      if (formType.type != 'hidden') {
+        logger.fine(
+          'Skipping extended info as the FORM_TYPE field is not of type "hidden"',
+        );
+        continue;
+      }
+
+      validExtendedInfoItems.add(extendedInfo);
+    }
+
+    // Validate the capability hash
+    final newDiscoInfo = DiscoInfo(
+      discoInfo.features,
+      discoInfo.identities,
+      validExtendedInfoItems,
+      discoInfo.node,
+      discoInfo.jid,
+    );
+    final computedCapabilityHash = await calculateCapabilityHash(
+      hashFunction,
+      newDiscoInfo,
+    );
+
+    if (computedCapabilityHash == ver) {
+      await _cacheLock.synchronized(() {
+        _jidToCapHashCache[event.jid.toString()] = ver;
+        _capHashCache[ver] = newDiscoInfo;
+      });
+    } else {
+      logger.warning(
+        'Capability hash mismatch from ${event.jid}: Received "$ver", expected "$computedCapabilityHash".',
+      );
+    }
+  }
+
+  @visibleForTesting
+  void injectIntoCache(JID jid, String ver, DiscoInfo info) {
+    _jidToCapHashCache[jid.toString()] = ver;
+    _capHashCache[ver] = info;
+  }
+
+  @override
+  Future<void> onXmppEvent(XmppEvent event) async {
+    if (event is PresenceReceivedEvent) {
+      unawaited(onPresence(event));
+    } else if (event is StreamNegotiationsDoneEvent) {
+      // Clear the JID to cap. hash mapping.
+      await _cacheLock.synchronized(_jidToCapHashCache.clear);
+    }
+  }
+
   @override
   Future<void> postRegisterCallback() async {
     await super.postRegisterCallback();
 
     getAttributes()
-        .getManagerById<DiscoManager>(discoManager)!
-        .registerInfoCallback(
+        .getManagerById<DiscoManager>(discoManager)
+        ?.registerInfoCallback(
           await _getNode(),
           _onInfoQuery,
         );
 
     getAttributes()
-        .getManagerById<PresenceManager>(presenceManager)!
-        .registerPreSendCallback(
+        .getManagerById<PresenceManager>(presenceManager)
+        ?.registerPreSendCallback(
           _prePresenceSent,
         );
   }

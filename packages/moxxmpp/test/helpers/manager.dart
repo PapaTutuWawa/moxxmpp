@@ -22,6 +22,9 @@ class TestingManagerHolder {
 
   final Map<String, XmppManagerBase> _managers = {};
 
+  // The amount of stanzas sent
+  int sentStanzas = 0;
+
   static final JID jid = JID.fromString('testuser@example.org/abc123');
   static final ConnectionSettings settings = ConnectionSettings(
     jid: jid,
@@ -36,6 +39,7 @@ class TestingManagerHolder {
     bool encrypted = false,
     bool forceEncryption = false,
   }) async {
+    sentStanzas++;
     return XMLNode.fromString('<iq />');
   }
 

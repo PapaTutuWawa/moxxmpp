@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
 /// Hash names
+const _hashSha1 = 'sha-1';
 const _hashSha256 = 'sha-256';
 const _hashSha512 = 'sha-512';
 const _hashSha3256 = 'sha3-256';
@@ -23,6 +24,9 @@ XMLNode constructHashElement(HashFunction hash, String value) {
 }
 
 enum HashFunction {
+  /// SHA-1
+  sha1,
+
   /// SHA-256
   sha256,
 
@@ -46,6 +50,8 @@ enum HashFunction {
   /// - XEP-0300
   factory HashFunction.fromName(String name) {
     switch (name) {
+      case _hashSha1:
+        return HashFunction.sha1;
       case _hashSha256:
         return HashFunction.sha256;
       case _hashSha512:
@@ -63,9 +69,33 @@ enum HashFunction {
     throw Exception();
   }
 
+  /// Like [HashFunction.fromName], but returns null if the hash function is unknown
+  static HashFunction? maybeFromName(String name) {
+    switch (name) {
+      case _hashSha1:
+        return HashFunction.sha1;
+      case _hashSha256:
+        return HashFunction.sha256;
+      case _hashSha512:
+        return HashFunction.sha512;
+      case _hashSha3256:
+        return HashFunction.sha3_256;
+      case _hashSha3512:
+        return HashFunction.sha3_512;
+      case _hashBlake2b256:
+        return HashFunction.blake2b256;
+      case _hashBlake2b512:
+        return HashFunction.blake2b512;
+    }
+
+    return null;
+  }
+
   /// Return the hash function's name according to IANA's hash name register or XEP-0300.
   String toName() {
     switch (this) {
+      case HashFunction.sha1:
+        return _hashSha1;
       case HashFunction.sha256:
         return _hashSha256;
       case HashFunction.sha512:
@@ -88,6 +118,9 @@ class CryptographicHashManager extends XmppManagerBase {
   @override
   Future<bool> isSupported() async => true;
 
+  /// NOTE: We intentionally do not advertise support for SHA-1, as it is marked as
+  ///       MUST NOT. Sha-1 support is only for providing a wrapper over its hash
+  ///       function, for example for XEP-0115.
   @override
   List<String> getDiscoFeatures() => [
         '$hashFunctionNameBaseXmlns:$_hashSha256',
@@ -107,6 +140,9 @@ class CryptographicHashManager extends XmppManagerBase {
     // TODO(PapaTutuWawa): Implement the others as well
     HashAlgorithm algo;
     switch (function) {
+      case HashFunction.sha1:
+        algo = Sha1();
+        break;
       case HashFunction.sha256:
         algo = Sha256();
         break;

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:meta/meta.dart';
-import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -40,12 +39,6 @@ class DiscoManager extends XmppManagerBase {
 
   /// Disco identities that we advertise
   final List<Identity> _identities;
-
-  /// Map full JID to Capability hashes
-  final Map<String, CapabilityHashInfo> _capHashCache = {};
-
-  /// Map capability hash to the disco info
-  final Map<String, DiscoInfo> _capHashInfoCache = {};
 
   /// Map full JID to Disco Info
   final Map<DiscoCacheKey, DiscoInfo> _discoInfoCache = {};
@@ -101,13 +94,7 @@ class DiscoManager extends XmppManagerBase {
 
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
-    if (event is PresenceReceivedEvent) {
-      await _onPresence(event.jid, event.presence);
-    } else if (event is ConnectionStateChangedEvent) {
-      // TODO(Unknown): This handling is stupid. We should have an event that is
-      //                triggered when we cannot guarantee that everything is as
-      //                it was before.
-      if (event.state != XmppConnectionState.connected) return;
+    if (event is StreamNegotiationsDoneEvent) {
       if (event.resumed) return;
 
       // Cancel all waiting requests
@@ -135,6 +122,15 @@ class DiscoManager extends XmppManagerBase {
     _discoItemsCallbacks[node] = callback;
   }
 
+  /// Add a [DiscoCacheKey]-[DiscoInfo] pair [discoInfoEntry] to the internal cache.
+  Future<void> addCachedDiscoInfo(
+    MapEntry<DiscoCacheKey, DiscoInfo> discoInfoEntry,
+  ) async {
+    await _cacheLock.synchronized(() {
+      _discoInfoCache[discoInfoEntry.key] = discoInfoEntry.value;
+    });
+  }
+
   /// Adds a list of features to the possible disco info response.
   /// This function only adds features that are not already present in the disco features.
   void addFeatures(List<String> features) {
@@ -153,39 +149,6 @@ class DiscoManager extends XmppManagerBase {
         _identities.add(identity);
       }
     }
-  }
-
-  Future<void> _onPresence(JID from, Stanza presence) async {
-    final c = presence.firstTag('c', xmlns: capsXmlns);
-    if (c == null) return;
-
-    final info = CapabilityHashInfo(
-      c.attributes['ver']! as String,
-      c.attributes['node']! as String,
-      c.attributes['hash']! as String,
-    );
-
-    // Check if we already know of that cache
-    var cached = false;
-    await _cacheLock.synchronized(() async {
-      if (!_capHashCache.containsKey(info.ver)) {
-        cached = true;
-      }
-    });
-    if (cached) return;
-
-    // Request the cap hash
-    logger.finest(
-      "Received capability hash we don't know about. Requesting it...",
-    );
-    final result =
-        await discoInfoQuery(from.toString(), node: '${info.node}#${info.ver}');
-    if (result.isType<DiscoError>()) return;
-
-    await _cacheLock.synchronized(() async {
-      _capHashCache[from.toString()] = info;
-      _capHashInfoCache[info.ver] = result.get<DiscoInfo>();
-    });
   }
 
   /// Returns the [DiscoInfo] object that would be used as the response to a disco#info
@@ -269,10 +232,11 @@ class DiscoManager extends XmppManagerBase {
   Future<void> _exitDiscoInfoCriticalSection(
     DiscoCacheKey key,
     Result<DiscoError, DiscoInfo> result,
+    bool shouldCache,
   ) async {
     await _cacheLock.synchronized(() async {
       // Add to cache if it is a result
-      if (result.isType<DiscoInfo>()) {
+      if (result.isType<DiscoInfo>() && shouldCache) {
         _discoInfoCache[key] = result.get<DiscoInfo>();
       }
     });
@@ -280,14 +244,24 @@ class DiscoManager extends XmppManagerBase {
     await _discoInfoTracker.resolve(key, result);
   }
 
-  /// Sends a disco info query to the (full) jid [entity], optionally with node=[node].
+  /// Send a disco#info query to [entity]. If [node] is specified, then the disco#info
+  /// request will be directed against that one node of [entity].
+  ///
+  /// [shouldEncrypt] indicates to possible end-to-end encryption implementations whether
+  /// the request should be encrypted (true) or not (false).
+  ///
+  /// [shouldCache] indicates whether the successful result of the disco#info query
+  /// should be cached (true) or not(false).
   Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
     String entity, {
     String? node,
     bool shouldEncrypt = true,
+    bool shouldCache = true,
   }) async {
-    final cacheKey = DiscoCacheKey(entity, node);
     DiscoInfo? info;
+    final cacheKey = DiscoCacheKey(entity, node);
+    final ecm = getAttributes()
+        .getManagerById<EntityCapabilitiesManager>(entityCapabilitiesManager);
     final ffuture = await _cacheLock
         .synchronized<Future<Future<Result<DiscoError, DiscoInfo>>?>?>(
             () async {
@@ -296,6 +270,14 @@ class DiscoManager extends XmppManagerBase {
         info = _discoInfoCache[cacheKey];
         return null;
       } else {
+        // Check if we know entity capabilities
+        if (ecm != null && node == null) {
+          info = await ecm.getCachedDiscoInfoFromJid(JID.fromString(entity));
+          if (info != null) {
+            return null;
+          }
+        }
+
         return _discoInfoTracker.waitFor(cacheKey);
       }
     });
@@ -316,14 +298,14 @@ class DiscoManager extends XmppManagerBase {
     final query = stanza.firstTag('query');
     if (query == null) {
       final result = Result<DiscoError, DiscoInfo>(InvalidResponseDiscoError());
-      await _exitDiscoInfoCriticalSection(cacheKey, result);
+      await _exitDiscoInfoCriticalSection(cacheKey, result, shouldCache);
       return result;
     }
 
     if (stanza.attributes['type'] == 'error') {
       //final error = stanza.firstTag('error');
       final result = Result<DiscoError, DiscoInfo>(ErrorResponseDiscoError());
-      await _exitDiscoInfoCriticalSection(cacheKey, result);
+      await _exitDiscoInfoCriticalSection(cacheKey, result, shouldCache);
       return result;
     }
 
@@ -333,7 +315,7 @@ class DiscoManager extends XmppManagerBase {
         JID.fromString(entity),
       ),
     );
-    await _exitDiscoInfoCriticalSection(cacheKey, result);
+    await _exitDiscoInfoCriticalSection(cacheKey, result, shouldCache);
     return result;
   }
 

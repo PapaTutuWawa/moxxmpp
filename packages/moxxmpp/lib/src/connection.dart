@@ -578,7 +578,12 @@ class XmppConnection {
 
     // Tell consumers of the event stream that we're done with stream feature
     // negotiations
-    await _sendEvent(StreamNegotiationsDoneEvent());
+    await _sendEvent(
+      StreamNegotiationsDoneEvent(
+        getManagerById<StreamManagementManager>(smManager)?.streamResumed ??
+            false,
+      ),
+    );
   }
 
   /// Sets the connection state to [state] and triggers an event of type

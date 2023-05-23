@@ -1,8 +1,151 @@
-import 'package:cryptography/cryptography.dart';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
 
+import '../helpers/logging.dart';
+import '../helpers/manager.dart';
+
+class StubbedDiscoManager extends DiscoManager {
+  StubbedDiscoManager() : super([]);
+
+  /// Inject an identity twice.
+  bool multipleEqualIdentities = false;
+
+  /// Inject a disco feature twice.
+  bool multipleEqualFeatures = false;
+
+  /// Inject the same (correct) extended info form twice.
+  bool multipleExtendedFormsWithSameType = false;
+
+  /// No FORM_TYPE
+  bool invalidExtension1 = false;
+
+  /// FORM_TYPE is not hidden
+  bool invalidExtension2 = false;
+
+  /// FORM_TYPE has more than one different values
+  bool invalidExtension3 = false;
+
+  @override
+  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
+    String entity, {
+    String? node,
+    bool shouldEncrypt = true,
+    bool shouldCache = true,
+  }) async {
+    return Result(
+      DiscoInfo(
+        [
+          'http://jabber.org/protocol/caps',
+          'http://jabber.org/protocol/disco#info',
+          'http://jabber.org/protocol/disco#items',
+          'http://jabber.org/protocol/muc',
+          if (multipleEqualFeatures) 'http://jabber.org/protocol/muc',
+        ],
+        [
+          const Identity(
+            category: 'client',
+            type: 'pc',
+            name: 'Exodus 0.9.1',
+          ),
+          if (multipleEqualIdentities)
+            const Identity(
+              category: 'client',
+              type: 'pc',
+              name: 'Exodus 0.9.1',
+            ),
+        ],
+        [
+          if (multipleExtendedFormsWithSameType)
+            const DataForm(
+              type: 'result',
+              instructions: [],
+              fields: [
+                DataFormField(
+                  options: [],
+                  values: [
+                    'http://jabber.org/network/serverinfo',
+                  ],
+                  isRequired: false,
+                  varAttr: 'FORM_TYPE',
+                  type: 'hidden',
+                )
+              ],
+              reported: [],
+              items: [],
+            ),
+          if (multipleExtendedFormsWithSameType)
+            const DataForm(
+              type: 'result',
+              instructions: [],
+              fields: [
+                DataFormField(
+                  options: [],
+                  values: [
+                    'http://jabber.org/network/serverinfo',
+                  ],
+                  isRequired: false,
+                  varAttr: 'FORM_TYPE',
+                  type: 'hidden',
+                ),
+              ],
+              reported: [],
+              items: [],
+            ),
+          if (invalidExtension1)
+            const DataForm(
+              type: 'result',
+              instructions: [],
+              fields: [],
+              reported: [],
+              items: [],
+            ),
+          if (invalidExtension2)
+            const DataForm(
+              type: 'result',
+              instructions: [],
+              fields: [
+                DataFormField(
+                  options: [],
+                  values: [
+                    'http://jabber.org/network/serverinfo',
+                  ],
+                  isRequired: false,
+                  varAttr: 'FORM_TYPE',
+                ),
+              ],
+              reported: [],
+              items: [],
+            ),
+          if (invalidExtension3)
+            const DataForm(
+              type: 'result',
+              instructions: [],
+              fields: [
+                DataFormField(
+                  options: [],
+                  values: [
+                    'http://jabber.org/network/serverinfo',
+                    'http://jabber.org/network/better-serverinfo',
+                  ],
+                  isRequired: false,
+                  varAttr: 'FORM_TYPE',
+                  type: 'hidden',
+                ),
+              ],
+              reported: [],
+              items: [],
+            ),
+        ],
+        null,
+        JID.fromString('some@user.local/test'),
+      ),
+    );
+  }
+}
+
 void main() {
+  initLogger();
+
   test('Test XEP example', () async {
     final data = DiscoInfo(
       const [
@@ -23,7 +166,7 @@ void main() {
       JID.fromString('some@user.local/test'),
     );
 
-    final hash = await calculateCapabilityHash(data, Sha1());
+    final hash = await calculateCapabilityHash(HashFunction.sha1, data);
     expect(hash, 'QgayPKawpkPSDYmwT/WM94uAlu0=');
   });
 
@@ -56,7 +199,7 @@ void main() {
       JID.fromString('some@user.local/test'),
     );
 
-    final hash = await calculateCapabilityHash(data, Sha1());
+    final hash = await calculateCapabilityHash(HashFunction.sha1, data);
     expect(hash, 'q07IKJEyjvHSyhy//CH0CxmKi8w=');
   });
 
@@ -114,7 +257,7 @@ void main() {
       ]
     );
 
-    final hash = await calculateCapabilityHash(data, Sha1());
+    final hash = await calculateCapabilityHash(HashFunction.sha1, data);
     expect(hash, "T7fOZrtBnV8sDA2fFTS59vyOyUs=");
     */
   });
@@ -165,7 +308,291 @@ void main() {
       JID.fromString('user@server.local/test'),
     );
 
-    final hash = await calculateCapabilityHash(data, Sha1());
+    final hash = await calculateCapabilityHash(HashFunction.sha1, data);
     expect(hash, 'zcIke+Rk13ah4d1pwDG7bEZsVwA=');
+  });
+
+  group('Receiving a capability hash', () {
+    final aliceJid = JID.fromString('alice@example.org/abc123');
+
+    test('Caching a correct capability hash', () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(StubbedDiscoManager());
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        await manager.getCachedDiscoInfoFromJid(aliceJid) != null,
+        true,
+      );
+    });
+
+    test('Not caching an incorrect capability hash string', () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(StubbedDiscoManager());
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94AAAAA=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        await manager.getCachedDiscoInfoFromJid(aliceJid),
+        null,
+      );
+    });
+
+    test('Not caching ill-formed identities', () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(
+        StubbedDiscoManager()..multipleEqualIdentities = true,
+      );
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        await manager.getCachedDiscoInfoFromJid(aliceJid),
+        null,
+      );
+    });
+
+    test('Not caching ill-formed features', () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(
+        StubbedDiscoManager()..multipleEqualFeatures = true,
+      );
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        await manager.getCachedDiscoInfoFromJid(aliceJid),
+        null,
+      );
+    });
+
+    test('Not caching multiple forms with equal FORM_TYPE', () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(
+        StubbedDiscoManager()..multipleExtendedFormsWithSameType = true,
+      );
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        await manager.getCachedDiscoInfoFromJid(aliceJid),
+        null,
+      );
+    });
+
+    test('Caching without invalid form (no FORM_TYPE)', () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(
+        StubbedDiscoManager()..invalidExtension1 = true,
+      );
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final cachedItem = await manager.getCachedDiscoInfoFromJid(aliceJid);
+      expect(
+        cachedItem != null,
+        true,
+      );
+      expect(cachedItem!.extendedInfo.isEmpty, true);
+    });
+
+    test('Caching without invalid form (FORM_TYPE not hidden)', () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(
+        StubbedDiscoManager()..invalidExtension2 = true,
+      );
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final cachedItem = await manager.getCachedDiscoInfoFromJid(aliceJid);
+      expect(
+        cachedItem != null,
+        true,
+      );
+      expect(cachedItem!.extendedInfo.isEmpty, true);
+    });
+
+    test("Not caching as FORM_TYPE's values are distinct", () async {
+      final tm = TestingManagerHolder();
+      final manager = EntityCapabilitiesManager('');
+
+      await tm.register(
+        StubbedDiscoManager()..invalidExtension3 = true,
+      );
+      await tm.register(manager);
+
+      await manager.onPresence(
+        PresenceReceivedEvent(
+          aliceJid,
+          Stanza.presence(
+            from: aliceJid.toString(),
+            children: [
+              XMLNode.xmlns(
+                tag: 'c',
+                xmlns: capsXmlns,
+                attributes: {
+                  'hash': 'sha-1',
+                  'node': 'http://example.org/client',
+                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        await manager.getCachedDiscoInfoFromJid(aliceJid),
+        null,
+      );
+    });
   });
 }
