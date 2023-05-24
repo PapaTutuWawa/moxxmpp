@@ -1,5 +1,4 @@
 import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp/src/util/queue.dart';
 import 'package:test/test.dart';
 import '../helpers/logging.dart';
 import '../helpers/xmpp.dart';

@@ -6,7 +6,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 
 class BlockingManager extends XmppManagerBase {

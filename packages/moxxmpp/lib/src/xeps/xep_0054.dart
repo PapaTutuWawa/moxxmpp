@@ -8,7 +8,6 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
-import 'package:moxxmpp/src/util/queue.dart';
 
 abstract class VCardError {}
 

@@ -6,8 +6,8 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
+import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/util/queue.dart';
 
 class XmppManagerAttributes {
   XmppManagerAttributes({

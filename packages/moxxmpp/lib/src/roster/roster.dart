@@ -15,7 +15,6 @@ import 'package:moxxmpp/src/roster/state.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
-import 'package:moxxmpp/src/util/queue.dart';
 
 @immutable
 class XmppRosterItem {

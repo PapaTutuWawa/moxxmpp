@@ -8,7 +8,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/util/queue.dart';
 
 /// A function that will be called when presence, outside of subscription request
 /// management, will be sent. Useful for managers that want to add [XMLNode]s to said

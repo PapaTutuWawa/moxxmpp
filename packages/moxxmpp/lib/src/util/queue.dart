@@ -5,29 +5,6 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:synchronized/synchronized.dart';
 
-class StanzaDetails {
-  const StanzaDetails(
-    this.stanza, {
-    this.addId = true,
-    this.awaitable = true,
-    this.encrypted = false,
-    this.forceEncryption = false,
-  });
-
-  /// The stanza to send.
-  final Stanza stanza;
-
-  /// Flag indicating whether a stanza id should be added before sending.
-  final bool addId;
-
-  /// Track the stanza to allow awaiting its response.
-  final bool awaitable;
-
-  final bool encrypted;
-
-  final bool forceEncryption;
-}
-
 class StanzaQueueEntry {
   const StanzaQueueEntry(
     this.details,
