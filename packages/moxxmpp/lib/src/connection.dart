@@ -80,7 +80,7 @@ class XmppConnection {
     _socketStream = _socket.getDataStream();
     // TODO(Unknown): Handle on done
     _socketStream.transform(_streamParser).forEach(handleXmlStream);
-    _socket.getEventStream().listen(_handleSocketEvent);
+    _socket.getEventStream().listen(handleSocketEvent);
 
     _stanzaQueue = AsyncStanzaQueue(
       _sendStanzaImpl,
@@ -362,7 +362,8 @@ class XmppConnection {
   }
 
   /// Called whenever the socket creates an event
-  Future<void> _handleSocketEvent(XmppSocketEvent event) async {
+  @visibleForTesting
+  Future<void> handleSocketEvent(XmppSocketEvent event) async {
     if (event is XmppSocketErrorEvent) {
       await handleError(SocketError(event));
     } else if (event is XmppSocketClosureEvent) {
