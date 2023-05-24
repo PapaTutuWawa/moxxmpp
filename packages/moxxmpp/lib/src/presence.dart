@@ -7,10 +7,9 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
-import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 
 /// A function that will be called when presence, outside of subscription request
 /// management, will be sent. Useful for managers that want to add [XMLNode]s to said
@@ -49,12 +48,8 @@ class PresenceManager extends XmppManagerBase {
   Future<void> onXmppEvent(XmppEvent event) async {
     if (event is StreamNegotiationsDoneEvent) {
       // Send initial presence only when we have not resumed the stream
-      final sm = getAttributes().getNegotiatorById<StreamManagementNegotiator>(
-        streamManagementNegotiator,
-      );
-      final isResumed = sm?.isResumed ?? false;
-      if (!isResumed) {
-        unawaited(sendInitialPresence());
+      if (!event.resumed) {
+        await sendInitialPresence();
       }
     }
   }
@@ -108,66 +103,82 @@ class PresenceManager extends XmppManagerBase {
 
     final attrs = getAttributes();
     await attrs.sendStanza(
-      Stanza.presence(
-        from: attrs.getFullJID().toString(),
-        children: children,
+      StanzaDetails(
+        Stanza.presence(
+          from: attrs.getFullJID().toString(),
+          children: children,
+        ),
+        awaitable: false,
+        addId: false,
       ),
-      awaitable: false,
-      addId: false,
     );
   }
 
   /// Send an unavailable presence with no 'to' attribute.
   void sendUnavailablePresence() {
     getAttributes().sendStanza(
-      Stanza.presence(
-        type: 'unavailable',
+      StanzaDetails(
+        Stanza.presence(
+          type: 'unavailable',
+        ),
+        awaitable: false,
       ),
-      addFrom: StanzaFromType.full,
     );
   }
 
   /// Sends a subscription request to [to].
   void sendSubscriptionRequest(String to) {
     getAttributes().sendStanza(
-      Stanza.presence(
-        type: 'subscribe',
-        to: to,
+      StanzaDetails(
+        Stanza.presence(
+          type: 'subscribe',
+          to: to,
+        ),
+        addFrom: StanzaFromType.none,
+        awaitable: false,
       ),
-      addFrom: StanzaFromType.none,
     );
   }
 
   /// Sends an unsubscription request to [to].
   void sendUnsubscriptionRequest(String to) {
     getAttributes().sendStanza(
-      Stanza.presence(
-        type: 'unsubscribe',
-        to: to,
+      StanzaDetails(
+        Stanza.presence(
+          type: 'unsubscribe',
+          to: to,
+        ),
+        addFrom: StanzaFromType.none,
+        awaitable: false,
       ),
-      addFrom: StanzaFromType.none,
     );
   }
 
   /// Accept a presence subscription request for [to].
   void sendSubscriptionRequestApproval(String to) {
     getAttributes().sendStanza(
-      Stanza.presence(
-        type: 'subscribed',
-        to: to,
+      StanzaDetails(
+        Stanza.presence(
+          type: 'subscribed',
+          to: to,
+        ),
+        addFrom: StanzaFromType.none,
+        awaitable: false,
       ),
-      addFrom: StanzaFromType.none,
     );
   }
 
   /// Reject a presence subscription request for [to].
   void sendSubscriptionRequestRejection(String to) {
     getAttributes().sendStanza(
-      Stanza.presence(
-        type: 'unsubscribed',
-        to: to,
+      StanzaDetails(
+        Stanza.presence(
+          type: 'unsubscribed',
+          to: to,
+        ),
+        addFrom: StanzaFromType.none,
+        awaitable: false,
       ),
-      addFrom: StanzaFromType.none,
     );
   }
 }

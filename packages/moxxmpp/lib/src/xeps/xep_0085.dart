@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 
 enum ChatState { active, composing, paused, inactive, gone }
 
@@ -111,10 +112,14 @@ class ChatStateManager extends XmppManagerBase {
     final tagName = state.toString().split('.').last;
 
     getAttributes().sendStanza(
-      Stanza.message(
-        to: to,
-        type: messageType,
-        children: [XMLNode.xmlns(tag: tagName, xmlns: chatStateXmlns)],
+      StanzaDetails(
+        Stanza.message(
+          to: to,
+          type: messageType,
+          children: [
+            XMLNode.xmlns(tag: tagName, xmlns: chatStateXmlns),
+          ],
+        ),
       ),
     );
   }

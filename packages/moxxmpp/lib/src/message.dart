@@ -8,6 +8,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
@@ -320,6 +321,11 @@ class MessageManager extends XmppManagerBase {
       );
     }
 
-    getAttributes().sendStanza(stanza, awaitable: false);
+    getAttributes().sendStanza(
+      StanzaDetails(
+        stanza,
+        awaitable: false,
+      ),
+    );
   }
 }

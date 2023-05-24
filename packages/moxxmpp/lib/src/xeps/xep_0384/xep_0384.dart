@@ -11,6 +11,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
@@ -262,24 +263,26 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     String toJid,
   ) async {
     await getAttributes().sendStanza(
-      Stanza.message(
-        to: toJid,
-        type: 'chat',
-        children: [
-          _buildEncryptedElement(
-            result,
-            toJid,
-            await _getDeviceId(),
-          ),
+      StanzaDetails(
+        Stanza.message(
+          to: toJid,
+          type: 'chat',
+          children: [
+            _buildEncryptedElement(
+              result,
+              toJid,
+              await _getDeviceId(),
+            ),
 
-          // Add a storage hint in case this is a message
-          // Taken from the example at
-          // https://xmpp.org/extensions/xep-0384.html#message-structure-description.
-          MessageProcessingHint.store.toXml(),
-        ],
+            // Add a storage hint in case this is a message
+            // Taken from the example at
+            // https://xmpp.org/extensions/xep-0384.html#message-structure-description.
+            MessageProcessingHint.store.toXml(),
+          ],
+        ),
+        awaitable: false,
+        encrypted: true,
       ),
-      awaitable: false,
-      encrypted: true,
     );
   }
 

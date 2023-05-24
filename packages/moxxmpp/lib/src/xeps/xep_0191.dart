@@ -6,6 +6,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 
 class BlockingManager extends XmppManagerBase {
@@ -96,39 +97,43 @@ class BlockingManager extends XmppManagerBase {
   }
 
   Future<bool> block(List<String> items) async {
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'set',
-        children: [
-          XMLNode.xmlns(
-            tag: 'block',
-            xmlns: blockingXmlns,
-            children: items.map((item) {
-              return XMLNode(
-                tag: 'item',
-                attributes: <String, String>{'jid': item},
-              );
-            }).toList(),
-          )
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          children: [
+            XMLNode.xmlns(
+              tag: 'block',
+              xmlns: blockingXmlns,
+              children: items.map((item) {
+                return XMLNode(
+                  tag: 'item',
+                  attributes: <String, String>{'jid': item},
+                );
+              }).toList(),
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     return result.attributes['type'] == 'result';
   }
 
   Future<bool> unblockAll() async {
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'set',
-        children: [
-          XMLNode.xmlns(
-            tag: 'unblock',
-            xmlns: blockingXmlns,
-          )
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          children: [
+            XMLNode.xmlns(
+              tag: 'unblock',
+              xmlns: blockingXmlns,
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     return result.attributes['type'] == 'result';
   }
@@ -136,41 +141,45 @@ class BlockingManager extends XmppManagerBase {
   Future<bool> unblock(List<String> items) async {
     assert(items.isNotEmpty, 'The list of items to unblock must be non-empty');
 
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'set',
-        children: [
-          XMLNode.xmlns(
-            tag: 'unblock',
-            xmlns: blockingXmlns,
-            children: items
-                .map(
-                  (item) => XMLNode(
-                    tag: 'item',
-                    attributes: <String, String>{'jid': item},
-                  ),
-                )
-                .toList(),
-          )
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          children: [
+            XMLNode.xmlns(
+              tag: 'unblock',
+              xmlns: blockingXmlns,
+              children: items
+                  .map(
+                    (item) => XMLNode(
+                      tag: 'item',
+                      attributes: <String, String>{'jid': item},
+                    ),
+                  )
+                  .toList(),
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     return result.attributes['type'] == 'result';
   }
 
   Future<List<String>> getBlocklist() async {
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'get',
-        children: [
-          XMLNode.xmlns(
-            tag: 'blocklist',
-            xmlns: blockingXmlns,
-          )
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'get',
+          children: [
+            XMLNode.xmlns(
+              tag: 'blocklist',
+              xmlns: blockingXmlns,
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     final blocklist = result.firstTag('blocklist', xmlns: blockingXmlns)!;
     return blocklist

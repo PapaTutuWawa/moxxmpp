@@ -420,12 +420,17 @@ class XmppConnection {
         .contains(await getConnectionState());
   }
 
-  Future<Future<XMLNode>?> sendStanza2(StanzaDetails details) async {
+  /// Sends a stanza described by [details] to the server. Until sent, the stanza is
+  /// kept in a queue, that is flushed after going online again. If Stream Management
+  /// is active, stanza's acknowledgement is tracked.
+  // TODO(Unknown): if addId = false, the function crashes.
+  Future<XMLNode?> sendStanza(StanzaDetails details) async {
     assert(
       implies(
-          details.awaitable,
-          details.stanza.id != null && details.stanza.id!.isNotEmpty ||
-              details.addId),
+        details.awaitable,
+        details.stanza.id != null && details.stanza.id!.isNotEmpty ||
+            details.addId,
+      ),
       'An awaitable stanza must have an id',
     );
 
@@ -550,131 +555,6 @@ class XmppConnection {
     _log.fine('Done');
   }
 
-  /// Sends a [stanza] to the server. If stream management is enabled, then keeping track
-  /// of the stanza is taken care of. Returns a Future that resolves when we receive a
-  /// response to the stanza.
-  ///
-  /// If addFrom is true, then a 'from' attribute will be added to the stanza if
-  /// [stanza] has none.
-  /// If addId is true, then an 'id' attribute will be added to the stanza if [stanza] has
-  /// none.
-  // TODO(Unknown): if addId = false, the function crashes.
-  Future<XMLNode> sendStanza(
-    Stanza stanza, {
-    StanzaFromType addFrom = StanzaFromType.full,
-    bool addId = true,
-    bool awaitable = true,
-    bool encrypted = false,
-    bool forceEncryption = false,
-  }) async {
-    assert(
-      implies(addId == false && stanza.id == null, !awaitable),
-      'Cannot await a stanza with no id',
-    );
-
-    // Add extra data in case it was not set
-    var stanza_ = stanza;
-    if (addId && (stanza_.id == null || stanza_.id == '')) {
-      stanza_ = stanza.copyWith(id: generateId());
-    }
-    if (addFrom != StanzaFromType.none &&
-        (stanza_.from == null || stanza_.from == '')) {
-      switch (addFrom) {
-        case StanzaFromType.full:
-          {
-            stanza_ = stanza_.copyWith(
-              from: _getJidWithResource().toString(),
-            );
-          }
-          break;
-        case StanzaFromType.bare:
-          {
-            stanza_ = stanza_.copyWith(
-              from: connectionSettings.jid.toBare().toString(),
-            );
-          }
-          break;
-        case StanzaFromType.none:
-          break;
-      }
-    }
-    stanza_ = stanza_.copyWith(
-      xmlns: _negotiationsHandler.getStanzaNamespace(),
-    );
-
-    _log.fine('Running pre stanza handlers..');
-    final data = await _runOutgoingPreStanzaHandlers(
-      stanza_,
-      initial: StanzaHandlerData(
-        false,
-        false,
-        null,
-        stanza_,
-        encrypted: encrypted,
-        forceEncryption: forceEncryption,
-      ),
-    );
-    _log.fine('Done');
-
-    if (data.cancel) {
-      _log.fine('A stanza handler indicated that it wants to cancel sending.');
-      await _sendEvent(StanzaSendingCancelledEvent(data));
-      return Stanza(
-        tag: data.stanza.tag,
-        to: data.stanza.from,
-        from: data.stanza.to,
-        attributes: <String, String>{
-          'type': 'error',
-          if (data.stanza.id != null) 'id': data.stanza.id!,
-        },
-      );
-    }
-
-    final prefix = data.encrypted ? '(Encrypted) ' : '';
-    _log.finest('==> $prefix${stanza_.toXml()}');
-
-    final stanzaString = data.stanza.toXml();
-
-    // ignore: cascade_invocations
-    _log.fine('Attempting to acquire lock for ${data.stanza.id}...');
-    // TODO(PapaTutuWawa): Handle this much more graceful
-    var future = Future.value(XMLNode(tag: 'not-used'));
-    if (awaitable) {
-      future = await _stanzaAwaiter.addPending(
-        // A stanza with no to attribute is for direct processing by the server. As such,
-        // we can correlate it by just *assuming* we have that attribute
-        // (RFC 6120 Section 8.1.1.1)
-        data.stanza.to ?? connectionSettings.jid.toBare().toString(),
-        data.stanza.id!,
-        data.stanza.tag,
-      );
-    }
-
-    // This uses the StreamManager to behave like a send queue
-    if (await _canSendData()) {
-      _socket.write(stanzaString);
-
-      // Try to ack every stanza
-      // NOTE: Here we have send an Ack request nonza. This is now done by StreamManagementManager when receiving the StanzaSentEvent
-    } else {
-      _log.fine('_canSendData() returned false.');
-    }
-
-    _log.fine('Running post stanza handlers..');
-    await _runOutgoingPostStanzaHandlers(
-      stanza_,
-      initial: StanzaHandlerData(
-        false,
-        false,
-        null,
-        stanza_,
-      ),
-    );
-    _log.fine('Done');
-
-    return future;
-  }
-
   /// Called when we timeout during connecting
   Future<void> _onConnectingTimeout() async {
     _log.severe('Connection stuck in "connecting". Causing a reconnection...');
@@ -696,17 +576,10 @@ class XmppConnection {
     // Set the new routing state
     _updateRoutingState(RoutingState.handleStanzas);
 
-    // Set the connection state
-    await _setConnectionState(XmppConnectionState.connected);
-
     // Enable reconnections
     if (_enableReconnectOnSuccess) {
       await _reconnectionPolicy.setShouldReconnect(true);
     }
-
-    // Resolve the connection completion future
-    _connectionCompleter?.complete(const Result(true));
-    _connectionCompleter = null;
 
     // Tell consumers of the event stream that we're done with stream feature
     // negotiations
@@ -716,6 +589,16 @@ class XmppConnection {
             false,
       ),
     );
+
+    // Set the connection state
+    await _setConnectionState(XmppConnectionState.connected);
+
+    // Resolve the connection completion future
+    _connectionCompleter?.complete(const Result(true));
+    _connectionCompleter = null;
+
+    // Flush the stanza send queue
+    await _stanzaQueue.restart();
   }
 
   /// Sets the connection state to [state] and triggers an event of type

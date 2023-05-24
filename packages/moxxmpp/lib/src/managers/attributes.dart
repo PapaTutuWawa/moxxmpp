@@ -6,8 +6,8 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
-import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 
 class XmppManagerAttributes {
   XmppManagerAttributes({
@@ -23,14 +23,7 @@ class XmppManagerAttributes {
   });
 
   /// Send a stanza whose response can be awaited.
-  final Future<XMLNode> Function(
-    Stanza stanza, {
-    StanzaFromType addFrom,
-    bool addId,
-    bool awaitable,
-    bool encrypted,
-    bool forceEncryption,
-  }) sendStanza;
+  final Future<XMLNode?> Function(StanzaDetails) sendStanza;
 
   /// Send a nonza.
   final void Function(XMLNode) sendNonza;

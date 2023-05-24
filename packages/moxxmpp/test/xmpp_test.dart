@@ -131,11 +131,7 @@ void main() {
         password: 'aaaa',
       );
     await conn.registerManagers([
-      PresenceManager(),
-      RosterManager(TestingRosterStateManager('', [])),
-      DiscoManager([]),
       StreamManagementManager(),
-      EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),

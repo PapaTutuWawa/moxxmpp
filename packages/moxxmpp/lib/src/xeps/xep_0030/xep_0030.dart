@@ -10,6 +10,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/util/wait.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
@@ -291,10 +292,12 @@ class DiscoManager extends XmppManagerBase {
       }
     }
 
-    final stanza = await getAttributes().sendStanza(
-      buildDiscoInfoQueryStanza(entity, node),
-      encrypted: !shouldEncrypt,
-    );
+    final stanza = (await getAttributes().sendStanza(
+      StanzaDetails(
+        buildDiscoInfoQueryStanza(entity, node),
+        encrypted: !shouldEncrypt,
+      ),
+    ))!;
     final query = stanza.firstTag('query');
     if (query == null) {
       final result = Result<DiscoError, DiscoInfo>(InvalidResponseDiscoError());
@@ -331,10 +334,12 @@ class DiscoManager extends XmppManagerBase {
       return future;
     }
 
-    final stanza = await getAttributes().sendStanza(
-      buildDiscoItemsQueryStanza(entity, node: node),
-      encrypted: !shouldEncrypt,
-    ) as Stanza;
+    final stanza = (await getAttributes().sendStanza(
+      StanzaDetails(
+        buildDiscoItemsQueryStanza(entity, node: node),
+        encrypted: !shouldEncrypt,
+      ),
+    ))!;
 
     final query = stanza.firstTag('query');
     if (query == null) {
@@ -344,7 +349,7 @@ class DiscoManager extends XmppManagerBase {
       return result;
     }
 
-    if (stanza.type == 'error') {
+    if (stanza.attributes['type'] == 'error') {
       //final error = stanza.firstTag('error');
       //print("Disco Items error: " + error.toXml());
       final result =

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:test/test.dart';
 import '../helpers/logging.dart';
 import '../helpers/xmpp.dart';
@@ -44,15 +45,8 @@ Future<void> runOutgoingStanzaHandlers(
 
 XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
   return XmppManagerAttributes(
-    sendStanza: (
-      stanza, {
-      StanzaFromType addFrom = StanzaFromType.full,
-      bool addId = true,
-      bool awaitable = true,
-      bool encrypted = false,
-      bool forceEncryption = false,
-    }) async {
-      callback(stanza);
+    sendStanza: (StanzaDetails details) async {
+      callback(details.stanza);
 
       return Stanza.message();
     },
@@ -290,12 +284,8 @@ void main() {
         );
       final sm = StreamManagementManager();
       await conn.registerManagers([
-        PresenceManager(),
-        RosterManager(TestingRosterStateManager('', [])),
-        DiscoManager([]),
         sm,
         CarbonsManager()..forceEnable(),
-        EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
       await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
@@ -776,7 +766,11 @@ void main() {
 
     // Send a bogus stanza
     unawaited(
-      conn.sendStanza(Stanza.iq(to: 'localhost', type: 'get')),
+      conn.sendStanza(
+        StanzaDetails(
+          Stanza.iq(to: 'localhost', type: 'get'),
+        ),
+      ),
     );
 
     await Future<void>.delayed(const Duration(seconds: 5));

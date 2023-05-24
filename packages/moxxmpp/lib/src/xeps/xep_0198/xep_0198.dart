@@ -11,6 +11,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
@@ -414,7 +415,12 @@ class StreamManagementManager extends XmppManagerBase {
     _unackedStanzas.clear();
 
     for (final stanza in stanzas) {
-      await getAttributes().sendStanza(stanza, awaitable: false);
+      await getAttributes().sendStanza(
+        StanzaDetails(
+          stanza,
+          awaitable: false,
+        ),
+      );
     }
   }
 

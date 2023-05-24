@@ -1,6 +1,7 @@
 import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/stanza.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 
 /// Bounce a stanza if it was not handled by any manager. [conn] is the connection object
 /// to use for sending the stanza. [data] is the StanzaHandlerData of the unhandled
@@ -23,9 +24,11 @@ Future<void> handleUnhandledStanza(
     );
 
     await conn.sendStanza(
-      stanza,
-      awaitable: false,
-      forceEncryption: data.encrypted,
+      StanzaDetails(
+        stanza,
+        awaitable: false,
+        forceEncryption: data.encrypted,
+      ),
     );
   }
 }
