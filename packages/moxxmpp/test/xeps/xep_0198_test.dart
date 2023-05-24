@@ -381,7 +381,7 @@ void main() {
           '<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true" />',
         ),
         StanzaExpectation(
-          "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show></presence>",
+          "<presence xmlns='jabber:client'><show>chat</show></presence>",
           '<iq type="result" />',
         ),
         StringExpectation(
@@ -671,7 +671,7 @@ void main() {
         "<resumed xmlns='urn:xmpp:sm:3' h='id-1' h='12' />",
       ),
       StanzaExpectation(
-        "<iq to='localhost' type='get' from='polynomdivision@test.server/abc123' xmlns='jabber:client' />",
+        "<iq to='localhost' type='get' xmlns='jabber:client' />",
         '',
         ignoreId: true,
       ),
@@ -724,7 +724,7 @@ void main() {
         "<resumed xmlns='urn:xmpp:sm:3' h='id-1' h='12' />",
       ),
       StanzaExpectation(
-        "<iq to='localhost' type='get' from='polynomdivision@test.server/abc123' xmlns='jabber:client' />",
+        "<iq to='localhost' type='get' xmlns='jabber:client' />",
         '',
         ignoreId: true,
       ),

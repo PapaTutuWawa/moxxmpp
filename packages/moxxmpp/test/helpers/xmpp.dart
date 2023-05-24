@@ -98,7 +98,7 @@ List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
       ignoreId: true,
     ),
     StanzaExpectation(
-      "<presence xmlns='jabber:client' from='${settings.jid.toBare()}/MU29eEZn'><show>chat</show></presence>",
+      "<presence xmlns='jabber:client'><show>chat</show></presence>",
       '',
     ),
   ];

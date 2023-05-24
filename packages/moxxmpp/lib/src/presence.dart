@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -105,7 +104,6 @@ class PresenceManager extends XmppManagerBase {
     await attrs.sendStanza(
       StanzaDetails(
         Stanza.presence(
-          from: attrs.getFullJID().toString(),
           children: children,
         ),
         awaitable: false,
@@ -134,7 +132,6 @@ class PresenceManager extends XmppManagerBase {
           type: 'subscribe',
           to: to,
         ),
-        addFrom: StanzaFromType.none,
         awaitable: false,
       ),
     );
@@ -148,7 +145,6 @@ class PresenceManager extends XmppManagerBase {
           type: 'unsubscribe',
           to: to,
         ),
-        addFrom: StanzaFromType.none,
         awaitable: false,
       ),
     );
@@ -162,7 +158,6 @@ class PresenceManager extends XmppManagerBase {
           type: 'subscribed',
           to: to,
         ),
-        addFrom: StanzaFromType.none,
         awaitable: false,
       ),
     );
@@ -176,7 +171,6 @@ class PresenceManager extends XmppManagerBase {
           type: 'unsubscribed',
           to: to,
         ),
-        addFrom: StanzaFromType.none,
         awaitable: false,
       ),
     );

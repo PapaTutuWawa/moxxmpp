@@ -33,7 +33,6 @@ class TestingManagerHolder {
 
   Future<XMLNode> _sendStanza(
     stanza, {
-    StanzaFromType addFrom = StanzaFromType.full,
     bool addId = true,
     bool awaitable = true,
     bool encrypted = false,

@@ -16,7 +16,6 @@ Future<bool> testRosterManager(
       XmppManagerAttributes(
         sendStanza: (
           _, {
-          StanzaFromType addFrom = StanzaFromType.full,
           bool addId = true,
           bool retransmitted = false,
           bool awaitable = true,
@@ -267,7 +266,6 @@ void main() {
           XmppManagerAttributes(
             sendStanza: (
               _, {
-              StanzaFromType addFrom = StanzaFromType.full,
               bool addId = true,
               bool retransmitted = false,
               bool awaitable = true,

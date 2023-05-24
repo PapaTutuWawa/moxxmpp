@@ -49,18 +49,6 @@ enum XmppConnectionState {
   error
 }
 
-/// Metadata for [XmppConnection.sendStanza].
-enum StanzaFromType {
-  /// Add the full JID to the stanza as the from attribute
-  full,
-
-  /// Add the bare JID to the stanza as the from attribute
-  bare,
-
-  /// Add no JID as the from attribute
-  none,
-}
-
 /// This class is a connection to the server.
 class XmppConnection {
   XmppConnection(
@@ -454,25 +442,21 @@ class XmppConnection {
       newStanza = newStanza.copyWith(id: generateId());
     }
 
-    // Add a from type, if requested
-    if (details.addFrom != StanzaFromType.none &&
-        (newStanza.from == null || newStanza.from == '')) {
-      switch (details.addFrom) {
-        case StanzaFromType.full:
-          newStanza = newStanza.copyWith(
-            from: _getJidWithResource().toString(),
-          );
-          break;
-        case StanzaFromType.bare:
-          newStanza = newStanza.copyWith(
-            from: connectionSettings.jid.toBare().toString(),
-          );
-          break;
-        case StanzaFromType.none:
-          // NOOP
-          break;
-      }
-    }
+    // NOTE: Originally, we handled adding a "from" attribute to the stanza here.
+    //       However, this is not neccessary as RFC 6120 states:
+    //
+    //       > When a server receives an XML stanza from a connected client, the
+    //       > server MUST add a 'from' attribute to the stanza or override the
+    //       > 'from' attribute specified by the client, where the value of the
+    //       > 'from' attribute MUST be the full JID
+    //       > (<localpart@domainpart/resource>) determined by the server for
+    //       > the connected resource that generated the stanza (see
+    //       > Section 4.3.6), or the bare JID (<localpart@domainpart>) in the
+    //       > case of subscription-related presence stanzas (see [XMPP-IM]).
+    //
+    //       This means that even if we add a "from" attribute, the server will discard
+    //       it. If we don't specify it, then the server will add the correct value
+    //       itself.
 
     // Add the correct stanza namespace
     newStanza = newStanza.copyWith(

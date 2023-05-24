@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'package:meta/meta.dart';
-import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:synchronized/synchronized.dart';
@@ -9,7 +8,6 @@ import 'package:synchronized/synchronized.dart';
 class StanzaDetails {
   const StanzaDetails(
     this.stanza, {
-    this.addFrom = StanzaFromType.full,
     this.addId = true,
     this.awaitable = true,
     this.encrypted = false,
@@ -18,9 +16,6 @@ class StanzaDetails {
 
   /// The stanza to send.
   final Stanza stanza;
-
-  /// How to set the "from" attribute of the stanza.
-  final StanzaFromType addFrom;
 
   /// Flag indicating whether a stanza id should be added before sending.
   final bool addId;
