@@ -23,9 +23,11 @@ Future<void> handleUnhandledStanza(
     );
 
     await conn.sendStanza(
-      stanza,
-      awaitable: false,
-      forceEncryption: data.encrypted,
+      StanzaDetails(
+        stanza,
+        awaitable: false,
+        forceEncryption: data.encrypted,
+      ),
     );
   }
 }

@@ -92,7 +92,7 @@ void main() {
       [
         StanzaExpectation(
           '''
-<iq type="get" to="pubsub.server.example.org" id="a" from="testuser@example.org/MU29eEZn" xmlns="jabber:client">
+<iq type="get" to="pubsub.server.example.org" id="a" xmlns="jabber:client">
   <query xmlns="http://jabber.org/protocol/disco#info" />
 </iq>
 ''',
@@ -110,7 +110,7 @@ void main() {
         ),
         StanzaExpectation(
           '''
-<iq type="get" to="pubsub.server.example.org" id="a" from="testuser@example.org/MU29eEZn" xmlns="jabber:client">
+<iq type="get" to="pubsub.server.example.org" id="a" xmlns="jabber:client">
   <query xmlns="http://jabber.org/protocol/disco#items" node="princely_musings" />
 </iq>
 ''',
@@ -124,7 +124,7 @@ void main() {
         ),
         StanzaExpectation(
           '''
-<iq type="set" to="pubsub.server.example.org" id="a" from="testuser@example.org/MU29eEZn" xmlns="jabber:client">
+<iq type="set" to="pubsub.server.example.org" id="a" xmlns="jabber:client">
   <pubsub xmlns='http://jabber.org/protocol/pubsub'>
     <publish node='princely_musings'>
       <item id="current">

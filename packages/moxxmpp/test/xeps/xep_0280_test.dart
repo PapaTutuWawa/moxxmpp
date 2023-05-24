@@ -9,17 +9,9 @@ void main() {
   test("Test if we're vulnerable against CVE-2020-26547 style vulnerabilities",
       () async {
     final attributes = XmppManagerAttributes(
-      sendStanza: (
-        stanza, {
-        StanzaFromType addFrom = StanzaFromType.full,
-        bool addId = true,
-        bool retransmitted = false,
-        bool awaitable = true,
-        bool encrypted = false,
-        bool forceEncryption = false,
-      }) async {
+      sendStanza: (StanzaDetails details) async {
         // ignore: avoid_print
-        print('==> ${stanza.toXml()}');
+        print('==> ${details.stanza.toXml()}');
         return XMLNode(tag: 'iq', attributes: {'type': 'result'});
       },
       sendNonza: (nonza) {},

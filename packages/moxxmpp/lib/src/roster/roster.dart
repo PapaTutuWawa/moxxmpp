@@ -235,14 +235,16 @@ class RosterManager extends XmppManagerBase {
       query.attributes['ver'] = rosterVersion;
     }
 
-    final response = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'get',
-        children: [
-          query,
-        ],
+    final response = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'get',
+          children: [
+            query,
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (response.attributes['type'] != 'result') {
       logger.warning('Error requesting roster: ${response.toXml()}');
@@ -258,20 +260,22 @@ class RosterManager extends XmppManagerBase {
   Future<Result<RosterRequestResult?, RosterError>>
       requestRosterPushes() async {
     final attrs = getAttributes();
-    final result = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'get',
-        children: [
-          XMLNode.xmlns(
-            tag: 'query',
-            xmlns: rosterXmlns,
-            attributes: {
-              'ver': await _stateManager.getRosterVersion() ?? '',
-            },
-          )
-        ],
+    final result = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'get',
+          children: [
+            XMLNode.xmlns(
+              tag: 'query',
+              xmlns: rosterXmlns,
+              attributes: {
+                'ver': await _stateManager.getRosterVersion() ?? '',
+              },
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       logger.warning('Requesting roster pushes failed: ${result.toXml()}');
@@ -296,31 +300,33 @@ class RosterManager extends XmppManagerBase {
     List<String>? groups,
   }) async {
     final attrs = getAttributes();
-    final response = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'set',
-        children: [
-          XMLNode.xmlns(
-            tag: 'query',
-            xmlns: rosterXmlns,
-            children: [
-              XMLNode(
-                tag: 'item',
-                attributes: <String, String>{
-                  'jid': jid,
-                  ...title == jid.split('@')[0]
-                      ? <String, String>{}
-                      : <String, String>{'name': title}
-                },
-                children: (groups ?? [])
-                    .map((group) => XMLNode(tag: 'group', text: group))
-                    .toList(),
-              )
-            ],
-          )
-        ],
+    final response = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          children: [
+            XMLNode.xmlns(
+              tag: 'query',
+              xmlns: rosterXmlns,
+              children: [
+                XMLNode(
+                  tag: 'item',
+                  attributes: <String, String>{
+                    'jid': jid,
+                    ...title == jid.split('@')[0]
+                        ? <String, String>{}
+                        : <String, String>{'name': title}
+                  },
+                  children: (groups ?? [])
+                      .map((group) => XMLNode(tag: 'group', text: group))
+                      .toList(),
+                )
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (response.attributes['type'] != 'result') {
       logger.severe('Error adding $jid to roster: $response');
@@ -334,26 +340,28 @@ class RosterManager extends XmppManagerBase {
   /// false otherwise.
   Future<RosterRemovalResult> removeFromRoster(String jid) async {
     final attrs = getAttributes();
-    final response = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'set',
-        children: [
-          XMLNode.xmlns(
-            tag: 'query',
-            xmlns: rosterXmlns,
-            children: [
-              XMLNode(
-                tag: 'item',
-                attributes: <String, String>{
-                  'jid': jid,
-                  'subscription': 'remove'
-                },
-              )
-            ],
-          )
-        ],
+    final response = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          children: [
+            XMLNode.xmlns(
+              tag: 'query',
+              xmlns: rosterXmlns,
+              children: [
+                XMLNode(
+                  tag: 'item',
+                  attributes: <String, String>{
+                    'jid': jid,
+                    'subscription': 'remove'
+                  },
+                )
+              ],
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (response.attributes['type'] != 'result') {
       logger.severe('Failed to remove roster item: ${response.toXml()}');

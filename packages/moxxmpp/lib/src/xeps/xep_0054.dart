@@ -103,19 +103,21 @@ class VCardManager extends XmppManagerBase {
   }
 
   Future<Result<VCardError, VCard>> requestVCard(String jid) async {
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        to: jid,
-        type: 'get',
-        children: [
-          XMLNode.xmlns(
-            tag: 'vCard',
-            xmlns: vCardTempXmlns,
-          )
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          to: jid,
+          type: 'get',
+          children: [
+            XMLNode.xmlns(
+              tag: 'vCard',
+              xmlns: vCardTempXmlns,
+            )
+          ],
+        ),
+        encrypted: true,
       ),
-      encrypted: true,
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       return Result(UnknownVCardError());

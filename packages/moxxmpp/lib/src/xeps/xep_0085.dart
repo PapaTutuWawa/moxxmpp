@@ -111,10 +111,14 @@ class ChatStateManager extends XmppManagerBase {
     final tagName = state.toString().split('.').last;
 
     getAttributes().sendStanza(
-      Stanza.message(
-        to: to,
-        type: messageType,
-        children: [XMLNode.xmlns(tag: tagName, xmlns: chatStateXmlns)],
+      StanzaDetails(
+        Stanza.message(
+          to: to,
+          type: messageType,
+          children: [
+            XMLNode.xmlns(tag: tagName, xmlns: chatStateXmlns),
+          ],
+        ),
       ),
     );
   }

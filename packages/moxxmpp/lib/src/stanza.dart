@@ -1,6 +1,30 @@
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
+/// A description of a stanza to send.
+class StanzaDetails {
+  const StanzaDetails(
+    this.stanza, {
+    this.addId = true,
+    this.awaitable = true,
+    this.encrypted = false,
+    this.forceEncryption = false,
+  });
+
+  /// The stanza to send.
+  final Stanza stanza;
+
+  /// Flag indicating whether a stanza id should be added before sending.
+  final bool addId;
+
+  /// Track the stanza to allow awaiting its response.
+  final bool awaitable;
+
+  final bool encrypted;
+
+  final bool forceEncryption;
+}
+
 /// A simple description of the <error /> element that may be inside a stanza
 class StanzaError {
   StanzaError(this.type, this.error);

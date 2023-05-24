@@ -4,6 +4,32 @@ import 'package:test/test.dart';
 import 'helpers/logging.dart';
 import 'helpers/xmpp.dart';
 
+class StubConnectivityManager extends ConnectivityManager {
+  bool _hasConnection = true;
+
+  Completer<void> _goingOnlineCompleter = Completer<void>();
+
+  @override
+  Future<bool> hasConnection() async => _hasConnection;
+
+  @override
+  Future<void> waitForConnection() async {
+    if (!_hasConnection) {
+      await _goingOnlineCompleter.future;
+    }
+  }
+
+  void goOffline() {
+    _hasConnection = false;
+  }
+
+  void goOnline() {
+    _hasConnection = true;
+    _goingOnlineCompleter.complete();
+    _goingOnlineCompleter = Completer<void>();
+  }
+}
+
 /// Returns true if the roster manager triggeres an event for a given stanza
 Future<bool> testRosterManager(
   String bareJid,
@@ -16,7 +42,6 @@ Future<bool> testRosterManager(
       XmppManagerAttributes(
         sendStanza: (
           _, {
-          StanzaFromType addFrom = StanzaFromType.full,
           bool addId = true,
           bool retransmitted = false,
           bool awaitable = true,
@@ -131,11 +156,7 @@ void main() {
         password: 'aaaa',
       );
     await conn.registerManagers([
-      PresenceManager(),
-      RosterManager(TestingRosterStateManager('', [])),
-      DiscoManager([]),
       StreamManagementManager(),
-      EntityCapabilitiesManager('http://moxxmpp.example'),
     ]);
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
@@ -271,7 +292,6 @@ void main() {
           XmppManagerAttributes(
             sendStanza: (
               _, {
-              StanzaFromType addFrom = StanzaFromType.full,
               bool addId = true,
               bool retransmitted = false,
               bool awaitable = true,
@@ -624,5 +644,153 @@ void main() {
       result2.isType<bool>(),
       true,
     );
+  });
+
+  test('Test sending stanzas while offline', () async {
+    final fakeSocket = StubTCPSocket(
+      [
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+  </stream:features>''',
+        ),
+        StringExpectation(
+          "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHBvbHlub21kaXZpc2lvbgBhYWFh</auth>",
+          '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
+        ),
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+    <session xmlns="urn:ietf:params:xml:ns:xmpp-session">
+      <optional/>
+    </session>
+    <csi xmlns="urn:xmpp:csi:0"/>
+    <sm xmlns="urn:xmpp:sm:3"/>
+  </stream:features>
+''',
+        ),
+        StanzaExpectation(
+          '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+          '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+          ignoreId: true,
+        ),
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+  </stream:features>''',
+        ),
+        StringExpectation(
+          "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHBvbHlub21kaXZpc2lvbgBhYWFh</auth>",
+          '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
+        ),
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+    <session xmlns="urn:ietf:params:xml:ns:xmpp-session">
+      <optional/>
+    </session>
+    <csi xmlns="urn:xmpp:csi:0"/>
+    <sm xmlns="urn:xmpp:sm:3"/>
+  </stream:features>
+''',
+        ),
+        StanzaExpectation(
+          '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+          '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+          ignoreId: true,
+        ),
+        StanzaExpectation(
+          '<iq xmlns="jabber:client" type="get" id="abc123"></iq>',
+          '<iq xmlns="jabber:client" type="result" id="abc123"></iq>',
+          ignoreId: true,
+        ),
+      ],
+    );
+    final connectivity = StubConnectivityManager();
+    final conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      connectivity,
+      ClientToServerNegotiator(),
+      fakeSocket,
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+      );
+    await conn.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      SaslScramNegotiator(10, '', '', ScramHashType.sha512),
+      ResourceBindingNegotiator(),
+    ]);
+
+    await conn.connect(
+      waitUntilLogin: true,
+    );
+    expect(fakeSocket.getState(), 4);
+
+    // Fake going offline
+    connectivity.goOffline();
+    await conn.handleSocketEvent(
+      XmppSocketClosureEvent(false),
+    );
+
+    // Send a stanza while offline
+    final stanzaFuture = conn.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          id: 'abc123',
+          type: 'get',
+        ),
+      ),
+    );
+
+    // Come online again
+    connectivity.goOnline();
+    await conn.connect(
+      waitUntilLogin: true,
+    );
+    await Future<void>.delayed(const Duration(seconds: 6));
+
+    expect(fakeSocket.getState(), 9);
+    expect(await stanzaFuture != null, true);
   });
 }

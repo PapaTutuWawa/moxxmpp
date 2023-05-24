@@ -26,6 +26,7 @@ import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
@@ -46,18 +47,6 @@ enum XmppConnectionState {
 
   /// We have received an unrecoverable error and the server killed the connection
   error
-}
-
-/// Metadata for [XmppConnection.sendStanza].
-enum StanzaFromType {
-  /// Add the full JID to the stanza as the from attribute
-  full,
-
-  /// Add the bare JID to the stanza as the from attribute
-  bare,
-
-  /// Add no JID as the from attribute
-  none,
 }
 
 /// This class is a connection to the server.
@@ -91,7 +80,12 @@ class XmppConnection {
     _socketStream = _socket.getDataStream();
     // TODO(Unknown): Handle on done
     _socketStream.transform(_streamParser).forEach(handleXmlStream);
-    _socket.getEventStream().listen(_handleSocketEvent);
+    _socket.getEventStream().listen(handleSocketEvent);
+
+    _stanzaQueue = AsyncStanzaQueue(
+      _sendStanzaImpl,
+      _canSendData,
+    );
   }
 
   /// The state that the connection is currently in
@@ -174,6 +168,8 @@ class XmppConnection {
   bool _enableReconnectOnSuccess = false;
 
   bool get isAuthenticated => _isAuthenticated;
+
+  late final AsyncStanzaQueue _stanzaQueue;
 
   /// Returns the JID we authenticate with and add the resource that we have bound.
   JID _getJidWithResource() {
@@ -366,7 +362,8 @@ class XmppConnection {
   }
 
   /// Called whenever the socket creates an event
-  Future<void> _handleSocketEvent(XmppSocketEvent event) async {
+  @visibleForTesting
+  Future<void> handleSocketEvent(XmppSocketEvent event) async {
     if (event is XmppSocketErrorEvent) {
       await handleError(SocketError(event));
     } else if (event is XmppSocketClosureEvent) {
@@ -412,133 +409,135 @@ class XmppConnection {
         .contains(await getConnectionState());
   }
 
-  /// Sends a [stanza] to the server. If stream management is enabled, then keeping track
-  /// of the stanza is taken care of. Returns a Future that resolves when we receive a
-  /// response to the stanza.
-  ///
-  /// If addFrom is true, then a 'from' attribute will be added to the stanza if
-  /// [stanza] has none.
-  /// If addId is true, then an 'id' attribute will be added to the stanza if [stanza] has
-  /// none.
+  /// Sends a stanza described by [details] to the server. Until sent, the stanza is
+  /// kept in a queue, that is flushed after going online again. If Stream Management
+  /// is active, stanza's acknowledgement is tracked.
   // TODO(Unknown): if addId = false, the function crashes.
-  Future<XMLNode> sendStanza(
-    Stanza stanza, {
-    StanzaFromType addFrom = StanzaFromType.full,
-    bool addId = true,
-    bool awaitable = true,
-    bool encrypted = false,
-    bool forceEncryption = false,
-  }) async {
+  Future<XMLNode?> sendStanza(StanzaDetails details) async {
     assert(
-      implies(addId == false && stanza.id == null, !awaitable),
-      'Cannot await a stanza with no id',
+      implies(
+        details.awaitable,
+        details.stanza.id != null && details.stanza.id!.isNotEmpty ||
+            details.addId,
+      ),
+      'An awaitable stanza must have an id',
     );
 
-    // Add extra data in case it was not set
-    var stanza_ = stanza;
-    if (addId && (stanza_.id == null || stanza_.id == '')) {
-      stanza_ = stanza.copyWith(id: generateId());
+    final completer = details.awaitable ? Completer<XMLNode>() : null;
+    await _stanzaQueue.enqueueStanza(
+      StanzaQueueEntry(
+        details,
+        completer,
+      ),
+    );
+
+    return completer?.future;
+  }
+
+  Future<void> _sendStanzaImpl(StanzaQueueEntry entry) async {
+    final details = entry.details;
+    var newStanza = details.stanza;
+
+    // Generate an id, if requested
+    if (details.addId && (newStanza.id == null || newStanza.id == '')) {
+      newStanza = newStanza.copyWith(id: generateId());
     }
-    if (addFrom != StanzaFromType.none &&
-        (stanza_.from == null || stanza_.from == '')) {
-      switch (addFrom) {
-        case StanzaFromType.full:
-          {
-            stanza_ = stanza_.copyWith(
-              from: _getJidWithResource().toString(),
-            );
-          }
-          break;
-        case StanzaFromType.bare:
-          {
-            stanza_ = stanza_.copyWith(
-              from: connectionSettings.jid.toBare().toString(),
-            );
-          }
-          break;
-        case StanzaFromType.none:
-          break;
-      }
-    }
-    stanza_ = stanza_.copyWith(
+
+    // NOTE: Originally, we handled adding a "from" attribute to the stanza here.
+    //       However, this is not neccessary as RFC 6120 states:
+    //
+    //       > When a server receives an XML stanza from a connected client, the
+    //       > server MUST add a 'from' attribute to the stanza or override the
+    //       > 'from' attribute specified by the client, where the value of the
+    //       > 'from' attribute MUST be the full JID
+    //       > (<localpart@domainpart/resource>) determined by the server for
+    //       > the connected resource that generated the stanza (see
+    //       > Section 4.3.6), or the bare JID (<localpart@domainpart>) in the
+    //       > case of subscription-related presence stanzas (see [XMPP-IM]).
+    //
+    //       This means that even if we add a "from" attribute, the server will discard
+    //       it. If we don't specify it, then the server will add the correct value
+    //       itself.
+
+    // Add the correct stanza namespace
+    newStanza = newStanza.copyWith(
       xmlns: _negotiationsHandler.getStanzaNamespace(),
     );
 
+    // Run pre-send handlers
     _log.fine('Running pre stanza handlers..');
     final data = await _runOutgoingPreStanzaHandlers(
-      stanza_,
+      newStanza,
       initial: StanzaHandlerData(
         false,
         false,
         null,
-        stanza_,
-        encrypted: encrypted,
-        forceEncryption: forceEncryption,
+        newStanza,
+        encrypted: details.encrypted,
+        forceEncryption: details.forceEncryption,
       ),
     );
     _log.fine('Done');
 
+    // Cancel sending, if the pre-send handlers indicated it.
     if (data.cancel) {
       _log.fine('A stanza handler indicated that it wants to cancel sending.');
       await _sendEvent(StanzaSendingCancelledEvent(data));
-      return Stanza(
-        tag: data.stanza.tag,
-        to: data.stanza.from,
-        from: data.stanza.to,
-        attributes: <String, String>{
-          'type': 'error',
-          ...data.stanza.id != null
-              ? {
-                  'id': data.stanza.id!,
-                }
-              : {},
-        },
-      );
+
+      // Resolve the future, if one was given.
+      if (details.awaitable) {
+        entry.completer!.complete(
+          Stanza(
+            tag: data.stanza.tag,
+            to: data.stanza.from,
+            from: data.stanza.to,
+            attributes: <String, String>{
+              'type': 'error',
+              if (data.stanza.id != null) 'id': data.stanza.id!,
+            },
+          ),
+        );
+      }
+      return;
     }
 
+    // Log the (raw) stanza
     final prefix = data.encrypted ? '(Encrypted) ' : '';
-    _log.finest('==> $prefix${stanza_.toXml()}');
+    _log.finest('==> $prefix${newStanza.toXml()}');
 
-    final stanzaString = data.stanza.toXml();
-
-    // ignore: cascade_invocations
-    _log.fine('Attempting to acquire lock for ${data.stanza.id}...');
-    // TODO(PapaTutuWawa): Handle this much more graceful
-    var future = Future.value(XMLNode(tag: 'not-used'));
-    if (awaitable) {
-      future = await _stanzaAwaiter.addPending(
+    if (details.awaitable) {
+      await _stanzaAwaiter
+          .addPending(
         // A stanza with no to attribute is for direct processing by the server. As such,
         // we can correlate it by just *assuming* we have that attribute
         // (RFC 6120 Section 8.1.1.1)
         data.stanza.to ?? connectionSettings.jid.toBare().toString(),
         data.stanza.id!,
         data.stanza.tag,
-      );
+      )
+          .then((result) {
+        entry.completer!.complete(result);
+      });
     }
 
-    // This uses the StreamManager to behave like a send queue
     if (await _canSendData()) {
-      _socket.write(stanzaString);
-
-      // Try to ack every stanza
-      // NOTE: Here we have send an Ack request nonza. This is now done by StreamManagementManager when receiving the StanzaSentEvent
+      _socket.write(data.stanza.toXml());
     } else {
-      _log.fine('_canSendData() returned false.');
+      _log.fine('Not sending dat as _canSendData() returned false.');
     }
 
+    // Run post-send handlers
     _log.fine('Running post stanza handlers..');
     await _runOutgoingPostStanzaHandlers(
-      stanza_,
+      newStanza,
       initial: StanzaHandlerData(
         false,
         false,
         null,
-        stanza_,
+        newStanza,
       ),
     );
     _log.fine('Done');
-
-    return future;
   }
 
   /// Called when we timeout during connecting
@@ -562,17 +561,10 @@ class XmppConnection {
     // Set the new routing state
     _updateRoutingState(RoutingState.handleStanzas);
 
-    // Set the connection state
-    await _setConnectionState(XmppConnectionState.connected);
-
     // Enable reconnections
     if (_enableReconnectOnSuccess) {
       await _reconnectionPolicy.setShouldReconnect(true);
     }
-
-    // Resolve the connection completion future
-    _connectionCompleter?.complete(const Result(true));
-    _connectionCompleter = null;
 
     // Tell consumers of the event stream that we're done with stream feature
     // negotiations
@@ -582,6 +574,16 @@ class XmppConnection {
             false,
       ),
     );
+
+    // Set the connection state
+    await _setConnectionState(XmppConnectionState.connected);
+
+    // Resolve the connection completion future
+    _connectionCompleter?.complete(const Result(true));
+    _connectionCompleter = null;
+
+    // Flush the stanza send queue
+    await _stanzaQueue.restart();
   }
 
   /// Sets the connection state to [state] and triggers an event of type

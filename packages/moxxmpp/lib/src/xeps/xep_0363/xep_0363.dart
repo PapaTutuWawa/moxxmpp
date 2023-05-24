@@ -149,23 +149,25 @@ class HttpFileUploadManager extends XmppManagerBase {
     }
 
     final attrs = getAttributes();
-    final response = await attrs.sendStanza(
-      Stanza.iq(
-        to: _entityJid.toString(),
-        type: 'get',
-        children: [
-          XMLNode.xmlns(
-            tag: 'request',
-            xmlns: httpFileUploadXmlns,
-            attributes: {
-              'filename': filename,
-              'size': filesize.toString(),
-              ...contentType != null ? {'content-type': contentType} : {}
-            },
-          )
-        ],
+    final response = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          to: _entityJid.toString(),
+          type: 'get',
+          children: [
+            XMLNode.xmlns(
+              tag: 'request',
+              xmlns: httpFileUploadXmlns,
+              attributes: {
+                'filename': filename,
+                'size': filesize.toString(),
+                ...contentType != null ? {'content-type': contentType} : {}
+              },
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (response.attributes['type']! != 'result') {
       logger.severe('Failed to request HTTP File Upload slot.');

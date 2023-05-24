@@ -58,11 +58,11 @@ void main() {
           ignoreId: true,
         ),
         StanzaExpectation(
-          "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='3QvQ2RAy45XBDhArjxy/vEWMl+E=' /></presence>",
+          "<presence xmlns='jabber:client'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='3QvQ2RAy45XBDhArjxy/vEWMl+E=' /></presence>",
           '',
         ),
         StanzaExpectation(
-          "<iq type='get' id='ec325efc-9924-4c48-93f8-ed34a2b0e5fc' to='romeo@montague.lit/orchard' from='polynomdivision@test.server/MU29eEZn' xmlns='jabber:client'><query xmlns='http://jabber.org/protocol/disco#info' /></iq>",
+          "<iq type='get' id='ec325efc-9924-4c48-93f8-ed34a2b0e5fc' to='romeo@montague.lit/orchard' xmlns='jabber:client'><query xmlns='http://jabber.org/protocol/disco#info' /></iq>",
           '',
           ignoreId: true,
         ),

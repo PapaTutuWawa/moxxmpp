@@ -23,14 +23,7 @@ class XmppManagerAttributes {
   });
 
   /// Send a stanza whose response can be awaited.
-  final Future<XMLNode> Function(
-    Stanza stanza, {
-    StanzaFromType addFrom,
-    bool addId,
-    bool awaitable,
-    bool encrypted,
-    bool forceEncryption,
-  }) sendStanza;
+  final Future<XMLNode?> Function(StanzaDetails) sendStanza;
 
   /// Send a nonza.
   final void Function(XMLNode) sendNonza;

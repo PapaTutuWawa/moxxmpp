@@ -181,27 +181,29 @@ class PubSubManager extends XmppManagerBase {
 
   Future<Result<PubSubError, bool>> subscribe(String jid, String node) async {
     final attrs = getAttributes();
-    final result = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'set',
-        to: jid,
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubXmlns,
-            children: [
-              XMLNode(
-                tag: 'subscribe',
-                attributes: <String, String>{
-                  'node': node,
-                  'jid': attrs.getFullJID().toBare().toString(),
-                },
-              ),
-            ],
-          ),
-        ],
+    final result = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          to: jid,
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubXmlns,
+              children: [
+                XMLNode(
+                  tag: 'subscribe',
+                  attributes: <String, String>{
+                    'node': node,
+                    'jid': attrs.getFullJID().toBare().toString(),
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       return Result(UnknownPubSubError());
@@ -222,27 +224,29 @@ class PubSubManager extends XmppManagerBase {
 
   Future<Result<PubSubError, bool>> unsubscribe(String jid, String node) async {
     final attrs = getAttributes();
-    final result = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'set',
-        to: jid,
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubXmlns,
-            children: [
-              XMLNode(
-                tag: 'unsubscribe',
-                attributes: <String, String>{
-                  'node': node,
-                  'jid': attrs.getFullJID().toBare().toString(),
-                },
-              ),
-            ],
-          ),
-        ],
+    final result = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          to: jid,
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubXmlns,
+              children: [
+                XMLNode(
+                  tag: 'unsubscribe',
+                  attributes: <String, String>{
+                    'node': node,
+                    'jid': attrs.getFullJID().toBare().toString(),
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       return Result(UnknownPubSubError());
@@ -293,38 +297,40 @@ class PubSubManager extends XmppManagerBase {
       pubOptions = await preprocessPublishOptions(jid, node, options);
     }
 
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'set',
-        to: jid.toString(),
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubXmlns,
-            children: [
-              XMLNode(
-                tag: 'publish',
-                attributes: <String, String>{'node': node},
-                children: [
-                  XMLNode(
-                    tag: 'item',
-                    attributes: id != null
-                        ? <String, String>{'id': id}
-                        : <String, String>{},
-                    children: [payload],
-                  )
-                ],
-              ),
-              if (pubOptions != null)
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          to: jid.toString(),
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubXmlns,
+              children: [
                 XMLNode(
-                  tag: 'publish-options',
-                  children: [pubOptions.toXml()],
+                  tag: 'publish',
+                  attributes: <String, String>{'node': node},
+                  children: [
+                    XMLNode(
+                      tag: 'item',
+                      attributes: id != null
+                          ? <String, String>{'id': id}
+                          : <String, String>{},
+                      children: [payload],
+                    )
+                  ],
                 ),
-            ],
-          )
-        ],
+                if (pubOptions != null)
+                  XMLNode(
+                    tag: 'publish-options',
+                    children: [pubOptions.toXml()],
+                  ),
+              ],
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
     if (result.attributes['type'] != 'result') {
       final error = getPubSubError(result);
 
@@ -395,21 +401,26 @@ class PubSubManager extends XmppManagerBase {
     String jid,
     String node,
   ) async {
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'get',
-        to: jid,
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubXmlns,
-            children: [
-              XMLNode(tag: 'items', attributes: <String, String>{'node': node}),
-            ],
-          )
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'get',
+          to: jid,
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubXmlns,
+              children: [
+                XMLNode(
+                  tag: 'items',
+                  attributes: <String, String>{'node': node},
+                ),
+              ],
+            )
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       return Result(getPubSubError(result));
@@ -436,30 +447,32 @@ class PubSubManager extends XmppManagerBase {
     String node,
     String id,
   ) async {
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'get',
-        to: jid,
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubXmlns,
-            children: [
-              XMLNode(
-                tag: 'items',
-                attributes: <String, String>{'node': node},
-                children: [
-                  XMLNode(
-                    tag: 'item',
-                    attributes: <String, String>{'id': id},
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'get',
+          to: jid,
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubXmlns,
+              children: [
+                XMLNode(
+                  tag: 'items',
+                  attributes: <String, String>{'node': node},
+                  children: [
+                    XMLNode(
+                      tag: 'item',
+                      attributes: <String, String>{'id': id},
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       return Result(getPubSubError(result));
@@ -488,53 +501,57 @@ class PubSubManager extends XmppManagerBase {
     final attrs = getAttributes();
 
     // Request the form
-    final form = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'get',
-        to: jid.toString(),
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubOwnerXmlns,
-            children: [
-              XMLNode(
-                tag: 'configure',
-                attributes: <String, String>{
-                  'node': node,
-                },
-              ),
-            ],
-          ),
-        ],
+    final form = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'get',
+          to: jid.toString(),
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubOwnerXmlns,
+              children: [
+                XMLNode(
+                  tag: 'configure',
+                  attributes: <String, String>{
+                    'node': node,
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ))!;
     if (form.attributes['type'] != 'result') {
       return Result(getPubSubError(form));
     }
 
-    final submit = await attrs.sendStanza(
-      Stanza.iq(
-        type: 'set',
-        to: jid.toString(),
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubOwnerXmlns,
-            children: [
-              XMLNode(
-                tag: 'configure',
-                attributes: <String, String>{
-                  'node': node,
-                },
-                children: [
-                  options.toXml(),
-                ],
-              ),
-            ],
-          ),
-        ],
+    final submit = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          to: jid.toString(),
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubOwnerXmlns,
+              children: [
+                XMLNode(
+                  tag: 'configure',
+                  attributes: <String, String>{
+                    'node': node,
+                  },
+                  children: [
+                    options.toXml(),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ))!;
     if (submit.attributes['type'] != 'result') {
       return Result(getPubSubError(form));
     }
@@ -543,28 +560,30 @@ class PubSubManager extends XmppManagerBase {
   }
 
   Future<Result<PubSubError, bool>> delete(JID host, String node) async {
-    final request = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'set',
-        to: host.toString(),
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubOwnerXmlns,
-            children: [
-              XMLNode(
-                tag: 'delete',
-                attributes: <String, String>{
-                  'node': node,
-                },
-              ),
-            ],
-          ),
-        ],
+    final request = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          to: host.toString(),
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubOwnerXmlns,
+              children: [
+                XMLNode(
+                  tag: 'delete',
+                  attributes: <String, String>{
+                    'node': node,
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ) as Stanza;
+    ))!;
 
-    if (request.type != 'result') {
+    if (request.attributes['type'] != 'result') {
       // TODO(Unknown): Be more specific
       return Result(UnknownPubSubError());
     }
@@ -577,36 +596,38 @@ class PubSubManager extends XmppManagerBase {
     String node,
     String itemId,
   ) async {
-    final request = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'set',
-        to: host.toString(),
-        children: [
-          XMLNode.xmlns(
-            tag: 'pubsub',
-            xmlns: pubsubXmlns,
-            children: [
-              XMLNode(
-                tag: 'retract',
-                attributes: <String, String>{
-                  'node': node,
-                },
-                children: [
-                  XMLNode(
-                    tag: 'item',
-                    attributes: <String, String>{
-                      'id': itemId,
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+    final request = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          to: host.toString(),
+          children: [
+            XMLNode.xmlns(
+              tag: 'pubsub',
+              xmlns: pubsubXmlns,
+              children: [
+                XMLNode(
+                  tag: 'retract',
+                  attributes: <String, String>{
+                    'node': node,
+                  },
+                  children: [
+                    XMLNode(
+                      tag: 'item',
+                      attributes: <String, String>{
+                        'id': itemId,
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ) as Stanza;
+    ))!;
 
-    if (request.type != 'result') {
+    if (request.attributes['type'] != 'result') {
       // TODO(Unknown): Be more specific
       return Result(UnknownPubSubError());
     }

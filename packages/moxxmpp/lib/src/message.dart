@@ -320,6 +320,11 @@ class MessageManager extends XmppManagerBase {
       );
     }
 
-    getAttributes().sendStanza(stanza, awaitable: false);
+    getAttributes().sendStanza(
+      StanzaDetails(
+        stanza,
+        awaitable: false,
+      ),
+    );
   }
 }

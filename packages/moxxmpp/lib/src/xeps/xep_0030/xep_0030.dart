@@ -291,10 +291,12 @@ class DiscoManager extends XmppManagerBase {
       }
     }
 
-    final stanza = await getAttributes().sendStanza(
-      buildDiscoInfoQueryStanza(entity, node),
-      encrypted: !shouldEncrypt,
-    );
+    final stanza = (await getAttributes().sendStanza(
+      StanzaDetails(
+        buildDiscoInfoQueryStanza(entity, node),
+        encrypted: !shouldEncrypt,
+      ),
+    ))!;
     final query = stanza.firstTag('query');
     if (query == null) {
       final result = Result<DiscoError, DiscoInfo>(InvalidResponseDiscoError());
@@ -331,10 +333,12 @@ class DiscoManager extends XmppManagerBase {
       return future;
     }
 
-    final stanza = await getAttributes().sendStanza(
-      buildDiscoItemsQueryStanza(entity, node: node),
-      encrypted: !shouldEncrypt,
-    ) as Stanza;
+    final stanza = (await getAttributes().sendStanza(
+      StanzaDetails(
+        buildDiscoItemsQueryStanza(entity, node: node),
+        encrypted: !shouldEncrypt,
+      ),
+    ))!;
 
     final query = stanza.firstTag('query');
     if (query == null) {
@@ -344,7 +348,7 @@ class DiscoManager extends XmppManagerBase {
       return result;
     }
 
-    if (stanza.type == 'error') {
+    if (stanza.attributes['type'] == 'error') {
       //final error = stanza.firstTag('error');
       //print("Disco Items error: " + error.toXml());
       final result =

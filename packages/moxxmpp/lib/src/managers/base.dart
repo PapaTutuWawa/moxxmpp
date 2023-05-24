@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
@@ -165,9 +166,11 @@ abstract class XmppManagerBase {
     );
 
     await getAttributes().sendStanza(
-      stanza,
-      awaitable: false,
-      forceEncryption: data.encrypted,
+      StanzaDetails(
+        stanza,
+        awaitable: false,
+        forceEncryption: data.encrypted,
+      ),
     );
   }
 }

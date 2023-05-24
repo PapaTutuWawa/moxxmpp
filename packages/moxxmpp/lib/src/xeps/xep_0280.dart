@@ -1,6 +1,5 @@
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:moxxmpp/src/connection.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -111,20 +110,20 @@ class CarbonsManager extends XmppManagerBase {
   /// Returns true if carbons were enabled. False, if not.
   Future<bool> enableCarbons() async {
     final attrs = getAttributes();
-    final result = await attrs.sendStanza(
-      Stanza.iq(
-        to: attrs.getFullJID().toBare().toString(),
-        type: 'set',
-        children: [
-          XMLNode.xmlns(
-            tag: 'enable',
-            xmlns: carbonsXmlns,
-          )
-        ],
+    final result = (await attrs.sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          to: attrs.getFullJID().toBare().toString(),
+          type: 'set',
+          children: [
+            XMLNode.xmlns(
+              tag: 'enable',
+              xmlns: carbonsXmlns,
+            )
+          ],
+        ),
       ),
-      addFrom: StanzaFromType.full,
-      addId: true,
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       logger.warning('Failed to enable message carbons');
@@ -142,19 +141,19 @@ class CarbonsManager extends XmppManagerBase {
   ///
   /// Returns true if carbons were disabled. False, if not.
   Future<bool> disableCarbons() async {
-    final result = await getAttributes().sendStanza(
-      Stanza.iq(
-        type: 'set',
-        children: [
-          XMLNode.xmlns(
-            tag: 'disable',
-            xmlns: carbonsXmlns,
-          )
-        ],
+    final result = (await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.iq(
+          type: 'set',
+          children: [
+            XMLNode.xmlns(
+              tag: 'disable',
+              xmlns: carbonsXmlns,
+            )
+          ],
+        ),
       ),
-      addFrom: StanzaFromType.full,
-      addId: true,
-    );
+    ))!;
 
     if (result.attributes['type'] != 'result') {
       logger.warning('Failed to disable message carbons');

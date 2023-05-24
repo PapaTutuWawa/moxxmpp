@@ -414,7 +414,12 @@ class StreamManagementManager extends XmppManagerBase {
     _unackedStanzas.clear();
 
     for (final stanza in stanzas) {
-      await getAttributes().sendStanza(stanza, awaitable: false);
+      await getAttributes().sendStanza(
+        StanzaDetails(
+          stanza,
+          awaitable: false,
+        ),
+      );
     }
   }
 

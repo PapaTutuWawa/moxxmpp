@@ -44,15 +44,8 @@ Future<void> runOutgoingStanzaHandlers(
 
 XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
   return XmppManagerAttributes(
-    sendStanza: (
-      stanza, {
-      StanzaFromType addFrom = StanzaFromType.full,
-      bool addId = true,
-      bool awaitable = true,
-      bool encrypted = false,
-      bool forceEncryption = false,
-    }) async {
-      callback(stanza);
+    sendStanza: (StanzaDetails details) async {
+      callback(details.stanza);
 
       return Stanza.message();
     },
@@ -290,12 +283,8 @@ void main() {
         );
       final sm = StreamManagementManager();
       await conn.registerManagers([
-        PresenceManager(),
-        RosterManager(TestingRosterStateManager('', [])),
-        DiscoManager([]),
         sm,
         CarbonsManager()..forceEnable(),
-        EntityCapabilitiesManager('http://moxxmpp.example'),
       ]);
       await conn.registerFeatureNegotiators([
         SaslPlainNegotiator(),
@@ -391,7 +380,7 @@ void main() {
           '<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true" />',
         ),
         StanzaExpectation(
-          "<presence xmlns='jabber:client' from='polynomdivision@test.server/MU29eEZn'><show>chat</show></presence>",
+          "<presence xmlns='jabber:client'><show>chat</show></presence>",
           '<iq type="result" />',
         ),
         StringExpectation(
@@ -681,7 +670,7 @@ void main() {
         "<resumed xmlns='urn:xmpp:sm:3' h='id-1' h='12' />",
       ),
       StanzaExpectation(
-        "<iq to='localhost' type='get' from='polynomdivision@test.server/abc123' xmlns='jabber:client' />",
+        "<iq to='localhost' type='get' xmlns='jabber:client' />",
         '',
         ignoreId: true,
       ),
@@ -734,7 +723,7 @@ void main() {
         "<resumed xmlns='urn:xmpp:sm:3' h='id-1' h='12' />",
       ),
       StanzaExpectation(
-        "<iq to='localhost' type='get' from='polynomdivision@test.server/abc123' xmlns='jabber:client' />",
+        "<iq to='localhost' type='get' xmlns='jabber:client' />",
         '',
         ignoreId: true,
       ),
@@ -776,7 +765,11 @@ void main() {
 
     // Send a bogus stanza
     unawaited(
-      conn.sendStanza(Stanza.iq(to: 'localhost', type: 'get')),
+      conn.sendStanza(
+        StanzaDetails(
+          Stanza.iq(to: 'localhost', type: 'get'),
+        ),
+      ),
     );
 
     await Future<void>.delayed(const Duration(seconds: 5));
