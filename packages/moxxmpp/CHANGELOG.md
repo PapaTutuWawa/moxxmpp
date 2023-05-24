@@ -10,7 +10,7 @@
 - **BREAKING**: The entity argument of `DiscoManager.discoInfoQuery` and `DiscoManager.discoItemsQuery` are now `JID` instead of `String`.
 - **BREAKING**: `PubSubManager` and `UserAvatarManager` now use `JID` instead of `String`.
 - **BREAKING**: `XmppConnection.sendStanza` not only takes a `StanzaDetails` argument.
-- Sent stanzas are not kept in a queue until sent.
+- Sent stanzas are now kept in a queue until sent.
 
 ## 0.3.1
 
