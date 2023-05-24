@@ -26,6 +26,7 @@ import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
@@ -92,6 +93,11 @@ class XmppConnection {
     // TODO(Unknown): Handle on done
     _socketStream.transform(_streamParser).forEach(handleXmlStream);
     _socket.getEventStream().listen(_handleSocketEvent);
+
+    _stanzaQueue = AsyncStanzaQueue(
+      _sendStanzaImpl,
+      _canSendData,
+    );
   }
 
   /// The state that the connection is currently in
@@ -174,6 +180,8 @@ class XmppConnection {
   bool _enableReconnectOnSuccess = false;
 
   bool get isAuthenticated => _isAuthenticated;
+
+  late final AsyncStanzaQueue _stanzaQueue;
 
   /// Returns the JID we authenticate with and add the resource that we have bound.
   JID _getJidWithResource() {
@@ -412,6 +420,136 @@ class XmppConnection {
         .contains(await getConnectionState());
   }
 
+  Future<Future<XMLNode>?> sendStanza2(StanzaDetails details) async {
+    assert(
+      implies(
+          details.awaitable,
+          details.stanza.id != null && details.stanza.id!.isNotEmpty ||
+              details.addId),
+      'An awaitable stanza must have an id',
+    );
+
+    final completer = details.awaitable ? Completer<XMLNode>() : null;
+    await _stanzaQueue.enqueueStanza(
+      StanzaQueueEntry(
+        details,
+        completer,
+      ),
+    );
+
+    return completer?.future;
+  }
+
+  Future<void> _sendStanzaImpl(StanzaQueueEntry entry) async {
+    final details = entry.details;
+    var newStanza = details.stanza;
+
+    // Generate an id, if requested
+    if (details.addId && (newStanza.id == null || newStanza.id == '')) {
+      newStanza = newStanza.copyWith(id: generateId());
+    }
+
+    // Add a from type, if requested
+    if (details.addFrom != StanzaFromType.none &&
+        (newStanza.from == null || newStanza.from == '')) {
+      switch (details.addFrom) {
+        case StanzaFromType.full:
+          newStanza = newStanza.copyWith(
+            from: _getJidWithResource().toString(),
+          );
+          break;
+        case StanzaFromType.bare:
+          newStanza = newStanza.copyWith(
+            from: connectionSettings.jid.toBare().toString(),
+          );
+          break;
+        case StanzaFromType.none:
+          // NOOP
+          break;
+      }
+    }
+
+    // Add the correct stanza namespace
+    newStanza = newStanza.copyWith(
+      xmlns: _negotiationsHandler.getStanzaNamespace(),
+    );
+
+    // Run pre-send handlers
+    _log.fine('Running pre stanza handlers..');
+    final data = await _runOutgoingPreStanzaHandlers(
+      newStanza,
+      initial: StanzaHandlerData(
+        false,
+        false,
+        null,
+        newStanza,
+        encrypted: details.encrypted,
+        forceEncryption: details.forceEncryption,
+      ),
+    );
+    _log.fine('Done');
+
+    // Cancel sending, if the pre-send handlers indicated it.
+    if (data.cancel) {
+      _log.fine('A stanza handler indicated that it wants to cancel sending.');
+      await _sendEvent(StanzaSendingCancelledEvent(data));
+
+      // Resolve the future, if one was given.
+      if (details.awaitable) {
+        entry.completer!.complete(
+          Stanza(
+            tag: data.stanza.tag,
+            to: data.stanza.from,
+            from: data.stanza.to,
+            attributes: <String, String>{
+              'type': 'error',
+              if (data.stanza.id != null) 'id': data.stanza.id!,
+            },
+          ),
+        );
+      }
+      return;
+    }
+
+    // Log the (raw) stanza
+    final prefix = data.encrypted ? '(Encrypted) ' : '';
+    _log.finest('==> $prefix${newStanza.toXml()}');
+
+    if (details.awaitable) {
+      await _stanzaAwaiter
+          .addPending(
+        // A stanza with no to attribute is for direct processing by the server. As such,
+        // we can correlate it by just *assuming* we have that attribute
+        // (RFC 6120 Section 8.1.1.1)
+        data.stanza.to ?? connectionSettings.jid.toBare().toString(),
+        data.stanza.id!,
+        data.stanza.tag,
+      )
+          .then((result) {
+        entry.completer!.complete(result);
+      });
+    }
+
+    if (await _canSendData()) {
+      _socket.write(data.stanza.toXml());
+    } else {
+      _log.fine('Not sending dat as _canSendData() returned false.');
+    }
+
+    // Run post-send handlers
+    _log.fine('Running post stanza handlers..');
+    await _runOutgoingPostStanzaHandlers(
+      newStanza,
+      initial: StanzaHandlerData(
+        false,
+        false,
+        null,
+        newStanza,
+      ),
+    );
+    _log.fine('Done');
+  }
+
   /// Sends a [stanza] to the server. If stream management is enabled, then keeping track
   /// of the stanza is taken care of. Returns a Future that resolves when we receive a
   /// response to the stanza.
@@ -487,11 +625,7 @@ class XmppConnection {
         from: data.stanza.to,
         attributes: <String, String>{
           'type': 'error',
-          ...data.stanza.id != null
-              ? {
-                  'id': data.stanza.id!,
-                }
-              : {},
+          if (data.stanza.id != null) 'id': data.stanza.id!,
         },
       );
     }
