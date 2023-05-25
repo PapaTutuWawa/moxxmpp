@@ -79,12 +79,13 @@ class MessageEvent extends XmppEvent {
     required this.fromJid,
     required this.toJid,
     required this.sid,
-    required this.stanzaId,
     required this.isCarbon,
     required this.deliveryReceiptRequested,
     required this.isMarkable,
     required this.encrypted,
     required this.other,
+    this.originId,
+    this.stanzaIds,
     this.error,
     this.type,
     this.oob,
@@ -107,7 +108,8 @@ class MessageEvent extends XmppEvent {
   final JID toJid;
   final String sid;
   final String? type;
-  final StableStanzaId stanzaId;
+  final String? originId;
+  final List<StanzaId>? stanzaIds;
   final bool isCarbon;
   final bool deliveryReceiptRequested;
   final bool isMarkable;

@@ -1,7 +1,7 @@
 // coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
-// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'data.dart';
 
@@ -32,8 +32,11 @@ mixin _$StanzaHandlerData {
   bool get retransmitted => throw _privateConstructorUsedError;
   StatelessMediaSharingData? get sims => throw _privateConstructorUsedError;
   StatelessFileSharingData? get sfs => throw _privateConstructorUsedError;
-  OOBData? get oob => throw _privateConstructorUsedError;
-  StableStanzaId? get stableId => throw _privateConstructorUsedError;
+  OOBData? get oob =>
+      throw _privateConstructorUsedError; // XEP-0359 <origin-id />'s id attribute, if available.
+  String? get originId =>
+      throw _privateConstructorUsedError; // XEP-0359 <stanza-id /> elements, if available.
+  List<StanzaId>? get stanzaIds => throw _privateConstructorUsedError;
   ReplyData? get reply => throw _privateConstructorUsedError;
   ChatState? get chatState => throw _privateConstructorUsedError;
   bool get isCarbon => throw _privateConstructorUsedError;
@@ -79,7 +82,8 @@ mixin _$StanzaHandlerData {
 abstract class $StanzaHandlerDataCopyWith<$Res> {
   factory $StanzaHandlerDataCopyWith(
           StanzaHandlerData value, $Res Function(StanzaHandlerData) then) =
-      _$StanzaHandlerDataCopyWithImpl<$Res>;
+      _$StanzaHandlerDataCopyWithImpl<$Res, StanzaHandlerData>;
+  @useResult
   $Res call(
       {bool done,
       bool cancel,
@@ -89,7 +93,8 @@ abstract class $StanzaHandlerDataCopyWith<$Res> {
       StatelessMediaSharingData? sims,
       StatelessFileSharingData? sfs,
       OOBData? oob,
-      StableStanzaId? stableId,
+      String? originId,
+      List<StanzaId>? stanzaIds,
       ReplyData? reply,
       ChatState? chatState,
       bool isCarbon,
@@ -110,149 +115,156 @@ abstract class $StanzaHandlerDataCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$StanzaHandlerDataCopyWithImpl<$Res>
+class _$StanzaHandlerDataCopyWithImpl<$Res, $Val extends StanzaHandlerData>
     implements $StanzaHandlerDataCopyWith<$Res> {
   _$StanzaHandlerDataCopyWithImpl(this._value, this._then);
 
-  final StanzaHandlerData _value;
   // ignore: unused_field
-  final $Res Function(StanzaHandlerData) _then;
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? done = freezed,
-    Object? cancel = freezed,
+    Object? done = null,
+    Object? cancel = null,
     Object? cancelReason = freezed,
-    Object? stanza = freezed,
-    Object? retransmitted = freezed,
+    Object? stanza = null,
+    Object? retransmitted = null,
     Object? sims = freezed,
     Object? sfs = freezed,
     Object? oob = freezed,
-    Object? stableId = freezed,
+    Object? originId = freezed,
+    Object? stanzaIds = freezed,
     Object? reply = freezed,
     Object? chatState = freezed,
-    Object? isCarbon = freezed,
-    Object? deliveryReceiptRequested = freezed,
-    Object? isMarkable = freezed,
+    Object? isCarbon = null,
+    Object? deliveryReceiptRequested = null,
+    Object? isMarkable = null,
     Object? fun = freezed,
     Object? funReplacement = freezed,
     Object? funCancellation = freezed,
-    Object? encrypted = freezed,
-    Object? forceEncryption = freezed,
+    Object? encrypted = null,
+    Object? forceEncryption = null,
     Object? encryptionType = freezed,
     Object? delayedDelivery = freezed,
-    Object? other = freezed,
+    Object? other = null,
     Object? messageRetraction = freezed,
     Object? lastMessageCorrectionSid = freezed,
     Object? messageReactions = freezed,
     Object? stickerPackId = freezed,
   }) {
     return _then(_value.copyWith(
-      done: done == freezed
+      done: null == done
           ? _value.done
           : done // ignore: cast_nullable_to_non_nullable
               as bool,
-      cancel: cancel == freezed
+      cancel: null == cancel
           ? _value.cancel
           : cancel // ignore: cast_nullable_to_non_nullable
               as bool,
-      cancelReason: cancelReason == freezed
+      cancelReason: freezed == cancelReason
           ? _value.cancelReason
           : cancelReason // ignore: cast_nullable_to_non_nullable
               as dynamic,
-      stanza: stanza == freezed
+      stanza: null == stanza
           ? _value.stanza
           : stanza // ignore: cast_nullable_to_non_nullable
               as Stanza,
-      retransmitted: retransmitted == freezed
+      retransmitted: null == retransmitted
           ? _value.retransmitted
           : retransmitted // ignore: cast_nullable_to_non_nullable
               as bool,
-      sims: sims == freezed
+      sims: freezed == sims
           ? _value.sims
           : sims // ignore: cast_nullable_to_non_nullable
               as StatelessMediaSharingData?,
-      sfs: sfs == freezed
+      sfs: freezed == sfs
           ? _value.sfs
           : sfs // ignore: cast_nullable_to_non_nullable
               as StatelessFileSharingData?,
-      oob: oob == freezed
+      oob: freezed == oob
           ? _value.oob
           : oob // ignore: cast_nullable_to_non_nullable
               as OOBData?,
-      stableId: stableId == freezed
-          ? _value.stableId
-          : stableId // ignore: cast_nullable_to_non_nullable
-              as StableStanzaId?,
-      reply: reply == freezed
+      originId: freezed == originId
+          ? _value.originId
+          : originId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      stanzaIds: freezed == stanzaIds
+          ? _value.stanzaIds
+          : stanzaIds // ignore: cast_nullable_to_non_nullable
+              as List<StanzaId>?,
+      reply: freezed == reply
           ? _value.reply
           : reply // ignore: cast_nullable_to_non_nullable
               as ReplyData?,
-      chatState: chatState == freezed
+      chatState: freezed == chatState
           ? _value.chatState
           : chatState // ignore: cast_nullable_to_non_nullable
               as ChatState?,
-      isCarbon: isCarbon == freezed
+      isCarbon: null == isCarbon
           ? _value.isCarbon
           : isCarbon // ignore: cast_nullable_to_non_nullable
               as bool,
-      deliveryReceiptRequested: deliveryReceiptRequested == freezed
+      deliveryReceiptRequested: null == deliveryReceiptRequested
           ? _value.deliveryReceiptRequested
           : deliveryReceiptRequested // ignore: cast_nullable_to_non_nullable
               as bool,
-      isMarkable: isMarkable == freezed
+      isMarkable: null == isMarkable
           ? _value.isMarkable
           : isMarkable // ignore: cast_nullable_to_non_nullable
               as bool,
-      fun: fun == freezed
+      fun: freezed == fun
           ? _value.fun
           : fun // ignore: cast_nullable_to_non_nullable
               as FileMetadataData?,
-      funReplacement: funReplacement == freezed
+      funReplacement: freezed == funReplacement
           ? _value.funReplacement
           : funReplacement // ignore: cast_nullable_to_non_nullable
               as String?,
-      funCancellation: funCancellation == freezed
+      funCancellation: freezed == funCancellation
           ? _value.funCancellation
           : funCancellation // ignore: cast_nullable_to_non_nullable
               as String?,
-      encrypted: encrypted == freezed
+      encrypted: null == encrypted
           ? _value.encrypted
           : encrypted // ignore: cast_nullable_to_non_nullable
               as bool,
-      forceEncryption: forceEncryption == freezed
+      forceEncryption: null == forceEncryption
           ? _value.forceEncryption
           : forceEncryption // ignore: cast_nullable_to_non_nullable
               as bool,
-      encryptionType: encryptionType == freezed
+      encryptionType: freezed == encryptionType
           ? _value.encryptionType
           : encryptionType // ignore: cast_nullable_to_non_nullable
               as ExplicitEncryptionType?,
-      delayedDelivery: delayedDelivery == freezed
+      delayedDelivery: freezed == delayedDelivery
           ? _value.delayedDelivery
           : delayedDelivery // ignore: cast_nullable_to_non_nullable
               as DelayedDelivery?,
-      other: other == freezed
+      other: null == other
           ? _value.other
           : other // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>,
-      messageRetraction: messageRetraction == freezed
+      messageRetraction: freezed == messageRetraction
           ? _value.messageRetraction
           : messageRetraction // ignore: cast_nullable_to_non_nullable
               as MessageRetractionData?,
-      lastMessageCorrectionSid: lastMessageCorrectionSid == freezed
+      lastMessageCorrectionSid: freezed == lastMessageCorrectionSid
           ? _value.lastMessageCorrectionSid
           : lastMessageCorrectionSid // ignore: cast_nullable_to_non_nullable
               as String?,
-      messageReactions: messageReactions == freezed
+      messageReactions: freezed == messageReactions
           ? _value.messageReactions
           : messageReactions // ignore: cast_nullable_to_non_nullable
               as MessageReactions?,
-      stickerPackId: stickerPackId == freezed
+      stickerPackId: freezed == stickerPackId
           ? _value.stickerPackId
           : stickerPackId // ignore: cast_nullable_to_non_nullable
               as String?,
-    ));
+    ) as $Val);
   }
 }
 
@@ -263,6 +275,7 @@ abstract class _$$_StanzaHandlerDataCopyWith<$Res>
           $Res Function(_$_StanzaHandlerData) then) =
       __$$_StanzaHandlerDataCopyWithImpl<$Res>;
   @override
+  @useResult
   $Res call(
       {bool done,
       bool cancel,
@@ -272,7 +285,8 @@ abstract class _$$_StanzaHandlerDataCopyWith<$Res>
       StatelessMediaSharingData? sims,
       StatelessFileSharingData? sfs,
       OOBData? oob,
-      StableStanzaId? stableId,
+      String? originId,
+      List<StanzaId>? stanzaIds,
       ReplyData? reply,
       ChatState? chatState,
       bool isCarbon,
@@ -294,146 +308,149 @@ abstract class _$$_StanzaHandlerDataCopyWith<$Res>
 
 /// @nodoc
 class __$$_StanzaHandlerDataCopyWithImpl<$Res>
-    extends _$StanzaHandlerDataCopyWithImpl<$Res>
+    extends _$StanzaHandlerDataCopyWithImpl<$Res, _$_StanzaHandlerData>
     implements _$$_StanzaHandlerDataCopyWith<$Res> {
   __$$_StanzaHandlerDataCopyWithImpl(
       _$_StanzaHandlerData _value, $Res Function(_$_StanzaHandlerData) _then)
-      : super(_value, (v) => _then(v as _$_StanzaHandlerData));
+      : super(_value, _then);
 
-  @override
-  _$_StanzaHandlerData get _value => super._value as _$_StanzaHandlerData;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? done = freezed,
-    Object? cancel = freezed,
+    Object? done = null,
+    Object? cancel = null,
     Object? cancelReason = freezed,
-    Object? stanza = freezed,
-    Object? retransmitted = freezed,
+    Object? stanza = null,
+    Object? retransmitted = null,
     Object? sims = freezed,
     Object? sfs = freezed,
     Object? oob = freezed,
-    Object? stableId = freezed,
+    Object? originId = freezed,
+    Object? stanzaIds = freezed,
     Object? reply = freezed,
     Object? chatState = freezed,
-    Object? isCarbon = freezed,
-    Object? deliveryReceiptRequested = freezed,
-    Object? isMarkable = freezed,
+    Object? isCarbon = null,
+    Object? deliveryReceiptRequested = null,
+    Object? isMarkable = null,
     Object? fun = freezed,
     Object? funReplacement = freezed,
     Object? funCancellation = freezed,
-    Object? encrypted = freezed,
-    Object? forceEncryption = freezed,
+    Object? encrypted = null,
+    Object? forceEncryption = null,
     Object? encryptionType = freezed,
     Object? delayedDelivery = freezed,
-    Object? other = freezed,
+    Object? other = null,
     Object? messageRetraction = freezed,
     Object? lastMessageCorrectionSid = freezed,
     Object? messageReactions = freezed,
     Object? stickerPackId = freezed,
   }) {
     return _then(_$_StanzaHandlerData(
-      done == freezed
+      null == done
           ? _value.done
           : done // ignore: cast_nullable_to_non_nullable
               as bool,
-      cancel == freezed
+      null == cancel
           ? _value.cancel
           : cancel // ignore: cast_nullable_to_non_nullable
               as bool,
-      cancelReason == freezed
+      freezed == cancelReason
           ? _value.cancelReason
           : cancelReason // ignore: cast_nullable_to_non_nullable
               as dynamic,
-      stanza == freezed
+      null == stanza
           ? _value.stanza
           : stanza // ignore: cast_nullable_to_non_nullable
               as Stanza,
-      retransmitted: retransmitted == freezed
+      retransmitted: null == retransmitted
           ? _value.retransmitted
           : retransmitted // ignore: cast_nullable_to_non_nullable
               as bool,
-      sims: sims == freezed
+      sims: freezed == sims
           ? _value.sims
           : sims // ignore: cast_nullable_to_non_nullable
               as StatelessMediaSharingData?,
-      sfs: sfs == freezed
+      sfs: freezed == sfs
           ? _value.sfs
           : sfs // ignore: cast_nullable_to_non_nullable
               as StatelessFileSharingData?,
-      oob: oob == freezed
+      oob: freezed == oob
           ? _value.oob
           : oob // ignore: cast_nullable_to_non_nullable
               as OOBData?,
-      stableId: stableId == freezed
-          ? _value.stableId
-          : stableId // ignore: cast_nullable_to_non_nullable
-              as StableStanzaId?,
-      reply: reply == freezed
+      originId: freezed == originId
+          ? _value.originId
+          : originId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      stanzaIds: freezed == stanzaIds
+          ? _value._stanzaIds
+          : stanzaIds // ignore: cast_nullable_to_non_nullable
+              as List<StanzaId>?,
+      reply: freezed == reply
           ? _value.reply
           : reply // ignore: cast_nullable_to_non_nullable
               as ReplyData?,
-      chatState: chatState == freezed
+      chatState: freezed == chatState
           ? _value.chatState
           : chatState // ignore: cast_nullable_to_non_nullable
               as ChatState?,
-      isCarbon: isCarbon == freezed
+      isCarbon: null == isCarbon
           ? _value.isCarbon
           : isCarbon // ignore: cast_nullable_to_non_nullable
               as bool,
-      deliveryReceiptRequested: deliveryReceiptRequested == freezed
+      deliveryReceiptRequested: null == deliveryReceiptRequested
           ? _value.deliveryReceiptRequested
           : deliveryReceiptRequested // ignore: cast_nullable_to_non_nullable
               as bool,
-      isMarkable: isMarkable == freezed
+      isMarkable: null == isMarkable
           ? _value.isMarkable
           : isMarkable // ignore: cast_nullable_to_non_nullable
               as bool,
-      fun: fun == freezed
+      fun: freezed == fun
           ? _value.fun
           : fun // ignore: cast_nullable_to_non_nullable
               as FileMetadataData?,
-      funReplacement: funReplacement == freezed
+      funReplacement: freezed == funReplacement
           ? _value.funReplacement
           : funReplacement // ignore: cast_nullable_to_non_nullable
               as String?,
-      funCancellation: funCancellation == freezed
+      funCancellation: freezed == funCancellation
           ? _value.funCancellation
           : funCancellation // ignore: cast_nullable_to_non_nullable
               as String?,
-      encrypted: encrypted == freezed
+      encrypted: null == encrypted
           ? _value.encrypted
           : encrypted // ignore: cast_nullable_to_non_nullable
               as bool,
-      forceEncryption: forceEncryption == freezed
+      forceEncryption: null == forceEncryption
           ? _value.forceEncryption
           : forceEncryption // ignore: cast_nullable_to_non_nullable
               as bool,
-      encryptionType: encryptionType == freezed
+      encryptionType: freezed == encryptionType
           ? _value.encryptionType
           : encryptionType // ignore: cast_nullable_to_non_nullable
               as ExplicitEncryptionType?,
-      delayedDelivery: delayedDelivery == freezed
+      delayedDelivery: freezed == delayedDelivery
           ? _value.delayedDelivery
           : delayedDelivery // ignore: cast_nullable_to_non_nullable
               as DelayedDelivery?,
-      other: other == freezed
+      other: null == other
           ? _value._other
           : other // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>,
-      messageRetraction: messageRetraction == freezed
+      messageRetraction: freezed == messageRetraction
           ? _value.messageRetraction
           : messageRetraction // ignore: cast_nullable_to_non_nullable
               as MessageRetractionData?,
-      lastMessageCorrectionSid: lastMessageCorrectionSid == freezed
+      lastMessageCorrectionSid: freezed == lastMessageCorrectionSid
           ? _value.lastMessageCorrectionSid
           : lastMessageCorrectionSid // ignore: cast_nullable_to_non_nullable
               as String?,
-      messageReactions: messageReactions == freezed
+      messageReactions: freezed == messageReactions
           ? _value.messageReactions
           : messageReactions // ignore: cast_nullable_to_non_nullable
               as MessageReactions?,
-      stickerPackId: stickerPackId == freezed
+      stickerPackId: freezed == stickerPackId
           ? _value.stickerPackId
           : stickerPackId // ignore: cast_nullable_to_non_nullable
               as String?,
@@ -449,7 +466,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
       this.sims,
       this.sfs,
       this.oob,
-      this.stableId,
+      this.originId,
+      final List<StanzaId>? stanzaIds,
       this.reply,
       this.chatState,
       this.isCarbon = false,
@@ -467,7 +485,8 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
       this.lastMessageCorrectionSid,
       this.messageReactions,
       this.stickerPackId})
-      : _other = other;
+      : _stanzaIds = stanzaIds,
+        _other = other;
 
 // Indicates to the runner that processing is now done. This means that all
 // pre-processing is done and no other handlers should be consulted.
@@ -495,8 +514,21 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
   final StatelessFileSharingData? sfs;
   @override
   final OOBData? oob;
+// XEP-0359 <origin-id />'s id attribute, if available.
   @override
-  final StableStanzaId? stableId;
+  final String? originId;
+// XEP-0359 <stanza-id /> elements, if available.
+  final List<StanzaId>? _stanzaIds;
+// XEP-0359 <stanza-id /> elements, if available.
+  @override
+  List<StanzaId>? get stanzaIds {
+    final value = _stanzaIds;
+    if (value == null) return null;
+    if (_stanzaIds is EqualUnmodifiableListView) return _stanzaIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
   @override
   final ReplyData? reply;
   @override
@@ -545,6 +577,7 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
   @override
   @JsonKey()
   Map<String, dynamic> get other {
+    if (_other is EqualUnmodifiableMapView) return _other;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableMapView(_other);
   }
@@ -565,7 +598,7 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
 
   @override
   String toString() {
-    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, stableId: $stableId, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, forceEncryption: $forceEncryption, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction, lastMessageCorrectionSid: $lastMessageCorrectionSid, messageReactions: $messageReactions, stickerPackId: $stickerPackId)';
+    return 'StanzaHandlerData(done: $done, cancel: $cancel, cancelReason: $cancelReason, stanza: $stanza, retransmitted: $retransmitted, sims: $sims, sfs: $sfs, oob: $oob, originId: $originId, stanzaIds: $stanzaIds, reply: $reply, chatState: $chatState, isCarbon: $isCarbon, deliveryReceiptRequested: $deliveryReceiptRequested, isMarkable: $isMarkable, fun: $fun, funReplacement: $funReplacement, funCancellation: $funCancellation, encrypted: $encrypted, forceEncryption: $forceEncryption, encryptionType: $encryptionType, delayedDelivery: $delayedDelivery, other: $other, messageRetraction: $messageRetraction, lastMessageCorrectionSid: $lastMessageCorrectionSid, messageReactions: $messageReactions, stickerPackId: $stickerPackId)';
   }
 
   @override
@@ -573,80 +606,90 @@ class _$_StanzaHandlerData implements _StanzaHandlerData {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_StanzaHandlerData &&
-            const DeepCollectionEquality().equals(other.done, done) &&
-            const DeepCollectionEquality().equals(other.cancel, cancel) &&
+            (identical(other.done, done) || other.done == done) &&
+            (identical(other.cancel, cancel) || other.cancel == cancel) &&
             const DeepCollectionEquality()
                 .equals(other.cancelReason, cancelReason) &&
-            const DeepCollectionEquality().equals(other.stanza, stanza) &&
+            (identical(other.stanza, stanza) || other.stanza == stanza) &&
+            (identical(other.retransmitted, retransmitted) ||
+                other.retransmitted == retransmitted) &&
+            (identical(other.sims, sims) || other.sims == sims) &&
+            (identical(other.sfs, sfs) || other.sfs == sfs) &&
+            (identical(other.oob, oob) || other.oob == oob) &&
+            (identical(other.originId, originId) ||
+                other.originId == originId) &&
             const DeepCollectionEquality()
-                .equals(other.retransmitted, retransmitted) &&
-            const DeepCollectionEquality().equals(other.sims, sims) &&
-            const DeepCollectionEquality().equals(other.sfs, sfs) &&
-            const DeepCollectionEquality().equals(other.oob, oob) &&
-            const DeepCollectionEquality().equals(other.stableId, stableId) &&
-            const DeepCollectionEquality().equals(other.reply, reply) &&
-            const DeepCollectionEquality().equals(other.chatState, chatState) &&
-            const DeepCollectionEquality().equals(other.isCarbon, isCarbon) &&
-            const DeepCollectionEquality().equals(
-                other.deliveryReceiptRequested, deliveryReceiptRequested) &&
-            const DeepCollectionEquality()
-                .equals(other.isMarkable, isMarkable) &&
-            const DeepCollectionEquality().equals(other.fun, fun) &&
-            const DeepCollectionEquality()
-                .equals(other.funReplacement, funReplacement) &&
-            const DeepCollectionEquality()
-                .equals(other.funCancellation, funCancellation) &&
-            const DeepCollectionEquality().equals(other.encrypted, encrypted) &&
-            const DeepCollectionEquality()
-                .equals(other.forceEncryption, forceEncryption) &&
-            const DeepCollectionEquality()
-                .equals(other.encryptionType, encryptionType) &&
-            const DeepCollectionEquality()
-                .equals(other.delayedDelivery, delayedDelivery) &&
+                .equals(other._stanzaIds, _stanzaIds) &&
+            (identical(other.reply, reply) || other.reply == reply) &&
+            (identical(other.chatState, chatState) ||
+                other.chatState == chatState) &&
+            (identical(other.isCarbon, isCarbon) ||
+                other.isCarbon == isCarbon) &&
+            (identical(
+                    other.deliveryReceiptRequested, deliveryReceiptRequested) ||
+                other.deliveryReceiptRequested == deliveryReceiptRequested) &&
+            (identical(other.isMarkable, isMarkable) ||
+                other.isMarkable == isMarkable) &&
+            (identical(other.fun, fun) || other.fun == fun) &&
+            (identical(other.funReplacement, funReplacement) ||
+                other.funReplacement == funReplacement) &&
+            (identical(other.funCancellation, funCancellation) ||
+                other.funCancellation == funCancellation) &&
+            (identical(other.encrypted, encrypted) ||
+                other.encrypted == encrypted) &&
+            (identical(other.forceEncryption, forceEncryption) ||
+                other.forceEncryption == forceEncryption) &&
+            (identical(other.encryptionType, encryptionType) ||
+                other.encryptionType == encryptionType) &&
+            (identical(other.delayedDelivery, delayedDelivery) ||
+                other.delayedDelivery == delayedDelivery) &&
             const DeepCollectionEquality().equals(other._other, this._other) &&
-            const DeepCollectionEquality()
-                .equals(other.messageRetraction, messageRetraction) &&
-            const DeepCollectionEquality().equals(
-                other.lastMessageCorrectionSid, lastMessageCorrectionSid) &&
-            const DeepCollectionEquality()
-                .equals(other.messageReactions, messageReactions) &&
-            const DeepCollectionEquality()
-                .equals(other.stickerPackId, stickerPackId));
+            (identical(other.messageRetraction, messageRetraction) ||
+                other.messageRetraction == messageRetraction) &&
+            (identical(
+                    other.lastMessageCorrectionSid, lastMessageCorrectionSid) ||
+                other.lastMessageCorrectionSid == lastMessageCorrectionSid) &&
+            (identical(other.messageReactions, messageReactions) ||
+                other.messageReactions == messageReactions) &&
+            (identical(other.stickerPackId, stickerPackId) ||
+                other.stickerPackId == stickerPackId));
   }
 
   @override
   int get hashCode => Object.hashAll([
         runtimeType,
-        const DeepCollectionEquality().hash(done),
-        const DeepCollectionEquality().hash(cancel),
+        done,
+        cancel,
         const DeepCollectionEquality().hash(cancelReason),
-        const DeepCollectionEquality().hash(stanza),
-        const DeepCollectionEquality().hash(retransmitted),
-        const DeepCollectionEquality().hash(sims),
-        const DeepCollectionEquality().hash(sfs),
-        const DeepCollectionEquality().hash(oob),
-        const DeepCollectionEquality().hash(stableId),
-        const DeepCollectionEquality().hash(reply),
-        const DeepCollectionEquality().hash(chatState),
-        const DeepCollectionEquality().hash(isCarbon),
-        const DeepCollectionEquality().hash(deliveryReceiptRequested),
-        const DeepCollectionEquality().hash(isMarkable),
-        const DeepCollectionEquality().hash(fun),
-        const DeepCollectionEquality().hash(funReplacement),
-        const DeepCollectionEquality().hash(funCancellation),
-        const DeepCollectionEquality().hash(encrypted),
-        const DeepCollectionEquality().hash(forceEncryption),
-        const DeepCollectionEquality().hash(encryptionType),
-        const DeepCollectionEquality().hash(delayedDelivery),
+        stanza,
+        retransmitted,
+        sims,
+        sfs,
+        oob,
+        originId,
+        const DeepCollectionEquality().hash(_stanzaIds),
+        reply,
+        chatState,
+        isCarbon,
+        deliveryReceiptRequested,
+        isMarkable,
+        fun,
+        funReplacement,
+        funCancellation,
+        encrypted,
+        forceEncryption,
+        encryptionType,
+        delayedDelivery,
         const DeepCollectionEquality().hash(_other),
-        const DeepCollectionEquality().hash(messageRetraction),
-        const DeepCollectionEquality().hash(lastMessageCorrectionSid),
-        const DeepCollectionEquality().hash(messageReactions),
-        const DeepCollectionEquality().hash(stickerPackId)
+        messageRetraction,
+        lastMessageCorrectionSid,
+        messageReactions,
+        stickerPackId
       ]);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$_StanzaHandlerDataCopyWith<_$_StanzaHandlerData> get copyWith =>
       __$$_StanzaHandlerDataCopyWithImpl<_$_StanzaHandlerData>(
           this, _$identity);
@@ -659,7 +702,8 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
       final StatelessMediaSharingData? sims,
       final StatelessFileSharingData? sfs,
       final OOBData? oob,
-      final StableStanzaId? stableId,
+      final String? originId,
+      final List<StanzaId>? stanzaIds,
       final ReplyData? reply,
       final ChatState? chatState,
       final bool isCarbon,
@@ -698,8 +742,10 @@ abstract class _StanzaHandlerData implements StanzaHandlerData {
   StatelessFileSharingData? get sfs;
   @override
   OOBData? get oob;
-  @override
-  StableStanzaId? get stableId;
+  @override // XEP-0359 <origin-id />'s id attribute, if available.
+  String? get originId;
+  @override // XEP-0359 <stanza-id /> elements, if available.
+  List<StanzaId>? get stanzaIds;
   @override
   ReplyData? get reply;
   @override

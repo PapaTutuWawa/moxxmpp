@@ -1,7 +1,7 @@
 // coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
-// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'state.dart';
 
@@ -36,7 +36,8 @@ mixin _$StreamManagementState {
 abstract class $StreamManagementStateCopyWith<$Res> {
   factory $StreamManagementStateCopyWith(StreamManagementState value,
           $Res Function(StreamManagementState) then) =
-      _$StreamManagementStateCopyWithImpl<$Res>;
+      _$StreamManagementStateCopyWithImpl<$Res, StreamManagementState>;
+  @useResult
   $Res call(
       {int c2s,
       int s2c,
@@ -45,39 +46,42 @@ abstract class $StreamManagementStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$StreamManagementStateCopyWithImpl<$Res>
+class _$StreamManagementStateCopyWithImpl<$Res,
+        $Val extends StreamManagementState>
     implements $StreamManagementStateCopyWith<$Res> {
   _$StreamManagementStateCopyWithImpl(this._value, this._then);
 
-  final StreamManagementState _value;
   // ignore: unused_field
-  final $Res Function(StreamManagementState) _then;
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? c2s = freezed,
-    Object? s2c = freezed,
+    Object? c2s = null,
+    Object? s2c = null,
     Object? streamResumptionLocation = freezed,
     Object? streamResumptionId = freezed,
   }) {
     return _then(_value.copyWith(
-      c2s: c2s == freezed
+      c2s: null == c2s
           ? _value.c2s
           : c2s // ignore: cast_nullable_to_non_nullable
               as int,
-      s2c: s2c == freezed
+      s2c: null == s2c
           ? _value.s2c
           : s2c // ignore: cast_nullable_to_non_nullable
               as int,
-      streamResumptionLocation: streamResumptionLocation == freezed
+      streamResumptionLocation: freezed == streamResumptionLocation
           ? _value.streamResumptionLocation
           : streamResumptionLocation // ignore: cast_nullable_to_non_nullable
               as String?,
-      streamResumptionId: streamResumptionId == freezed
+      streamResumptionId: freezed == streamResumptionId
           ? _value.streamResumptionId
           : streamResumptionId // ignore: cast_nullable_to_non_nullable
               as String?,
-    ));
+    ) as $Val);
   }
 }
 
@@ -88,6 +92,7 @@ abstract class _$$_StreamManagementStateCopyWith<$Res>
           $Res Function(_$_StreamManagementState) then) =
       __$$_StreamManagementStateCopyWithImpl<$Res>;
   @override
+  @useResult
   $Res call(
       {int c2s,
       int s2c,
@@ -97,37 +102,34 @@ abstract class _$$_StreamManagementStateCopyWith<$Res>
 
 /// @nodoc
 class __$$_StreamManagementStateCopyWithImpl<$Res>
-    extends _$StreamManagementStateCopyWithImpl<$Res>
+    extends _$StreamManagementStateCopyWithImpl<$Res, _$_StreamManagementState>
     implements _$$_StreamManagementStateCopyWith<$Res> {
   __$$_StreamManagementStateCopyWithImpl(_$_StreamManagementState _value,
       $Res Function(_$_StreamManagementState) _then)
-      : super(_value, (v) => _then(v as _$_StreamManagementState));
+      : super(_value, _then);
 
-  @override
-  _$_StreamManagementState get _value =>
-      super._value as _$_StreamManagementState;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? c2s = freezed,
-    Object? s2c = freezed,
+    Object? c2s = null,
+    Object? s2c = null,
     Object? streamResumptionLocation = freezed,
     Object? streamResumptionId = freezed,
   }) {
     return _then(_$_StreamManagementState(
-      c2s == freezed
+      null == c2s
           ? _value.c2s
           : c2s // ignore: cast_nullable_to_non_nullable
               as int,
-      s2c == freezed
+      null == s2c
           ? _value.s2c
           : s2c // ignore: cast_nullable_to_non_nullable
               as int,
-      streamResumptionLocation: streamResumptionLocation == freezed
+      streamResumptionLocation: freezed == streamResumptionLocation
           ? _value.streamResumptionLocation
           : streamResumptionLocation // ignore: cast_nullable_to_non_nullable
               as String?,
-      streamResumptionId: streamResumptionId == freezed
+      streamResumptionId: freezed == streamResumptionId
           ? _value.streamResumptionId
           : streamResumptionId // ignore: cast_nullable_to_non_nullable
               as String?,
@@ -163,25 +165,23 @@ class _$_StreamManagementState implements _StreamManagementState {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_StreamManagementState &&
-            const DeepCollectionEquality().equals(other.c2s, c2s) &&
-            const DeepCollectionEquality().equals(other.s2c, s2c) &&
-            const DeepCollectionEquality().equals(
-                other.streamResumptionLocation, streamResumptionLocation) &&
-            const DeepCollectionEquality()
-                .equals(other.streamResumptionId, streamResumptionId));
+            (identical(other.c2s, c2s) || other.c2s == c2s) &&
+            (identical(other.s2c, s2c) || other.s2c == s2c) &&
+            (identical(
+                    other.streamResumptionLocation, streamResumptionLocation) ||
+                other.streamResumptionLocation == streamResumptionLocation) &&
+            (identical(other.streamResumptionId, streamResumptionId) ||
+                other.streamResumptionId == streamResumptionId));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(c2s),
-      const DeepCollectionEquality().hash(s2c),
-      const DeepCollectionEquality().hash(streamResumptionLocation),
-      const DeepCollectionEquality().hash(streamResumptionId));
+      runtimeType, c2s, s2c, streamResumptionLocation, streamResumptionId);
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$_StreamManagementStateCopyWith<_$_StreamManagementState> get copyWith =>
       __$$_StreamManagementStateCopyWithImpl<_$_StreamManagementState>(
           this, _$identity);

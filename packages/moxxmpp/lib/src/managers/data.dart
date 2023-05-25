@@ -34,7 +34,12 @@ class StanzaHandlerData with _$StanzaHandlerData {
     StatelessMediaSharingData? sims,
     StatelessFileSharingData? sfs,
     OOBData? oob,
-    StableStanzaId? stableId,
+
+    // XEP-0359 <origin-id />'s id attribute, if available.
+    String? originId,
+
+    // XEP-0359 <stanza-id /> elements, if available.
+    List<StanzaId>? stanzaIds,
     ReplyData? reply,
     ChatState? chatState,
     @Default(false) bool isCarbon,
