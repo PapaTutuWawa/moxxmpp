@@ -31,4 +31,6 @@ const lastMessageCorrectionManager = 'org.moxxmpp.lastmessagecorrectionmanager';
 const messageReactionsManager = 'org.moxxmpp.messagereactionsmanager';
 const stickersManager = 'org.moxxmpp.stickersmanager';
 const entityCapabilitiesManager = 'org.moxxmpp.entitycapabilities';
+const messageProcessingHintManager = 'org.moxxmpp.messageprocessinghint';
+const occupantIdManager = 'org.moxxmpp.occupantidmanager';
 const mucManager = 'org.moxxmpp.mucmanager';
