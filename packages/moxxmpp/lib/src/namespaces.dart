@@ -20,6 +20,9 @@ const discoItemsXmlns = 'http://jabber.org/protocol/disco#items';
 // XEP-0033
 const extendedAddressingXmlns = 'http://jabber.org/protocol/address';
 
+// XEP-0045
+const mucXmlns = 'http://jabber.org/protocol/muc';
+
 // XEP-0054
 const vCardTempXmlns = 'vcard-temp';
 const vCardTempUpdate = 'vcard-temp:x:update';

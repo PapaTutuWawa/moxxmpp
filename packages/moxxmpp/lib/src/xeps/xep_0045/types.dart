@@ -9,7 +9,7 @@ class RoomInformation {
   });
 
   factory RoomInformation.fromStanza({
-    required String roomJID,
+    required JID roomJID,
     required XMLNode stanza,
   }) {
     final featureNodes = stanza.children[0].findTags('feature');
@@ -31,7 +31,7 @@ class RoomInformation {
       throw InvalidStanzaFormat();
     }
   }
-  final String jid;
+  final JID jid;
   final List<String> features;
   final String name;
 }
