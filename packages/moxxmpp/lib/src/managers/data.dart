@@ -75,5 +75,8 @@ class StanzaHandlerData with _$StanzaHandlerData {
     MessageReactions? messageReactions,
     // The Id of the sticker pack this sticker belongs to
     String? stickerPackId,
+    // Flag indicating whether the stanza should be excluded from stream management's
+    // resending behaviour
+    @Default(false) bool excludeFromStreamManagement,
   }) = _StanzaHandlerData;
 }

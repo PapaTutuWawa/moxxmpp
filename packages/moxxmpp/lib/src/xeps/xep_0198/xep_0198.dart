@@ -399,10 +399,12 @@ class StreamManagementManager extends XmppManagerBase {
     Stanza stanza,
     StanzaHandlerData state,
   ) async {
-    await _incrementC2S();
-    _unackedStanzas[_state.c2s] = stanza;
-
     if (isStreamManagementEnabled()) {
+      await _incrementC2S();
+
+      if (state.excludeFromStreamManagement) return state;
+
+      _unackedStanzas[_state.c2s] = stanza;
       await _sendAckRequest();
     }
 
@@ -414,6 +416,8 @@ class StreamManagementManager extends XmppManagerBase {
     _unackedStanzas.clear();
 
     for (final stanza in stanzas) {
+      logger
+          .finest('Resending ${stanza.tag} with id ${stanza.attributes["id"]}');
       await getAttributes().sendStanza(
         StanzaDetails(
           stanza,

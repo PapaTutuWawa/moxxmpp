@@ -7,6 +7,7 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
+import 'package:moxxmpp/src/xeps/xep_0084.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
 import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
@@ -192,15 +193,35 @@ class SubscriptionRequestReceivedEvent extends XmppEvent {
   final JID from;
 }
 
-/// Triggered when we receive a new or updated avatar
-class AvatarUpdatedEvent extends XmppEvent {
-  AvatarUpdatedEvent({
-    required this.jid,
-    required this.base64,
-    required this.hash,
-  });
-  final String jid;
+/// Triggered when we receive a new or updated avatar via XEP-0084
+class UserAvatarUpdatedEvent extends XmppEvent {
+  UserAvatarUpdatedEvent(
+    this.jid,
+    this.metadata,
+  );
+
+  /// The JID of the user updating their avatar.
+  final JID jid;
+
+  /// The metadata of the avatar.
+  final List<UserAvatarMetadata> metadata;
+}
+
+/// Triggered when we receive a new or updated avatar via XEP-0054
+class VCardAvatarUpdatedEvent extends XmppEvent {
+  VCardAvatarUpdatedEvent(
+    this.jid,
+    this.base64,
+    this.hash,
+  );
+
+  /// The JID of the entity that updated their avatar.
+  final JID jid;
+
+  /// The base64-encoded avatar data.
   final String base64;
+
+  /// The SHA-1 hash of the avatar.
   final String hash;
 }
 

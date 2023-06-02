@@ -179,13 +179,13 @@ class PubSubManager extends XmppManagerBase {
     return options;
   }
 
-  Future<Result<PubSubError, bool>> subscribe(String jid, String node) async {
+  Future<Result<PubSubError, bool>> subscribe(JID jid, String node) async {
     final attrs = getAttributes();
     final result = (await attrs.sendStanza(
       StanzaDetails(
         Stanza.iq(
           type: 'set',
-          to: jid,
+          to: jid.toString(),
           children: [
             XMLNode.xmlns(
               tag: 'pubsub',
@@ -222,13 +222,13 @@ class PubSubManager extends XmppManagerBase {
     return Result(subscription.attributes['subscription'] == 'subscribed');
   }
 
-  Future<Result<PubSubError, bool>> unsubscribe(String jid, String node) async {
+  Future<Result<PubSubError, bool>> unsubscribe(JID jid, String node) async {
     final attrs = getAttributes();
     final result = (await attrs.sendStanza(
       StanzaDetails(
         Stanza.iq(
           type: 'set',
-          to: jid,
+          to: jid.toString(),
           children: [
             XMLNode.xmlns(
               tag: 'pubsub',
@@ -398,14 +398,14 @@ class PubSubManager extends XmppManagerBase {
   }
 
   Future<Result<PubSubError, List<PubSubItem>>> getItems(
-    String jid,
+    JID jid,
     String node,
   ) async {
     final result = (await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.iq(
           type: 'get',
-          to: jid,
+          to: jid.toString(),
           children: [
             XMLNode.xmlns(
               tag: 'pubsub',

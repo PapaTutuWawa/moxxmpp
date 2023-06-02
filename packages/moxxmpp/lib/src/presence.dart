@@ -112,24 +112,48 @@ class PresenceManager extends XmppManagerBase {
   }
 
   /// Send an unavailable presence with no 'to' attribute.
-  void sendUnavailablePresence() {
-    getAttributes().sendStanza(
+  Future<void> sendUnavailablePresence() async {
+    // Bypass the queue so that this get's sent immediately.
+    // If we do it like this, we can also block the disconnection
+    // until we're actually ready.
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
           type: 'unavailable',
+        ),
+        awaitable: false,
+        bypassQueue: true,
+        excludeFromStreamManagement: true,
+      ),
+    );
+  }
+
+  /// Sends a subscription request to [to].
+  // TODO(PapaTutuWawa): Check if we're allowed to pre-approve
+  Future<void> requestSubscription(JID to, {bool preApprove = false}) async {
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          type: preApprove ? 'subscribed' : 'subscribe',
+          to: to.toString(),
         ),
         awaitable: false,
       ),
     );
   }
 
-  /// Sends a subscription request to [to].
-  void sendSubscriptionRequest(String to) {
-    getAttributes().sendStanza(
+  /// Accept a subscription request from [to].
+  Future<void> acceptSubscriptionRequest(JID to) async {
+    await requestSubscription(to, preApprove: true);
+  }
+
+  /// Send a subscription request rejection to [to].
+  Future<void> rejectSubscriptionRequest(JID to) async {
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
-          type: 'subscribe',
-          to: to,
+          type: 'unsubscribed',
+          to: to.toString(),
         ),
         awaitable: false,
       ),
@@ -137,38 +161,12 @@ class PresenceManager extends XmppManagerBase {
   }
 
   /// Sends an unsubscription request to [to].
-  void sendUnsubscriptionRequest(String to) {
-    getAttributes().sendStanza(
+  Future<void> unsubscribe(JID to) async {
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
           type: 'unsubscribe',
-          to: to,
-        ),
-        awaitable: false,
-      ),
-    );
-  }
-
-  /// Accept a presence subscription request for [to].
-  void sendSubscriptionRequestApproval(String to) {
-    getAttributes().sendStanza(
-      StanzaDetails(
-        Stanza.presence(
-          type: 'subscribed',
-          to: to,
-        ),
-        awaitable: false,
-      ),
-    );
-  }
-
-  /// Reject a presence subscription request for [to].
-  void sendSubscriptionRequestRejection(String to) {
-    getAttributes().sendStanza(
-      StanzaDetails(
-        Stanza.presence(
-          type: 'unsubscribed',
-          to: to,
+          to: to.toString(),
         ),
         awaitable: false,
       ),

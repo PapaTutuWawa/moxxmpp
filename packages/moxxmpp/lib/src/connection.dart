@@ -405,8 +405,7 @@ class XmppConnection {
 
   /// Returns true if we can send data through the socket.
   Future<bool> _canSendData() async {
-    return [XmppConnectionState.connected, XmppConnectionState.connecting]
-        .contains(await getConnectionState());
+    return await getConnectionState() == XmppConnectionState.connected;
   }
 
   /// Sends a stanza described by [details] to the server. Until sent, the stanza is
@@ -424,12 +423,16 @@ class XmppConnection {
     );
 
     final completer = details.awaitable ? Completer<XMLNode>() : null;
-    await _stanzaQueue.enqueueStanza(
-      StanzaQueueEntry(
-        details,
-        completer,
-      ),
+    final entry = StanzaQueueEntry(
+      details,
+      completer,
     );
+
+    if (details.bypassQueue) {
+      await _sendStanzaImpl(entry);
+    } else {
+      await _stanzaQueue.enqueueStanza(entry);
+    }
 
     return completer?.future;
   }
@@ -523,7 +526,7 @@ class XmppConnection {
     if (await _canSendData()) {
       _socket.write(data.stanza.toXml());
     } else {
-      _log.fine('Not sending dat as _canSendData() returned false.');
+      _log.fine('Not sending data as _canSendData() returned false.');
     }
 
     // Run post-send handlers
@@ -535,6 +538,7 @@ class XmppConnection {
         false,
         null,
         newStanza,
+        excludeFromStreamManagement: details.excludeFromStreamManagement,
       ),
     );
     _log.fine('Done');
@@ -835,7 +839,7 @@ class XmppConnection {
     await _reconnectionPolicy.setShouldReconnect(false);
 
     if (triggeredByUser) {
-      getPresenceManager()?.sendUnavailablePresence();
+      await getPresenceManager()?.sendUnavailablePresence();
     }
 
     _socket.prepareDisconnect();

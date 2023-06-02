@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -15,10 +16,17 @@ abstract class AvatarError {}
 
 class UnknownAvatarError extends AvatarError {}
 
-class UserAvatar {
-  const UserAvatar({required this.base64, required this.hash});
+class UserAvatarData {
+  const UserAvatarData(this.base64, this.hash);
+
+  /// The base64-encoded avatar data.
   final String base64;
+
+  /// The SHA-1 hash of the raw avatar data.
   final String hash;
+
+  /// The raw avatar data.
+  List<int> get data => base64Decode(base64);
 }
 
 class UserAvatarMetadata {
@@ -27,21 +35,44 @@ class UserAvatarMetadata {
     this.length,
     this.width,
     this.height,
-    this.mime,
+    this.type,
+    this.url,
   );
 
-  /// The amount of bytes in the file
+  factory UserAvatarMetadata.fromXML(XMLNode node) {
+    assert(
+      node.tag == 'metadata' &&
+          node.attributes['xmlns'] == userAvatarMetadataXmlns,
+      '<metadata /> element required',
+    );
+
+    final width = node.attributes['width'] as String?;
+    final height = node.attributes['height'] as String?;
+    return UserAvatarMetadata(
+      node.attributes['id']! as String,
+      int.parse(node.attributes['bytes']! as String),
+      width != null ? int.parse(width) : null,
+      height != null ? int.parse(height) : null,
+      node.attributes['type']! as String,
+      node.attributes['url'] as String?,
+    );
+  }
+
+  /// The amount of bytes in the file.
   final int length;
 
-  /// The identifier of the avatar
+  /// The identifier of the avatar.
   final String id;
 
-  /// Image proportions
-  final int width;
-  final int height;
+  /// Image proportions.
+  final int? width;
+  final int? height;
 
-  /// The MIME type of the avatar
-  final String mime;
+  /// The URL where the avatar can be found.
+  final String? url;
+
+  /// The MIME type of the avatar.
+  final String type;
 }
 
 /// NOTE: This class requires a PubSubManager
@@ -52,12 +83,17 @@ class UserAvatarManager extends XmppManagerBase {
       getAttributes().getManagerById(pubsubManager)! as PubSubManager;
 
   @override
+  List<String> getDiscoFeatures() => [
+        '$userAvatarMetadataXmlns+notify',
+      ];
+
+  @override
   Future<void> onXmppEvent(XmppEvent event) async {
     if (event is PubSubNotificationEvent) {
-      if (event.item.node != userAvatarDataXmlns) return;
+      if (event.item.node != userAvatarMetadataXmlns) return;
 
-      if (event.item.payload.tag != 'data' ||
-          event.item.payload.attributes['xmlns'] != userAvatarDataXmlns) {
+      if (event.item.payload.tag != 'metadata' ||
+          event.item.payload.attributes['xmlns'] != userAvatarMetadataXmlns) {
         logger.warning(
           'Received avatar update from ${event.from} but the payload is invalid. Ignoring...',
         );
@@ -65,10 +101,12 @@ class UserAvatarManager extends XmppManagerBase {
       }
 
       getAttributes().sendEvent(
-        AvatarUpdatedEvent(
-          jid: event.from,
-          base64: event.item.payload.innerText(),
-          hash: event.item.id,
+        UserAvatarUpdatedEvent(
+          JID.fromString(event.from),
+          event.item.payload
+              .findTags('metadata', xmlns: userAvatarMetadataXmlns)
+              .map(UserAvatarMetadata.fromXML)
+              .toList(),
         ),
       );
     }
@@ -80,7 +118,7 @@ class UserAvatarManager extends XmppManagerBase {
 
   /// Requests the avatar from [jid]. Returns the avatar data if the request was
   /// successful. Null otherwise
-  Future<Result<AvatarError, UserAvatar>> getUserAvatar(String jid) async {
+  Future<Result<AvatarError, UserAvatarData>> getUserAvatar(JID jid) async {
     final pubsub = _getPubSubManager();
     final resultsRaw = await pubsub.getItems(jid, userAvatarDataXmlns);
     if (resultsRaw.isType<PubSubError>()) return Result(UnknownAvatarError());
@@ -90,9 +128,9 @@ class UserAvatarManager extends XmppManagerBase {
 
     final item = results[0];
     return Result(
-      UserAvatar(
-        base64: item.payload.innerText(),
-        hash: item.id,
+      UserAvatarData(
+        item.payload.innerText(),
+        item.id,
       ),
     );
   }
@@ -146,7 +184,7 @@ class UserAvatarManager extends XmppManagerBase {
               'bytes': metadata.length.toString(),
               'height': metadata.height.toString(),
               'width': metadata.width.toString(),
-              'type': metadata.mime,
+              'type': metadata.type,
               'id': metadata.id,
             },
           ),
@@ -163,14 +201,14 @@ class UserAvatarManager extends XmppManagerBase {
   }
 
   /// Subscribe the data and metadata node of [jid].
-  Future<Result<AvatarError, bool>> subscribe(String jid) async {
+  Future<Result<AvatarError, bool>> subscribe(JID jid) async {
     await _getPubSubManager().subscribe(jid, userAvatarMetadataXmlns);
 
     return const Result(true);
   }
 
   /// Unsubscribe the data and metadata node of [jid].
-  Future<Result<AvatarError, bool>> unsubscribe(String jid) async {
+  Future<Result<AvatarError, bool>> unsubscribe(JID jid) async {
     await _getPubSubManager().subscribe(jid, userAvatarMetadataXmlns);
 
     return const Result(true);

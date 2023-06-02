@@ -223,15 +223,21 @@ class RosterManager extends XmppManagerBase {
     return Result(result);
   }
 
-  /// Requests the roster following RFC 6121.
-  Future<Result<RosterRequestResult, RosterError>> requestRoster() async {
+  /// Requests the roster following RFC 6121. If [useRosterVersion] is set to false, then
+  /// roster versioning will not be used, even if the server supports it and we have a last
+  /// known roster version.
+  Future<Result<RosterRequestResult, RosterError>> requestRoster({
+    bool useRosterVersion = true,
+  }) async {
     final attrs = getAttributes();
     final query = XMLNode.xmlns(
       tag: 'query',
       xmlns: rosterXmlns,
     );
     final rosterVersion = await _stateManager.getRosterVersion();
-    if (rosterVersion != null && rosterVersioningAvailable()) {
+    if (rosterVersion != null &&
+        rosterVersioningAvailable() &&
+        useRosterVersion) {
       query.attributes['ver'] = rosterVersion;
     }
 

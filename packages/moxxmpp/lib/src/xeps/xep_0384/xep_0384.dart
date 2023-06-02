@@ -516,8 +516,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     JID jid,
   ) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
-    final result =
-        await pm.getItems(jid.toBare().toString(), omemoDevicesXmlns);
+    final result = await pm.getItems(jid.toBare(), omemoDevicesXmlns);
     if (result.isType<PubSubError>()) return Result(UnknownOmemoError());
     return Result(result.get<List<PubSubItem>>().first.payload);
   }
@@ -543,7 +542,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   ) async {
     // TODO(Unknown): Should we query the device list first?
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
-    final bundlesRaw = await pm.getItems(jid.toString(), omemoBundlesXmlns);
+    final bundlesRaw = await pm.getItems(jid, omemoBundlesXmlns);
     if (bundlesRaw.isType<PubSubError>()) return Result(UnknownOmemoError());
 
     final bundles = bundlesRaw
@@ -639,7 +638,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   /// Subscribes to the device list PubSub node of [jid].
   Future<void> subscribeToDeviceListImpl(String jid) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
-    await pm.subscribe(jid, omemoDevicesXmlns);
+    await pm.subscribe(JID.fromString(jid), omemoDevicesXmlns);
   }
 
   /// Attempts to find out if [jid] supports omemo:2.

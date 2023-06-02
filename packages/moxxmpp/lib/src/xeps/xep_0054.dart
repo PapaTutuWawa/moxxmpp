@@ -66,11 +66,7 @@ class VCardManager extends XmppManagerBase {
         final binval = vcardResult.get<VCard>().photo?.binval;
         if (binval != null) {
           getAttributes().sendEvent(
-            AvatarUpdatedEvent(
-              jid: from,
-              base64: binval,
-              hash: hash,
-            ),
+            VCardAvatarUpdatedEvent(JID.fromString(from), binval, hash),
           );
         } else {
           logger.warning('No avatar data found');
