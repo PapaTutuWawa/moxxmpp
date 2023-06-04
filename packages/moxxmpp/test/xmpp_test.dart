@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:test/test.dart';
 import 'helpers/logging.dart';
 import 'helpers/xmpp.dart';
@@ -78,8 +79,8 @@ Future<bool> testRosterManager(
         StanzaHandlerData(
           false,
           false,
-          null,
           stanza,
+          TypedMap(),
         ),
       );
     }
@@ -335,8 +336,8 @@ void main() {
             StanzaHandlerData(
               false,
               false,
-              null,
               maliciousStanza,
+              TypedMap(),
             ),
           );
         }

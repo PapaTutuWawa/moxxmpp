@@ -8,6 +8,14 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
+class MessageDeliveryReceiptData {
+  const MessageDeliveryReceiptData(this.receiptRequested);
+
+  /// Indicates whether a delivery receipt is requested or not.
+  final bool receiptRequested;
+}
+
+// TODO: Merge those two functions into [MessageDeliveryReceiptData]
 XMLNode makeMessageDeliveryRequest() {
   return XMLNode.xmlns(
     tag: 'request',
@@ -56,7 +64,7 @@ class MessageDeliveryReceiptManager extends XmppManagerBase {
     Stanza message,
     StanzaHandlerData state,
   ) async {
-    return state.copyWith(deliveryReceiptRequested: true);
+    return state..extensions.set(const MessageDeliveryReceiptData(true));
   }
 
   Future<StanzaHandlerData> _onDeliveryReceiptReceived(
@@ -64,16 +72,16 @@ class MessageDeliveryReceiptManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final received = message.firstTag('received', xmlns: deliveryXmlns)!;
-    for (final item in message.children) {
-      if (!['origin-id', 'stanza-id', 'delay', 'store', 'received']
-          .contains(item.tag)) {
-        logger.info(
-          "Won't handle stanza as delivery receipt because we found an '${item.tag}' element",
-        );
+    // for (final item in message.children) {
+    //   if (!['origin-id', 'stanza-id', 'delay', 'store', 'received']
+    //       .contains(item.tag)) {
+    //     logger.info(
+    //       "Won't handle stanza as delivery receipt because we found an '${item.tag}' element",
+    //     );
 
-        return state.copyWith(done: true);
-      }
-    }
+    //     return state.copyWith(done: true);
+    //   }
+    // }
 
     getAttributes().sendEvent(
       DeliveryReceiptReceivedEvent(
@@ -81,6 +89,6 @@ class MessageDeliveryReceiptManager extends XmppManagerBase {
         id: received.attributes['id']! as String,
       ),
     );
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 }

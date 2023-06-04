@@ -76,7 +76,7 @@ class VCardManager extends XmppManagerBase {
       }
     }
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
   VCardPhoto? _parseVCardPhoto(XMLNode? node) {

@@ -6,38 +6,53 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
-enum ChatState { active, composing, paused, inactive, gone }
+enum ChatState {
+  active,
+  composing,
+  paused,
+  inactive,
+  gone;
 
-ChatState chatStateFromString(String raw) {
-  switch (raw) {
-    case 'active':
-      {
+  factory ChatState.fromString(String state) {
+    switch (state) {
+      case 'active':
         return ChatState.active;
-      }
-    case 'composing':
-      {
+      case 'composing':
         return ChatState.composing;
-      }
-    case 'paused':
-      {
+      case 'paused':
         return ChatState.paused;
-      }
-    case 'inactive':
-      {
+      case 'inactive':
         return ChatState.inactive;
-      }
-    case 'gone':
-      {
+      case 'gone':
         return ChatState.gone;
-      }
-    default:
-      {
+      default:
         return ChatState.gone;
-      }
+    }
+  }
+
+  @override
+  String toString() {
+    switch (this) {
+      case ChatState.active:
+        return 'active';
+      case ChatState.composing:
+        return 'composing';
+      case ChatState.paused:
+        return 'paused';
+      case ChatState.inactive:
+        return 'inactive';
+      case ChatState.gone:
+        return 'gone';
+    }
+  }
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: toString(),
+      xmlns: chatStateXmlns,
+    );
   }
 }
-
-String chatStateToString(ChatState state) => state.toString().split('.').last;
 
 class ChatStateManager extends XmppManagerBase {
   ChatStateManager() : super(chatStateManager);
@@ -64,61 +79,27 @@ class ChatStateManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final element = state.stanza.firstTagByXmlns(chatStateXmlns)!;
-    ChatState? chatState;
-
-    switch (element.tag) {
-      case 'active':
-        {
-          chatState = ChatState.active;
-        }
-        break;
-      case 'composing':
-        {
-          chatState = ChatState.composing;
-        }
-        break;
-      case 'paused':
-        {
-          chatState = ChatState.paused;
-        }
-        break;
-      case 'inactive':
-        {
-          chatState = ChatState.inactive;
-        }
-        break;
-      case 'gone':
-        {
-          chatState = ChatState.gone;
-        }
-        break;
-      default:
-        {
-          logger.warning("Received invalid chat state '${element.tag}'");
-        }
-    }
-
-    return state.copyWith(chatState: chatState);
+    state.extensions.set(ChatState.fromString(element.tag));
+    return state;
   }
 
   /// Send a chat state notification to [to]. You can specify the type attribute
   /// of the message with [messageType].
-  void sendChatState(
+  Future<void> sendChatState(
     ChatState state,
     String to, {
     String messageType = 'chat',
-  }) {
-    final tagName = state.toString().split('.').last;
-
-    getAttributes().sendStanza(
+  }) async {
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.message(
           to: to,
           type: messageType,
           children: [
-            XMLNode.xmlns(tag: tagName, xmlns: chatStateXmlns),
+            XMLNode.xmlns(tag: state.toString(), xmlns: chatStateXmlns),
           ],
         ),
+        awaitable: false,
       ),
     );
   }

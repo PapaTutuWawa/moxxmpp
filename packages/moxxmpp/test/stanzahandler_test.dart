@@ -1,4 +1,5 @@
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:test/test.dart';
 
 final stanza1 = Stanza.iq(
@@ -16,8 +17,8 @@ void main() {
       callback: (stanza, _) async => StanzaHandlerData(
         true,
         false,
-        null,
         stanza,
+        TypedMap(),
       ),
     );
 
@@ -38,8 +39,8 @@ void main() {
       callback: (stanza, _) async => StanzaHandlerData(
         true,
         false,
-        null,
         stanza,
+        TypedMap(),
       ),
       tagXmlns: 'owo',
     );
@@ -59,8 +60,8 @@ void main() {
         return StanzaHandlerData(
           true,
           false,
-          null,
           stanza,
+          TypedMap(),
         );
       },
       stanzaTag: 'iq',
@@ -77,8 +78,8 @@ void main() {
       StanzaHandlerData(
         false,
         false,
-        null,
         stanza2,
+        TypedMap(),
       ),
     );
     expect(run, true);
@@ -89,8 +90,8 @@ void main() {
       callback: (stanza, _) async => StanzaHandlerData(
         true,
         false,
-        null,
         stanza,
+        TypedMap(),
       ),
       tagName: 'tag',
     );
@@ -107,8 +108,8 @@ void main() {
       callback: (stanza, _) async => StanzaHandlerData(
         true,
         false,
-        null,
         stanza,
+        TypedMap(),
       ),
       tagName: 'tag',
       stanzaTag: 'iq',
@@ -127,8 +128,8 @@ void main() {
       callback: (stanza, _) async => StanzaHandlerData(
         true,
         false,
-        null,
         stanza,
+        TypedMap(),
       ),
       xmlns: componentAcceptXmlns,
     );
@@ -147,8 +148,8 @@ void main() {
         callback: (stanza, _) async => StanzaHandlerData(
           true,
           false,
-          null,
           stanza,
+          TypedMap(),
         ),
         tagName: '1',
         priority: 100,
@@ -157,8 +158,8 @@ void main() {
         callback: (stanza, _) async => StanzaHandlerData(
           true,
           false,
-          null,
           stanza,
+          TypedMap(),
         ),
         tagName: '2',
       ),
@@ -166,8 +167,8 @@ void main() {
         callback: (stanza, _) async => StanzaHandlerData(
           true,
           false,
-          null,
           stanza,
+          TypedMap(),
         ),
         tagName: '3',
         priority: 50,

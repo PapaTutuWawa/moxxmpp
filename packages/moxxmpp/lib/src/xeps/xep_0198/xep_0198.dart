@@ -15,6 +15,7 @@ import 'package:moxxmpp/src/xeps/xep_0198/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/state.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/types.dart';
 import 'package:synchronized/synchronized.dart';
 
 const xmlUintMax = 4294967296; // 2**32
@@ -402,7 +403,9 @@ class StreamManagementManager extends XmppManagerBase {
     if (isStreamManagementEnabled()) {
       await _incrementC2S();
 
-      if (state.excludeFromStreamManagement) return state;
+      if (state.extensions.get<StreamManagementData>()?.exclude ?? false) {
+        return state;
+      }
 
       _unackedStanzas[_state.c2s] = stanza;
       await _sendAckRequest();

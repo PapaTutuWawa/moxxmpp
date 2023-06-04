@@ -227,6 +227,13 @@ class StickerPack {
   }
 }
 
+class StickersData {
+  const StickersData(this.stickerPackId);
+
+  /// The id of the sticker pack the referenced sticker is from.
+  final String stickerPackId;
+}
+
 class StickersManager extends XmppManagerBase {
   StickersManager() : super(stickersManager);
 
@@ -249,9 +256,10 @@ class StickersManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final sticker = stanza.firstTag('sticker', xmlns: stickersXmlns)!;
-    return state.copyWith(
-      stickerPackId: sticker.attributes['pack']! as String,
-    );
+    return state
+      ..extensions.set(
+        StickersData(sticker.attributes['pack']! as String),
+      );
   }
 
   /// Publishes the StickerPack [pack] to the PubSub node of [jid]. If specified, then

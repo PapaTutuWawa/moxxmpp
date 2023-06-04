@@ -47,11 +47,12 @@ class MessageRetractionManager extends XmppManagerBase {
     final isFallbackBody =
         message.firstTag('fallback', xmlns: fallbackIndicationXmlns) != null;
 
-    return state.copyWith(
-      messageRetraction: MessageRetractionData(
-        applyTo.attributes['id']! as String,
-        isFallbackBody ? message.firstTag('body')?.innerText() : null,
-      ),
-    );
+    return state
+      ..extensions.set(
+        MessageRetractionData(
+          applyTo.attributes['id']! as String,
+          isFallbackBody ? message.firstTag('body')?.innerText() : null,
+        ),
+      );
   }
 }

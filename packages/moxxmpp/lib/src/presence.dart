@@ -66,7 +66,7 @@ class PresenceManager extends XmppManagerBase {
               from: JID.fromString(presence.from!),
             ),
           );
-          return state.copyWith(done: true);
+          return state..done = true;
         }
       default:
         break;
@@ -78,7 +78,7 @@ class PresenceManager extends XmppManagerBase {
       getAttributes().sendEvent(
         PresenceReceivedEvent(JID.fromString(presence.from!), presence),
       );
-      return state.copyWith(done: true);
+      return state..done = true;
     }
 
     return state;

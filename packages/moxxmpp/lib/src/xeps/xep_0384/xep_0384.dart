@@ -16,6 +16,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
+import 'package:moxxmpp/src/xeps/xep_0203.dart';
 import 'package:moxxmpp/src/xeps/xep_0280.dart';
 import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0380.dart';
@@ -276,7 +277,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
             // Add a storage hint in case this is a message
             // Taken from the example at
             // https://xmpp.org/extensions/xep-0384.html#message-structure-description.
-            MessageProcessingHint.store.toXml(),
+            MessageProcessingHint.store.toXML(),
           ],
         ),
         awaitable: false,
@@ -363,19 +364,18 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     logger.finest('Encryption done');
 
     if (!result.isSuccess(2)) {
-      final other = Map<String, dynamic>.from(state.other);
-      other['encryption_error_jids'] = result.jidEncryptionErrors;
-      other['encryption_error_devices'] = result.deviceEncryptionErrors;
-      return state.copyWith(
-        other: other,
+      return state
+        ..cancel = true
         // If we have no device list for toJid, then the contact most likely does not
         // support OMEMO:2
-        cancelReason: result.jidEncryptionErrors[toJid.toString()]
+        ..cancelReason = result.jidEncryptionErrors[toJid.toString()]
                 is NoKeyMaterialAvailableException
             ? OmemoNotSupportedForContactException()
-            : UnknownOmemoError(),
-        cancel: true,
-      );
+            : UnknownOmemoError()
+        ..encryptionError = OmemoEncryptionError(
+          result.jidEncryptionErrors,
+          result.deviceEncryptionErrors,
+        );
     }
 
     final encrypted = _buildEncryptedElement(
@@ -389,19 +389,16 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     if (stanza.tag == 'message') {
       children
         // Add EME data
-        ..add(buildEmeElement(ExplicitEncryptionType.omemo2))
+        ..add(ExplicitEncryptionType.omemo2.toXML())
         // Add a storage hint in case this is a message
         // Taken from the example at
         // https://xmpp.org/extensions/xep-0384.html#message-structure-description.
-        ..add(MessageProcessingHint.store.toXml());
+        ..add(MessageProcessingHint.store.toXML());
     }
 
-    return state.copyWith(
-      stanza: state.stanza.copyWith(
-        children: children,
-      ),
-      encrypted: true,
-    );
+    return state
+      ..stanza = state.stanza.copyWith(children: children)
+      ..encrypted = true;
   }
 
   /// This function is called whenever a message is to be encrypted. If it returns true,
@@ -444,17 +441,19 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       OmemoIncomingStanza(
         fromJid.toString(),
         sid,
-        state.delayedDelivery?.timestamp.millisecondsSinceEpoch ??
+        state.extensions
+                .get<DelayedDeliveryData>()
+                ?.timestamp
+                .millisecondsSinceEpoch ??
             DateTime.now().millisecondsSinceEpoch,
         keys,
         payloadElement?.innerText(),
       ),
     );
 
-    final other = Map<String, dynamic>.from(state.other);
     var children = stanza.children;
     if (result.error != null) {
-      other['encryption_error'] = result.error;
+      state.encryptionError = result.error;
     } else {
       children = stanza.children
           .where(
@@ -471,11 +470,9 @@ abstract class BaseOmemoManager extends XmppManagerBase {
         envelope = XMLNode.fromString(result.payload!);
       } on XmlParserException catch (_) {
         logger.warning('Failed to parse envelope payload: ${result.payload!}');
-        other['encryption_error'] = InvalidEnvelopePayloadException();
-        return state.copyWith(
-          encrypted: true,
-          other: other,
-        );
+        return state
+          ..encrypted = true
+          ..encryptionError = InvalidEnvelopePayloadException();
       }
 
       final envelopeChildren = envelope.firstTag('content')?.children;
@@ -489,13 +486,13 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       }
 
       if (!checkAffixElements(envelope, stanza.from!, ourJid)) {
-        other['encryption_error'] = InvalidAffixElementsException();
+        state.encryptionError = InvalidAffixElementsException();
       }
     }
 
-    return state.copyWith(
-      encrypted: true,
-      stanza: Stanza(
+    return state
+      ..encrypted = true
+      ..stanza = Stanza(
         to: stanza.to,
         from: stanza.from,
         id: stanza.id,
@@ -503,9 +500,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
         children: children,
         tag: stanza.tag,
         attributes: Map<String, String>.from(stanza.attributes),
-      ),
-      other: other,
-    );
+      );
   }
 
   /// Convenience function that attempts to retrieve the raw XML payload from the

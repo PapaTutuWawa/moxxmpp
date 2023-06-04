@@ -6,14 +6,21 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
-XMLNode makeLastMessageCorrectionEdit(String id) {
-  return XMLNode.xmlns(
-    tag: 'replace',
-    xmlns: lmcXmlns,
-    attributes: <String, String>{
-      'id': id,
-    },
-  );
+class LastMessageCorrectionData {
+  const LastMessageCorrectionData(this.id);
+
+  /// The id the LMC applies to.
+  final String id;
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'replace',
+      xmlns: lmcXmlns,
+      attributes: {
+        'id': id,
+      },
+    );
+  }
 }
 
 class LastMessageCorrectionManager extends XmppManagerBase {
@@ -42,8 +49,9 @@ class LastMessageCorrectionManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final edit = stanza.firstTag('replace', xmlns: lmcXmlns)!;
-    return state.copyWith(
-      lastMessageCorrectionSid: edit.attributes['id']! as String,
-    );
+    return state
+      ..extensions.set(
+        LastMessageCorrectionData(edit.attributes['id']! as String),
+      );
   }
 }

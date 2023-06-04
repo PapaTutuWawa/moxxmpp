@@ -135,10 +135,9 @@ class SFSManager extends XmppManagerBase {
   ) async {
     final sfs = message.firstTag('file-sharing', xmlns: sfsXmlns)!;
 
-    return state.copyWith(
-      sfs: StatelessFileSharingData.fromXML(
-        sfs,
-      ),
-    );
+    return state
+      ..extensions.set(
+        StatelessFileSharingData.fromXML(sfs),
+      );
   }
 }

@@ -55,14 +55,15 @@ class MessageReactionsManager extends XmppManagerBase {
   ) async {
     final reactionsElement =
         message.firstTag('reactions', xmlns: messageReactionsXmlns)!;
-    return state.copyWith(
-      messageReactions: MessageReactions(
-        reactionsElement.attributes['id']! as String,
-        reactionsElement.children
-            .where((c) => c.tag == 'reaction')
-            .map((c) => c.innerText())
-            .toList(),
-      ),
-    );
+    return state
+      ..extensions.set(
+        MessageReactions(
+          reactionsElement.attributes['id']! as String,
+          reactionsElement.children
+              .where((c) => c.tag == 'reaction')
+              .map((c) => c.innerText())
+              .toList(),
+        ),
+      );
   }
 }

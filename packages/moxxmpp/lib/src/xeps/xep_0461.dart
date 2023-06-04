@@ -103,13 +103,14 @@ class MessageRepliesManager extends XmppManagerBase {
       end = int.parse(body.attributes['end']! as String);
     }
 
-    return state.copyWith(
-      reply: ReplyData(
-        id: id,
-        to: to,
-        start: start,
-        end: end,
-      ),
-    );
+    return state
+      ..extensions.set(
+        ReplyData(
+          id: id,
+          to: to,
+          start: start,
+          end: end,
+        ),
+      );
   }
 }

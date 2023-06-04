@@ -8,6 +8,13 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
+class ChatMarkerData {
+  const ChatMarkerData(this.isMarkable);
+
+  /// Indicates whether the message can be replied to with a chat marker.
+  final bool isMarkable;
+}
+
 XMLNode makeChatMarkerMarkable() {
   return XMLNode.xmlns(
     tag: 'markable',
@@ -54,7 +61,9 @@ class ChatMarkerManager extends XmppManagerBase {
     final marker = message.firstTagByXmlns(chatMarkersXmlns)!;
 
     // Handle the <markable /> explicitly
-    if (marker.tag == 'markable') return state.copyWith(isMarkable: true);
+    if (marker.tag == 'markable') {
+      return state..extensions.set(const ChatMarkerData(true));
+    }
 
     if (!['received', 'displayed', 'acknowledged'].contains(marker.tag)) {
       logger.warning("Unknown message marker '${marker.tag}' found.");
@@ -68,6 +77,6 @@ class ChatMarkerManager extends XmppManagerBase {
       );
     }
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 }

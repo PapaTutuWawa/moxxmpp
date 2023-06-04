@@ -27,7 +27,9 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/queue.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
 import 'package:synchronized/synchronized.dart';
@@ -474,8 +476,8 @@ class XmppConnection {
       initial: StanzaHandlerData(
         false,
         false,
-        null,
         newStanza,
+        TypedMap(),
         encrypted: details.encrypted,
         forceEncryption: details.forceEncryption,
       ),
@@ -531,14 +533,15 @@ class XmppConnection {
 
     // Run post-send handlers
     _log.fine('Running post stanza handlers..');
+    final extensions = TypedMap()
+      ..set(StreamManagementData(details.excludeFromStreamManagement));
     await _runOutgoingPostStanzaHandlers(
       newStanza,
       initial: StanzaHandlerData(
         false,
         false,
-        null,
         newStanza,
-        excludeFromStreamManagement: details.excludeFromStreamManagement,
+        extensions,
       ),
     );
     _log.fine('Done');
@@ -653,7 +656,7 @@ class XmppConnection {
     Stanza stanza, {
     StanzaHandlerData? initial,
   }) async {
-    var state = initial ?? StanzaHandlerData(false, false, null, stanza);
+    var state = initial ?? StanzaHandlerData(false, false, stanza, TypedMap());
     for (final handler in handlers) {
       if (handler.matches(state.stanza)) {
         state = await handler.callback(state.stanza, state);
@@ -728,7 +731,7 @@ class XmppConnection {
     // it.
     final incomingPreHandlers = await _runIncomingPreStanzaHandlers(stanza);
     final prefix = incomingPreHandlers.encrypted &&
-            incomingPreHandlers.other['encryption_error'] == null
+            incomingPreHandlers.encryptionError == null
         ? '(Encrypted) '
         : '';
     _log.finest('<== $prefix${incomingPreHandlers.stanza.toXml()}');
@@ -747,10 +750,10 @@ class XmppConnection {
       initial: StanzaHandlerData(
         false,
         incomingPreHandlers.cancel,
-        incomingPreHandlers.cancelReason,
         incomingPreHandlers.stanza,
+        incomingPreHandlers.extensions,
         encrypted: incomingPreHandlers.encrypted,
-        other: incomingPreHandlers.other,
+        cancelReason: incomingPreHandlers.cancelReason,
       ),
     );
     if (!incomingHandlers.done) {

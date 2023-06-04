@@ -114,7 +114,7 @@ class PubSubManager extends XmppManagerBase {
       ),
     );
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
   Future<int> _getNodeItemCount(JID jid, String node) async {

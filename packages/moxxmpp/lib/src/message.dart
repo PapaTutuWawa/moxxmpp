@@ -12,15 +12,18 @@ import 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
 import 'package:moxxmpp/src/xeps/xep_0184.dart';
+import 'package:moxxmpp/src/xeps/xep_0280.dart';
 import 'package:moxxmpp/src/xeps/xep_0308.dart';
 import 'package:moxxmpp/src/xeps/xep_0333.dart';
 import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
+import 'package:moxxmpp/src/xeps/xep_0385.dart';
 import 'package:moxxmpp/src/xeps/xep_0424.dart';
 import 'package:moxxmpp/src/xeps/xep_0444.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
+import 'package:moxxmpp/src/xeps/xep_0449.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
 
 /// Data used to build a message stanza.
@@ -100,7 +103,7 @@ class MessageManager extends XmppManagerBase {
     final hints = List<MessageProcessingHint>.empty(growable: true);
     for (final element
         in message.findTagsByXmlns(messageProcessingHintsXmlns)) {
-      hints.add(messageProcessingHintFromXml(element));
+      hints.add(MessageProcessingHint.fromName(element.tag));
     }
 
     getAttributes().sendEvent(
@@ -109,32 +112,37 @@ class MessageManager extends XmppManagerBase {
         fromJid: JID.fromString(message.attributes['from']! as String),
         toJid: JID.fromString(message.attributes['to']! as String),
         sid: message.attributes['id']! as String,
-        originId: state.originId,
-        stanzaIds: state.stanzaIds,
-        isCarbon: state.isCarbon,
-        deliveryReceiptRequested: state.deliveryReceiptRequested,
-        isMarkable: state.isMarkable,
+        originId: state.extensions.get<StableIdData>()?.originId,
+        stanzaIds: state.extensions.get<StableIdData>()?.stanzaIds,
+        isCarbon: state.extensions.get<CarbonsData>()?.isCarbon ?? false,
+        deliveryReceiptRequested: state.extensions
+                .get<MessageDeliveryReceiptData>()
+                ?.receiptRequested ??
+            false,
+        isMarkable: state.extensions.get<ChatMarkerData>()?.isMarkable ?? false,
         type: message.attributes['type'] as String?,
-        oob: state.oob,
-        sfs: state.sfs,
-        sims: state.sims,
-        reply: state.reply,
-        chatState: state.chatState,
-        fun: state.fun,
-        funReplacement: state.funReplacement,
-        funCancellation: state.funCancellation,
+        oob: state.extensions.get<OOBData>(),
+        sfs: state.extensions.get<StatelessFileSharingData>(),
+        sims: state.extensions.get<StatelessMediaSharingData>(),
+        reply: state.extensions.get<ReplyData>(),
+        chatState: state.extensions.get<ChatState>(),
+        fun: state.extensions.get<FileUploadNotificationData>()?.metadata,
+        funReplacement:
+            state.extensions.get<FileUploadNotificationReplacementData>()?.id,
+        funCancellation:
+            state.extensions.get<FileUploadNotificationCancellationData>()?.id,
         encrypted: state.encrypted,
-        messageRetraction: state.messageRetraction,
-        messageCorrectionId: state.lastMessageCorrectionSid,
-        messageReactions: state.messageReactions,
+        messageRetraction: state.extensions.get<MessageRetractionData>(),
+        messageCorrectionId: state.extensions.get<MessageRetractionData>()?.id,
+        messageReactions: state.extensions.get<MessageReactions>(),
         messageProcessingHints: hints.isEmpty ? null : hints,
-        stickerPackId: state.stickerPackId,
-        other: state.other,
+        stickerPackId: state.extensions.get<StickersData>()?.stickerPackId,
+        other: {},
         error: StanzaError.fromStanza(message),
       ),
     );
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
   /// Send a message to to with the content body. If deliveryRequest is true, then
@@ -142,7 +150,7 @@ class MessageManager extends XmppManagerBase {
   /// If id is non-null, then it will be the id of the message stanza.
   /// element to this id. If originId is non-null, then it will create an "origin-id"
   /// child in the message stanza and set its id to originId.
-  void sendMessage(MessageDetails details) {
+  Future<void> sendMessage(MessageDetails details) async {
     assert(
       implies(
         details.quoteBody != null,
@@ -216,7 +224,7 @@ class MessageManager extends XmppManagerBase {
       stanza.addChild(makeChatMarkerMarkable());
     }
     if (details.originId != null) {
-      stanza.addChild(makeOriginIdElement(details.originId!));
+      stanza.addChild(StableIdData(details.originId, null).toOriginIdElement());
     }
 
     if (details.sfs != null) {
@@ -226,17 +234,13 @@ class MessageManager extends XmppManagerBase {
       if (source is StatelessFileSharingUrlSource &&
           details.setOOBFallbackBody) {
         // SFS recommends OOB as a fallback
-        stanza.addChild(constructOOBNode(OOBData(url: source.url)));
+        stanza.addChild(OOBData(source.url, null).toXML());
       }
     }
 
     if (details.chatState != null) {
       stanza.addChild(
-        // TODO(Unknown): Move this into xep_0085.dart
-        XMLNode.xmlns(
-          tag: chatStateToString(details.chatState!),
-          xmlns: chatStateXmlns,
-        ),
+        details.chatState!.toXML(),
       );
     }
 
@@ -293,9 +297,9 @@ class MessageManager extends XmppManagerBase {
 
     if (details.lastMessageCorrectionId != null) {
       stanza.addChild(
-        makeLastMessageCorrectionEdit(
+        LastMessageCorrectionData(
           details.lastMessageCorrectionId!,
-        ),
+        ).toXML(),
       );
     }
 
@@ -305,7 +309,7 @@ class MessageManager extends XmppManagerBase {
 
     if (details.messageProcessingHints != null) {
       for (final hint in details.messageProcessingHints!) {
-        stanza.addChild(hint.toXml());
+        stanza.addChild(hint.toXML());
       }
     }
 
@@ -321,7 +325,7 @@ class MessageManager extends XmppManagerBase {
       );
     }
 
-    getAttributes().sendStanza(
+    await getAttributes().sendStanza(
       StanzaDetails(
         stanza,
         awaitable: false,

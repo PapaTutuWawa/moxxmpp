@@ -5,27 +5,25 @@ enum MessageProcessingHint {
   noPermanentStore,
   noStore,
   noCopies,
-  store,
-}
+  store;
 
-MessageProcessingHint messageProcessingHintFromXml(XMLNode element) {
-  switch (element.tag) {
-    case 'no-permanent-store':
-      return MessageProcessingHint.noPermanentStore;
-    case 'no-store':
-      return MessageProcessingHint.noStore;
-    case 'no-copy':
-      return MessageProcessingHint.noCopies;
-    case 'store':
-      return MessageProcessingHint.store;
+  factory MessageProcessingHint.fromName(String name) {
+    switch (name) {
+      case 'no-permanent-store':
+        return MessageProcessingHint.noPermanentStore;
+      case 'no-store':
+        return MessageProcessingHint.noStore;
+      case 'no-copy':
+        return MessageProcessingHint.noCopies;
+      case 'store':
+        return MessageProcessingHint.store;
+    }
+
+    assert(false, 'Invalid Message Processing Hint: $name');
+    return MessageProcessingHint.noStore;
   }
 
-  assert(false, 'Invalid Message Processing Hint: ${element.tag}');
-  return MessageProcessingHint.noStore;
-}
-
-extension XmlExtension on MessageProcessingHint {
-  XMLNode toXml() {
+  XMLNode toXML() {
     String tag;
     switch (this) {
       case MessageProcessingHint.noPermanentStore:

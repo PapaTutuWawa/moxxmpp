@@ -145,7 +145,7 @@ class RosterManager extends XmppManagerBase {
       logger.warning(
         'Roster push invalid! Unexpected from attribute: ${stanza.toXml()}',
       );
-      return state.copyWith(done: true);
+      return state..done = true;
     }
 
     final query = stanza.firstTag('query', xmlns: rosterXmlns)!;
@@ -154,7 +154,7 @@ class RosterManager extends XmppManagerBase {
 
     if (item == null) {
       logger.warning('Received empty roster push');
-      return state.copyWith(done: true);
+      return state..done = true;
     }
 
     unawaited(
@@ -177,7 +177,7 @@ class RosterManager extends XmppManagerBase {
       [],
     );
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
   /// Shared code between requesting rosters without and with roster versioning, if

@@ -7,6 +7,28 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
+class StableIdData {
+  const StableIdData(this.originId, this.stanzaIds);
+
+  /// <origin-id />
+  final String? originId;
+
+  /// Stanza ids
+  final List<StanzaId>? stanzaIds;
+
+  XMLNode toOriginIdElement() {
+    assert(
+      originId != null,
+      'Can only build the XML element if originId != null',
+    );
+    return XMLNode.xmlns(
+      tag: 'origin-id',
+      xmlns: stableIdXmlns,
+      attributes: {'id': originId!},
+    );
+  }
+}
+
 /// Representation of a <stanza-id /> element.
 class StanzaId {
   const StanzaId(
@@ -30,14 +52,6 @@ class StanzaId {
       },
     );
   }
-}
-
-XMLNode makeOriginIdElement(String id) {
-  return XMLNode.xmlns(
-    tag: 'origin-id',
-    xmlns: stableIdXmlns,
-    attributes: {'id': id},
-  );
 }
 
 class StableIdManager extends XmppManagerBase {
@@ -86,9 +100,12 @@ class StableIdManager extends XmppManagerBase {
           .toList();
     }
 
-    return state.copyWith(
-      originId: originId,
-      stanzaIds: stanzaIds,
-    );
+    return state
+      ..extensions.set(
+        StableIdData(
+          originId,
+          stanzaIds,
+        ),
+      );
   }
 }

@@ -8,26 +8,24 @@ import 'package:moxxmpp/src/stringxml.dart';
 
 /// A data class representing the jabber:x:oob tag.
 class OOBData {
-  const OOBData({this.url, this.desc});
+  const OOBData(this.url, this.desc);
+
+  /// The communicated URL of the OOB data
   final String? url;
+
+  /// The description of the url.
   final String? desc;
-}
 
-XMLNode constructOOBNode(OOBData data) {
-  final children = List<XMLNode>.empty(growable: true);
-
-  if (data.url != null) {
-    children.add(XMLNode(tag: 'url', text: data.url));
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'x',
+      xmlns: oobDataXmlns,
+      children: [
+        if (url != null) XMLNode(tag: 'url', text: url),
+        if (desc != null) XMLNode(tag: 'desc', text: desc),
+      ],
+    );
   }
-  if (data.desc != null) {
-    children.add(XMLNode(tag: 'desc', text: data.desc));
-  }
-
-  return XMLNode.xmlns(
-    tag: 'x',
-    xmlns: oobDataXmlns,
-    children: children,
-  );
 }
 
 class OOBManager extends XmppManagerBase {
@@ -59,11 +57,12 @@ class OOBManager extends XmppManagerBase {
     final url = x.firstTag('url');
     final desc = x.firstTag('desc');
 
-    return state.copyWith(
-      oob: OOBData(
-        url: url?.innerText(),
-        desc: desc?.innerText(),
-      ),
-    );
+    return state
+      ..extensions.set(
+        OOBData(
+          url?.innerText(),
+          desc?.innerText(),
+        ),
+      );
   }
 }

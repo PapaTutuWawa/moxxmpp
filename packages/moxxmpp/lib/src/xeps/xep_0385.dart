@@ -98,7 +98,7 @@ class SIMSManager extends XmppManagerBase {
     final references = message.findTags('reference', xmlns: referenceXmlns);
     for (final ref in references) {
       final sims = ref.firstTag('media-sharing', xmlns: simsXmlns);
-      if (sims != null) return state.copyWith(sims: parseSIMSElement(sims));
+      if (sims != null) return state..extensions.set(parseSIMSElement(sims));
     }
 
     return state;

@@ -14,6 +14,13 @@ import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0297.dart';
 import 'package:moxxmpp/src/xeps/xep_0386.dart';
 
+class CarbonsData {
+  const CarbonsData(this.isCarbon);
+
+  /// Indicates whether this message is a carbon.
+  final bool isCarbon;
+}
+
 /// This manager class implements support for XEP-0280.
 class CarbonsManager extends XmppManagerBase {
   CarbonsManager() : super(carbonsManager);
@@ -77,15 +84,14 @@ class CarbonsManager extends XmppManagerBase {
   ) async {
     final from = JID.fromString(message.attributes['from']! as String);
     final received = message.firstTag('received', xmlns: carbonsXmlns)!;
-    if (!isCarbonValid(from)) return state.copyWith(done: true);
+    if (!isCarbonValid(from)) return state..done = true;
 
     final forwarded = received.firstTag('forwarded', xmlns: forwardedXmlns)!;
     final carbon = unpackForwarded(forwarded);
 
-    return state.copyWith(
-      isCarbon: true,
-      stanza: carbon,
-    );
+    return state
+      ..extensions.set(const CarbonsData(true))
+      ..stanza = carbon;
   }
 
   Future<StanzaHandlerData> _onMessageSent(
@@ -94,15 +100,14 @@ class CarbonsManager extends XmppManagerBase {
   ) async {
     final from = JID.fromString(message.attributes['from']! as String);
     final sent = message.firstTag('sent', xmlns: carbonsXmlns)!;
-    if (!isCarbonValid(from)) return state.copyWith(done: true);
+    if (!isCarbonValid(from)) return state..done = true;
 
     final forwarded = sent.firstTag('forwarded', xmlns: forwardedXmlns)!;
     final carbon = unpackForwarded(forwarded);
 
-    return state.copyWith(
-      isCarbon: true,
-      stanza: carbon,
-    );
+    return state
+      ..extensions.set(const CarbonsData(true))
+      ..stanza = carbon;
   }
 
   /// Send a request to the server, asking it to enable Message Carbons.
