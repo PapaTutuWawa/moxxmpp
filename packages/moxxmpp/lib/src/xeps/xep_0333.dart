@@ -17,9 +17,12 @@ enum ChatMarker {
 
   factory ChatMarker.fromName(String name) {
     switch (name) {
-      case 'received': return ChatMarker.received;
-      case 'displayed': return ChatMarker.displayed;
-      case 'acknowledged': return ChatMarker.acknowledged;
+      case 'received':
+        return ChatMarker.received;
+      case 'displayed':
+        return ChatMarker.displayed;
+      case 'acknowledged':
+        return ChatMarker.acknowledged;
     }
 
     throw Exception('Invalid chat marker $name');
@@ -32,7 +35,7 @@ enum ChatMarker {
         tag = 'received';
         break;
       case ChatMarker.displayed:
-        tag = 'displayed'; 
+        tag = 'displayed';
         break;
       case ChatMarker.acknowledged:
         tag = 'acknowledged';
@@ -129,7 +132,9 @@ class ChatMarkerManager extends XmppManagerBase {
     return state..done = true;
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final children = List<XMLNode>.empty(growable: true);
     final marker = extensions.get<ChatMarkerData>();
     if (marker != null) {
@@ -149,6 +154,8 @@ class ChatMarkerManager extends XmppManagerBase {
     await super.postRegisterCallback();
 
     // Register the sending callback
-    getAttributes().getManagerById<MessageManager>(messageManager)?.registerMessageSendingCallback(_messageSendingCallback);
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

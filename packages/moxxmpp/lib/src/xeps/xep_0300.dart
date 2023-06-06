@@ -66,7 +66,7 @@ enum HashFunction {
         return HashFunction.blake2b512;
     }
 
-    throw Exception();
+    throw Exception('Invalid hash function $name');
   }
 
   /// Like [HashFunction.fromName], but returns null if the hash function is unknown

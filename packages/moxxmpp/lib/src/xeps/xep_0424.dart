@@ -63,7 +63,9 @@ class MessageRetractionManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<MessageRetractionData>();
     return data != null
         ? [

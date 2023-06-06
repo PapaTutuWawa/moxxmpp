@@ -85,7 +85,7 @@ class ChatStateManager extends XmppManagerBase {
     try {
       state.extensions.set(ChatState.fromName(element.tag));
     } catch (_) {
-      logger.finest('Ignoring invalid chat state ${element.tag}'); 
+      logger.finest('Ignoring invalid chat state ${element.tag}');
     }
 
     return state;
@@ -112,7 +112,9 @@ class ChatStateManager extends XmppManagerBase {
     );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<ChatState>();
     return data != null
         ? [

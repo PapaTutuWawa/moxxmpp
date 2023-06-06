@@ -140,7 +140,9 @@ class SFSManager extends XmppManagerBase {
   @override
   Future<bool> isSupported() async => true;
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<StatelessFileSharingData>();
     if (data == null) {
       return [];

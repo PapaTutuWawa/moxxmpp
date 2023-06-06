@@ -123,7 +123,9 @@ class StableIdManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<StableIdData>();
     return data != null ? data.toXML() : [];
   }

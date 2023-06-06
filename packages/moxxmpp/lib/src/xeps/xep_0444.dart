@@ -69,7 +69,9 @@ class MessageReactionsManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<MessageReactions>();
     return data != null
         ? [

@@ -104,7 +104,9 @@ class MessageDeliveryReceiptManager extends XmppManagerBase {
     return state..done = true;
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<MessageDeliveryReceivedData>();
     return data != null
         ? [

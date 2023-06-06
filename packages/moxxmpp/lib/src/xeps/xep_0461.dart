@@ -103,7 +103,9 @@ class MessageRepliesManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   @visibleForTesting
-  List<XMLNode> messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<ReplyData>();
     return data != null
         ? [

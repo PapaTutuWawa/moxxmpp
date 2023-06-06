@@ -16,7 +16,9 @@ import 'package:moxxmpp/src/xeps/xep_0461.dart';
 /// A callback that is called whenever a message is sent using
 /// [MessageManager.sendMessage]. The input the typed map that is passed to
 /// sendMessage.
-typedef MessageSendingCallback = List<XMLNode> Function(TypedMap<StanzaHandlerExtension>);
+typedef MessageSendingCallback = List<XMLNode> Function(
+  TypedMap<StanzaHandlerExtension>,
+);
 
 /// The raw content of the <body /> element.
 class MessageBodyData {
@@ -85,7 +87,10 @@ class MessageManager extends XmppManagerBase {
 
   /// Send an unawaitable message to [to]. [extensions] is a typed map that contains
   /// data for building the message.
-  Future<void> sendMessage(JID to, TypedMap<StanzaHandlerExtension> extensions) async {
+  Future<void> sendMessage(
+    JID to,
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) async {
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.message(
@@ -102,7 +107,9 @@ class MessageManager extends XmppManagerBase {
     );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     if (extensions.get<ReplyData>() != null) {
       return [];
     }

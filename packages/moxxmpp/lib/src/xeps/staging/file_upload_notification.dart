@@ -141,7 +141,9 @@ class FileUploadNotificationManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final fun = extensions.get<FileUploadNotificationData>();
     if (fun != null) {
       return [fun.toXML()];

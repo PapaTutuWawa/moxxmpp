@@ -87,16 +87,18 @@ class MessageProcessingHintManager extends XmppManagerBase {
     return state
       ..extensions.set(
         MessageProcessingHintData(
-          elements.map((element) => MessageProcessingHint.fromName(element.tag)).toList(),
+          elements
+              .map((element) => MessageProcessingHint.fromName(element.tag))
+              .toList(),
         ),
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
     final data = extensions.get<MessageProcessingHintData>();
-    return data != null
-        ? data.hints.map((hint) => hint.toXML()).toList()
-        : [];
+    return data != null ? data.hints.map((hint) => hint.toXML()).toList() : [];
   }
 
   @override
