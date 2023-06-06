@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -15,19 +14,22 @@ import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
 import 'package:moxxmpp/src/xeps/xep_0184.dart';
 import 'package:moxxmpp/src/xeps/xep_0280.dart';
-import 'package:moxxmpp/src/xeps/xep_0308.dart';
 import 'package:moxxmpp/src/xeps/xep_0333.dart';
 import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:moxxmpp/src/xeps/xep_0385.dart';
 import 'package:moxxmpp/src/xeps/xep_0424.dart';
 import 'package:moxxmpp/src/xeps/xep_0444.dart';
-import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
-import 'package:moxxmpp/src/xeps/xep_0448.dart';
 import 'package:moxxmpp/src/xeps/xep_0449.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
 
+/// A callback that is called whenever a message is sent using
+/// [MessageManager.sendMessage]. The input the typed map that is passed to
+/// sendMessage.
+typedef MessageSendingCallback = List<XMLNode> Function(TypedMap);
+
+/// The raw content of the <body /> element.
 class MessageBodyData {
   const MessageBodyData(this.body);
 
@@ -42,65 +44,12 @@ class MessageBodyData {
   }
 }
 
+/// The id attribute of the message stanza.
 class MessageIdData {
   const MessageIdData(this.id);
 
   /// The id attribute of the stanza.
   final String id;
-}
-
-typedef MessageSendingCallback = List<XMLNode> Function(TypedMap);
-
-/// Data used to build a message stanza.
-///
-/// [setOOBFallbackBody] indicates, when using SFS, whether a OOB fallback should be
-/// added. This is recommended when sharing files but may cause issues when the message
-/// stanza should include a SFS element without any fallbacks.
-class MessageDetails {
-  const MessageDetails({
-    required this.to,
-    this.body,
-    this.requestDeliveryReceipt = false,
-    this.requestChatMarkers = true,
-    this.id,
-    this.originId,
-    this.quoteBody,
-    this.quoteId,
-    this.quoteFrom,
-    this.chatState,
-    this.sfs,
-    this.fun,
-    this.funReplacement,
-    this.funCancellation,
-    this.shouldEncrypt = false,
-    this.messageRetraction,
-    this.lastMessageCorrectionId,
-    this.messageReactions,
-    this.messageProcessingHints,
-    this.stickerPackId,
-    this.setOOBFallbackBody = true,
-  });
-  final String to;
-  final String? body;
-  final bool requestDeliveryReceipt;
-  final bool requestChatMarkers;
-  final String? id;
-  final String? originId;
-  final String? quoteBody;
-  final String? quoteId;
-  final String? quoteFrom;
-  final ChatState? chatState;
-  final StatelessFileSharingData? sfs;
-  final FileMetadataData? fun;
-  final String? funReplacement;
-  final String? funCancellation;
-  final bool shouldEncrypt;
-  final MessageRetractionData? messageRetraction;
-  final String? lastMessageCorrectionId;
-  final MessageReactions? messageReactions;
-  final String? stickerPackId;
-  final List<MessageProcessingHint>? messageProcessingHints;
-  final bool setOOBFallbackBody;
 }
 
 class MessageManager extends XmppManagerBase {
@@ -179,7 +128,9 @@ class MessageManager extends XmppManagerBase {
     return state..done = true;
   }
 
-  Future<void> sendMessage2(JID to, TypedMap extensions) async {
+  /// Send an unawaitable message to [to]. [extensions] is a typed map that contains
+  /// data for building the message.
+  Future<void> sendMessage(JID to, TypedMap extensions) async {
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.message(
@@ -191,194 +142,6 @@ class MessageManager extends XmppManagerBase {
               .flattened
               .toList(),
         ),
-        awaitable: false,
-      ),
-    );
-  }
-
-  /// Send a message to to with the content body. If deliveryRequest is true, then
-  /// the message will also request a delivery receipt from the receiver.
-  /// If id is non-null, then it will be the id of the message stanza.
-  /// element to this id. If originId is non-null, then it will create an "origin-id"
-  /// child in the message stanza and set its id to originId.
-  Future<void> sendMessage(MessageDetails details) async {
-    assert(
-      implies(
-        details.quoteBody != null,
-        details.quoteFrom != null && details.quoteId != null,
-      ),
-      'When quoting a message, then quoteFrom and quoteId must also be non-null',
-    );
-
-    final stanza = Stanza.message(
-      to: details.to,
-      type: 'chat',
-      id: details.id,
-      children: [],
-    );
-
-    if (details.quoteBody != null) {
-      final quote = QuoteData.fromBodies(details.quoteBody!, details.body!);
-
-      stanza
-        ..addChild(
-          XMLNode(tag: 'body', text: quote.body),
-        )
-        ..addChild(
-          XMLNode.xmlns(
-            tag: 'reply',
-            xmlns: replyXmlns,
-            attributes: {'to': details.quoteFrom!, 'id': details.quoteId!},
-          ),
-        )
-        ..addChild(
-          XMLNode.xmlns(
-            tag: 'fallback',
-            xmlns: fallbackXmlns,
-            attributes: {'for': replyXmlns},
-            children: [
-              XMLNode(
-                tag: 'body',
-                attributes: <String, String>{
-                  'start': '0',
-                  'end': '${quote.fallbackLength}',
-                },
-              )
-            ],
-          ),
-        );
-    } else {
-      var body = details.body;
-      if (details.sfs != null && details.setOOBFallbackBody) {
-        // TODO(Unknown): Maybe find a better solution
-        final firstSource = details.sfs!.sources.first;
-        if (firstSource is StatelessFileSharingUrlSource) {
-          body = firstSource.url;
-        } else if (firstSource is StatelessFileSharingEncryptedSource) {
-          body = firstSource.source.url;
-        }
-      } else if (details.messageRetraction?.fallback != null) {
-        body = details.messageRetraction!.fallback;
-      }
-
-      if (body != null) {
-        stanza.addChild(
-          XMLNode(tag: 'body', text: body),
-        );
-      }
-    }
-
-    // if (details.requestDeliveryReceipt) {
-    //   stanza.addChild(makeMessageDeliveryRequest());
-    // }
-    if (details.requestChatMarkers) {
-      stanza.addChild(makeChatMarkerMarkable());
-    }
-    if (details.originId != null) {
-      stanza.addChild(StableIdData(details.originId, null).toOriginIdElement());
-    }
-
-    if (details.sfs != null) {
-      stanza.addChild(details.sfs!.toXML());
-
-      final source = details.sfs!.sources.first;
-      if (source is StatelessFileSharingUrlSource &&
-          details.setOOBFallbackBody) {
-        // SFS recommends OOB as a fallback
-        stanza.addChild(OOBData(source.url, null).toXML());
-      }
-    }
-
-    if (details.chatState != null) {
-      stanza.addChild(
-        details.chatState!.toXML(),
-      );
-    }
-
-    if (details.fun != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'file-upload',
-          xmlns: fileUploadNotificationXmlns,
-          children: [
-            details.fun!.toXML(),
-          ],
-        ),
-      );
-    }
-
-    if (details.funReplacement != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'replaces',
-          xmlns: fileUploadNotificationXmlns,
-          attributes: <String, String>{
-            'id': details.funReplacement!,
-          },
-        ),
-      );
-    }
-
-    if (details.messageRetraction != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'apply-to',
-          xmlns: fasteningXmlns,
-          attributes: <String, String>{
-            'id': details.messageRetraction!.id,
-          },
-          children: [
-            XMLNode.xmlns(
-              tag: 'retract',
-              xmlns: messageRetractionXmlns,
-            ),
-          ],
-        ),
-      );
-
-      if (details.messageRetraction!.fallback != null) {
-        stanza.addChild(
-          XMLNode.xmlns(
-            tag: 'fallback',
-            xmlns: fallbackIndicationXmlns,
-          ),
-        );
-      }
-    }
-
-    if (details.lastMessageCorrectionId != null) {
-      stanza.addChild(
-        LastMessageCorrectionData(
-          details.lastMessageCorrectionId!,
-        ).toXML(),
-      );
-    }
-
-    if (details.messageReactions != null) {
-      stanza.addChild(details.messageReactions!.toXML());
-    }
-
-    if (details.messageProcessingHints != null) {
-      for (final hint in details.messageProcessingHints!) {
-        stanza.addChild(hint.toXML());
-      }
-    }
-
-    if (details.stickerPackId != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'sticker',
-          xmlns: stickersXmlns,
-          attributes: {
-            'pack': details.stickerPackId!,
-          },
-        ),
-      );
-    }
-
-    await getAttributes().sendStanza(
-      StanzaDetails(
-        stanza,
         awaitable: false,
       ),
     );

@@ -268,7 +268,7 @@ void main() {
       SFSManager(),
     ]);
 
-    await manager.sendMessage2(
+    await manager.sendMessage(
       JID.fromString('user@example.org'),
       TypedMap()
         ..set(
