@@ -1,6 +1,6 @@
 name: moxxmpp
 description: A pure-Dart XMPP library
-version: 0.3.2
+version: 0.4.0
 homepage: https://codeberg.org/moxxy/moxxmpp
 publish_to: https://git.polynom.me/api/packages/Moxxy/pub
 
