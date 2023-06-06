@@ -78,7 +78,6 @@ class MessageProcessingHintManager extends XmppManagerBase {
         ),
       ];
 
-  // TODO: Test
   Future<StanzaHandlerData> _onMessage(
     Stanza stanza,
     StanzaHandlerData state,
