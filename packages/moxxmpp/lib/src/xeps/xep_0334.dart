@@ -1,5 +1,6 @@
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 enum MessageProcessingHint {
   noPermanentStore,
@@ -44,5 +45,14 @@ enum MessageProcessingHint {
       tag: tag,
       xmlns: messageProcessingHintsXmlns,
     );
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<MessageProcessingHint>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
   }
 }

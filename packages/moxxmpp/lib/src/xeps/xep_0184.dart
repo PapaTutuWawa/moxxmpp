@@ -7,28 +7,53 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 class MessageDeliveryReceiptData {
   const MessageDeliveryReceiptData(this.receiptRequested);
 
   /// Indicates whether a delivery receipt is requested or not.
   final bool receiptRequested;
+
+  XMLNode toXML() {
+    assert(
+      receiptRequested,
+      'This method makes little sense with receiptRequested == false',
+    );
+    return XMLNode.xmlns(
+      tag: 'request',
+      xmlns: deliveryXmlns,
+    );
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<MessageDeliveryReceiptData>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
+  }
 }
 
-// TODO: Merge those two functions into [MessageDeliveryReceiptData]
-XMLNode makeMessageDeliveryRequest() {
-  return XMLNode.xmlns(
-    tag: 'request',
-    xmlns: deliveryXmlns,
-  );
-}
+class MessageDeliveryReceivedData {
+  const MessageDeliveryReceivedData(this.id);
 
-XMLNode makeMessageDeliveryResponse(String id) {
-  return XMLNode.xmlns(
-    tag: 'received',
-    xmlns: deliveryXmlns,
-    attributes: {'id': id},
-  );
+  /// The stanza id of the message we received.
+  final String id;
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'received',
+      xmlns: deliveryXmlns,
+      attributes: {'id': id},
+    );
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<MessageDeliveryReceivedData>();
+    return data != null ? [data.toXML()] : [];
+  }
 }
 
 class MessageDeliveryReceiptManager extends XmppManagerBase {

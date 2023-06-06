@@ -1,24 +1,36 @@
-import 'package:meta/meta.dart';
+import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
+import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
-/// Data summarizing the XEP-0461 data.
+/// A reply to a message.
 class ReplyData {
-  const ReplyData({
-    required this.id,
-    this.to,
+  const ReplyData(
+    this.id, {
+    this.body,
+    this.jid,
     this.start,
     this.end,
   });
 
-  /// The bare JID to whom the reply applies to
-  final String? to;
+  ReplyData.fromQuoteData(
+    this.id,
+    QuoteData quote, {
+    this.jid,
+  })  : body = quote.body,
+        start = 0,
+        end = quote.fallbackLength;
 
-  /// The stanza ID of the message that is replied to
+  /// The JID of the entity whose message we are replying to.
+  final JID? jid;
+
+  /// The id of the message that is replied to. What id to use depends on what kind
+  /// of message you want to reply to.
   final String id;
 
   /// The start of the fallback body (inclusive)
@@ -27,18 +39,59 @@ class ReplyData {
   /// The end of the fallback body (exclusive)
   final int? end;
 
+  /// The body of the message.
+  final String? body;
+
   /// Applies the metadata to the received body [body] in order to remove the fallback.
   /// If either [ReplyData.start] or [ReplyData.end] are null, then body is returned as
   /// is.
-  String removeFallback(String body) {
+  String? get withoutFallback {
+    if (body == null) return null;
     if (start == null || end == null) return body;
 
-    return body.replaceRange(start!, end, '');
+    return body!.replaceRange(start!, end, '');
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<ReplyData>();
+    return data != null
+        ? [
+            XMLNode.xmlns(
+              tag: 'reply',
+              xmlns: replyXmlns,
+              attributes: {
+                // The to attribute is optional
+                if (data.jid != null) 'to': data.jid!.toString(),
+
+                'id': data.id,
+              },
+            ),
+            if (data.body != null)
+              XMLNode(
+                tag: 'body',
+                text: data.body,
+              ),
+            if (data.body != null)
+              XMLNode.xmlns(
+                tag: 'fallback',
+                xmlns: fallbackXmlns,
+                attributes: {'for': replyXmlns},
+                children: [
+                  XMLNode(
+                    tag: 'body',
+                    attributes: {
+                      'start': data.start!.toString(),
+                      'end': data.end!.toString(),
+                    },
+                  ),
+                ],
+              ),
+          ]
+        : [];
   }
 }
 
 /// Internal class describing how to build a message with a quote fallback body.
-@visibleForTesting
 class QuoteData {
   const QuoteData(this.body, this.fallbackLength);
 
@@ -90,8 +143,8 @@ class MessageRepliesManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final reply = stanza.firstTag('reply', xmlns: replyXmlns)!;
-    final id = reply.attributes['id']! as String;
     final to = reply.attributes['to'] as String?;
+    final jid = to != null ? JID.fromString(to) : null;
     int? start;
     int? end;
 
@@ -106,10 +159,11 @@ class MessageRepliesManager extends XmppManagerBase {
     return state
       ..extensions.set(
         ReplyData(
-          id: id,
-          to: to,
+          reply.attributes['id']! as String,
+          jid: jid,
           start: start,
           end: end,
+          body: stanza.firstTag('body')?.innerText(),
         ),
       );
   }

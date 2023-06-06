@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 class LastMessageCorrectionData {
   const LastMessageCorrectionData(this.id);
@@ -20,6 +21,15 @@ class LastMessageCorrectionData {
         'id': id,
       },
     );
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<LastMessageCorrectionData>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
   }
 }
 

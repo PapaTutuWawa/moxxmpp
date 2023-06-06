@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
@@ -8,6 +9,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0085.dart';
@@ -25,6 +27,38 @@ import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
 import 'package:moxxmpp/src/xeps/xep_0449.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
+
+class MessageBodyData {
+  const MessageBodyData(this.body);
+
+  /// The content of the <body /> element.
+  final String? body;
+
+  XMLNode toXML() {
+    return XMLNode(
+      tag: 'body',
+      text: body,
+    );
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    if (extensions.get<ReplyData>() != null) {
+      return [];
+    }
+
+    final data = extensions.get<MessageBodyData>();
+    return data != null ? [data.toXML()] : [];
+  }
+}
+
+class MessageIdData {
+  const MessageIdData(this.id);
+
+  /// The id attribute of the stanza.
+  final String id;
+}
+
+typedef MessageSendingCallback = List<XMLNode> Function(TypedMap);
 
 /// Data used to build a message stanza.
 ///
@@ -79,7 +113,11 @@ class MessageDetails {
 }
 
 class MessageManager extends XmppManagerBase {
-  MessageManager() : super(messageManager);
+  MessageManager(this.messageSendingCallbacks) : super(messageManager);
+
+  /// A list of callbacks that are called when a message is sent in order to add
+  /// appropriate child elements.
+  final List<MessageSendingCallback> messageSendingCallbacks;
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
@@ -143,6 +181,23 @@ class MessageManager extends XmppManagerBase {
     );
 
     return state..done = true;
+  }
+
+  Future<void> sendMessage2(JID to, TypedMap extensions) async {
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.message(
+          to: to.toString(),
+          id: extensions.get<MessageIdData>()?.id,
+          type: 'chat',
+          children: messageSendingCallbacks
+              .map((c) => c(extensions))
+              .flattened
+              .toList(),
+        ),
+        awaitable: false,
+      ),
+    );
   }
 
   /// Send a message to to with the content body. If deliveryRequest is true, then
@@ -217,9 +272,9 @@ class MessageManager extends XmppManagerBase {
       }
     }
 
-    if (details.requestDeliveryReceipt) {
-      stanza.addChild(makeMessageDeliveryRequest());
-    }
+    // if (details.requestDeliveryReceipt) {
+    //   stanza.addChild(makeMessageDeliveryRequest());
+    // }
     if (details.requestChatMarkers) {
       stanza.addChild(makeChatMarkerMarkable());
     }
@@ -304,7 +359,7 @@ class MessageManager extends XmppManagerBase {
     }
 
     if (details.messageReactions != null) {
-      stanza.addChild(details.messageReactions!.toXml());
+      stanza.addChild(details.messageReactions!.toXML());
     }
 
     if (details.messageProcessingHints != null) {

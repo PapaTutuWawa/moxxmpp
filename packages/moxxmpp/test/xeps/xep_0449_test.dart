@@ -1,7 +1,14 @@
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:test/test.dart';
 
+import '../helpers/logging.dart';
+import '../helpers/manager.dart';
+import '../helpers/xmpp.dart';
+
 void main() {
+  initLogger();
+
   test('Test parsing a large sticker pack', () {
     // Example sticker pack based on the "miho" sticker pack by Movim
     final rawPack = XMLNode.fromString('''
@@ -224,5 +231,184 @@ void main() {
     );
 
     expect(pack.stickers.length, 16);
+  });
+
+  test('Test sending a sticker', () async {
+    final manager = MessageManager([
+      StatelessFileSharingData.messageSendingCallback,
+      StickersData.messageSendingCallback,
+    ]);
+    final holder = TestingManagerHolder(
+      stubSocket: StubTCPSocket([
+        StanzaExpectation(
+          // Example taken from https://xmpp.org/extensions/xep-0449.html#send
+          // - Replaced <dimensions /> with <width /> and <height />
+          '''
+<message to="user@example.org" type="chat">
+  <sticker xmlns='urn:xmpp:stickers:0' pack='EpRv28DHHzFrE4zd+xaNpVb4' />
+  <file-sharing xmlns='urn:xmpp:sfs:0'>
+    <file xmlns='urn:xmpp:file:metadata:0'>
+      <media-type>image/png</media-type>
+      <desc>😘</desc>
+      <size>67016</size>
+      <width>512</width>
+      <height>512</height>
+      <hash xmlns='urn:xmpp:hashes:2' algo='sha-256'>gw+6xdCgOcvCYSKuQNrXH33lV9NMzuDf/s0huByCDsY=</hash>
+    </file>
+    <sources>
+      <url-data xmlns='http://jabber.org/protocol/url-data' target='https://download.montague.lit/51078299-d071-46e1-b6d3-3de4a8ab67d6/sticker_marsey_kiss.png' />
+    </sources>
+  </file-sharing>
+</message>
+''',
+          '',
+        ),
+      ]),
+    );
+    await holder.register(manager);
+
+    await manager.sendMessage2(
+      JID.fromString('user@example.org'),
+      TypedMap()
+        ..set(
+          StickersData(
+            'EpRv28DHHzFrE4zd+xaNpVb4',
+            StatelessFileSharingData(
+              const FileMetadataData(
+                mediaType: 'image/png',
+                desc: '😘',
+                size: 67016,
+                width: 512,
+                height: 512,
+                hashes: {
+                  HashFunction.sha256:
+                      'gw+6xdCgOcvCYSKuQNrXH33lV9NMzuDf/s0huByCDsY=',
+                },
+                thumbnails: [],
+              ),
+              [
+                StatelessFileSharingUrlSource(
+                  'https://download.montague.lit/51078299-d071-46e1-b6d3-3de4a8ab67d6/sticker_marsey_kiss.png',
+                ),
+              ],
+            ),
+          ),
+        ),
+    );
+    await Future<void>.delayed(const Duration(seconds: 1));
+
+    expect(holder.socket.getState(), 1);
+  });
+
+  test('Test receiving a sticker', () async {
+    final fakeSocket = StubTCPSocket(
+      [
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+  </stream:features>''',
+        ),
+        StringExpectation(
+          "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHBvbHlub21kaXZpc2lvbgBhYWFh</auth>",
+          '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
+        ),
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+    <session xmlns="urn:ietf:params:xml:ns:xmpp-session">
+      <optional/>
+    </session>
+    <csi xmlns="urn:xmpp:csi:0"/>
+    <sm xmlns="urn:xmpp:sm:3"/>
+  </stream:features>
+''',
+        ),
+        StanzaExpectation(
+          '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+          '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+          ignoreId: true,
+        ),
+      ],
+    );
+    final conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
+      fakeSocket,
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('polynomdivision@test.server'),
+        password: 'aaaa',
+      );
+    await conn.registerManagers([
+      MessageManager([]),
+      SFSManager(),
+      StickersManager(),
+    ]);
+    await conn.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      ResourceBindingNegotiator(),
+    ]);
+    await conn.connect(
+      shouldReconnect: false,
+      enableReconnectOnSuccess: false,
+      waitUntilLogin: true,
+    );
+
+    MessageEvent? messageEvent;
+    conn.asBroadcastStream().listen((event) {
+      if (event is MessageEvent) {
+        messageEvent = event;
+      }
+    });
+
+    // Send the fake message
+    fakeSocket.injectRawXml(
+      '''
+<message id="aaaaaaaaa" from="user@example.org" to="polynomdivision@test.server/abc123" type="chat">
+  <sticker xmlns='urn:xmpp:stickers:0' pack='EpRv28DHHzFrE4zd+xaNpVb4' />
+  <file-sharing xmlns='urn:xmpp:sfs:0'>
+    <file xmlns='urn:xmpp:file:metadata:0'>
+      <media-type>image/png</media-type>
+      <desc>😘</desc>
+      <size>67016</size>
+      <width>512</width>
+      <height>512</height>
+      <hash xmlns='urn:xmpp:hashes:2' algo='sha-256'>gw+6xdCgOcvCYSKuQNrXH33lV9NMzuDf/s0huByCDsY=</hash>
+    </file>
+    <sources>
+      <url-data xmlns='http://jabber.org/protocol/url-data' target='https://download.montague.lit/51078299-d071-46e1-b6d3-3de4a8ab67d6/sticker_marsey_kiss.png' />
+    </sources>
+  </file-sharing>
+</message>
+''',
+    );
+
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(messageEvent?.stickerPackId, 'EpRv28DHHzFrE4zd+xaNpVb4');
+    expect(messageEvent?.sfs!.metadata.desc, '😘');
+    expect(
+      messageEvent?.sfs!.sources.first is StatelessFileSharingUrlSource,
+      true,
+    );
   });
 }

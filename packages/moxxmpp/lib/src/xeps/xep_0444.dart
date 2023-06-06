@@ -5,13 +5,14 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 class MessageReactions {
   const MessageReactions(this.messageId, this.emojis);
   final String messageId;
   final List<String> emojis;
 
-  XMLNode toXml() {
+  XMLNode toXML() {
     return XMLNode.xmlns(
       tag: 'reactions',
       xmlns: messageReactionsXmlns,
@@ -25,6 +26,15 @@ class MessageReactions {
         );
       }).toList(),
     );
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<MessageReactions>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
   }
 }
 

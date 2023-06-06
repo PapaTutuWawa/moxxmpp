@@ -4,11 +4,48 @@ import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
+import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 class MessageRetractionData {
   MessageRetractionData(this.id, this.fallback);
+
+  /// A potential fallback message to set the body to when retracting.
   final String? fallback;
+
+  /// The id of the message that is retracted.
   final String id;
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<MessageRetractionData>();
+    return data != null
+        ? [
+            XMLNode.xmlns(
+              tag: 'apply-to',
+              xmlns: fasteningXmlns,
+              attributes: <String, String>{
+                'id': data.id,
+              },
+              children: [
+                XMLNode.xmlns(
+                  tag: 'retract',
+                  xmlns: messageRetractionXmlns,
+                ),
+              ],
+            ),
+            if (data.fallback != null)
+              XMLNode(
+                tag: 'body',
+                text: data.fallback,
+              ),
+            if (data.fallback != null)
+              XMLNode.xmlns(
+                tag: 'fallback',
+                xmlns: fallbackIndicationXmlns,
+              ),
+          ]
+        : [];
+  }
 }
 
 class MessageRetractionManager extends XmppManagerBase {

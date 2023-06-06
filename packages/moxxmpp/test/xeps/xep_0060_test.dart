@@ -168,7 +168,6 @@ void main() {
       PubSubManager(),
       DiscoManager([]),
       PresenceManager(),
-      MessageManager(),
       RosterManager(TestingRosterStateManager(null, [])),
     ]);
     await connection.registerFeatureNegotiators([

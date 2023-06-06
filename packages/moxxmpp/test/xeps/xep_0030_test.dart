@@ -140,7 +140,7 @@ void main() {
       // Query Alice's device
       final result = await dm.discoInfoQuery(aliceJid);
       expect(result.isType<DiscoError>(), false);
-      expect(tm.sentStanzas, 0);
+      expect(tm.socket.getState(), 0);
     });
   });
 }

@@ -6,6 +6,8 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
+import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
 
@@ -71,7 +73,11 @@ List<StatelessFileSharingSource> processStatelessFileSharingSources(
 }
 
 class StatelessFileSharingData {
-  const StatelessFileSharingData(this.metadata, this.sources);
+  const StatelessFileSharingData(
+    this.metadata,
+    this.sources, {
+    this.includeOOBFallback = false,
+  });
 
   /// Parse [node] as a StatelessFileSharingData element.
   factory StatelessFileSharingData.fromXML(XMLNode node) {
@@ -87,6 +93,10 @@ class StatelessFileSharingData {
 
   final FileMetadataData metadata;
   final List<StatelessFileSharingSource> sources;
+
+  /// Flag indicating whether an OOB fallback should be set. The value is only
+  /// relevant in the context of the messageSendingCallback.
+  final bool includeOOBFallback;
 
   XMLNode toXML() {
     return XMLNode.xmlns(
@@ -109,6 +119,26 @@ class StatelessFileSharingData {
           source is StatelessFileSharingUrlSource,
     ) as StatelessFileSharingUrlSource?;
   }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<StatelessFileSharingData>();
+    if (data == null) {
+      return [];
+    }
+
+    // TODO(Unknown): Consider all sources?
+    final source = data.sources.first;
+    OOBData? oob;
+    if (source is StatelessFileSharingUrlSource && data.includeOOBFallback) {
+      // SFS recommends OOB as a fallback
+      oob = OOBData(source.url, null);
+    }
+
+    return [
+      data.toXML(),
+      if (oob != null) oob.toXML(),
+    ];
+  }
 }
 
 class SFSManager extends XmppManagerBase {
@@ -122,7 +152,7 @@ class SFSManager extends XmppManagerBase {
           tagXmlns: sfsXmlns,
           callback: _onMessage,
           // Before the message handler
-          priority: -99,
+          priority: -98,
         )
       ];
 

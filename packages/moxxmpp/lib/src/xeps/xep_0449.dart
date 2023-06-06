@@ -9,6 +9,7 @@ import 'package:moxxmpp/src/rfcs/rfc_4790.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
 import 'package:moxxmpp/src/xeps/xep_0300.dart';
@@ -228,10 +229,29 @@ class StickerPack {
 }
 
 class StickersData {
-  const StickersData(this.stickerPackId);
+  const StickersData(this.stickerPackId, this.sticker);
 
   /// The id of the sticker pack the referenced sticker is from.
   final String stickerPackId;
+
+  /// The metadata of the sticker.
+  final StatelessFileSharingData sticker;
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<StickersData>();
+    return data != null
+        ? [
+            XMLNode.xmlns(
+              tag: 'sticker',
+              xmlns: stickersXmlns,
+              attributes: {
+                'pack': data.stickerPackId,
+              },
+            ),
+            data.sticker.toXML(),
+          ]
+        : [];
+  }
 }
 
 class StickersManager extends XmppManagerBase {
@@ -258,7 +278,10 @@ class StickersManager extends XmppManagerBase {
     final sticker = stanza.firstTag('sticker', xmlns: stickersXmlns)!;
     return state
       ..extensions.set(
-        StickersData(sticker.attributes['pack']! as String),
+        StickersData(
+          sticker.attributes['pack']! as String,
+          state.extensions.get<StatelessFileSharingData>()!,
+        ),
       );
   }
 

@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 enum ChatState {
   active,
@@ -51,6 +52,11 @@ enum ChatState {
       tag: toString(),
       xmlns: chatStateXmlns,
     );
+  }
+
+  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<ChatState>();
+    return data != null ? [data.toXML()] : [];
   }
 }
 
