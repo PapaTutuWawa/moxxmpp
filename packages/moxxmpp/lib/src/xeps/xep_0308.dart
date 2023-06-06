@@ -8,7 +8,7 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 
-class LastMessageCorrectionData {
+class LastMessageCorrectionData implements StanzaHandlerExtension {
   const LastMessageCorrectionData(this.id);
 
   /// The id the LMC applies to.
@@ -57,7 +57,7 @@ class LastMessageCorrectionManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<LastMessageCorrectionData>();
     return data != null
         ? [

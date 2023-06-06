@@ -1,10 +1,10 @@
 /// A map, similar to Map, but always uses the type of the value as the key.
-class TypedMap {
+class TypedMap<B> {
   /// The internal mapping of type -> data
-  final Map<Object, Object> _data = {};
+  final Map<Object, B> _data = {};
 
   /// Associate the type of [value] with [value] in the map.
-  void set<T extends Object>(T value) {
+  void set<T extends B>(T value) {
     _data[T] = value;
   }
 

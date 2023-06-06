@@ -73,7 +73,7 @@ List<StatelessFileSharingSource> processStatelessFileSharingSources(
   return sources;
 }
 
-class StatelessFileSharingData {
+class StatelessFileSharingData implements StanzaHandlerExtension {
   const StatelessFileSharingData(
     this.metadata,
     this.sources, {
@@ -140,7 +140,7 @@ class SFSManager extends XmppManagerBase {
   @override
   Future<bool> isSupported() async => true;
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<StatelessFileSharingData>();
     if (data == null) {
       return [];

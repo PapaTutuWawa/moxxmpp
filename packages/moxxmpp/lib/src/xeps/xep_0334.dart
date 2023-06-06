@@ -54,6 +54,13 @@ enum MessageProcessingHint {
   }
 }
 
+class MessageProcessingHintData implements StanzaHandlerExtension {
+  const MessageProcessingHintData(this.hints);
+
+  /// The attached message processing hints.
+  final List<MessageProcessingHint> hints;
+}
+
 class MessageProcessingHintManager extends XmppManagerBase {
   MessageProcessingHintManager() : super(messageProcessingHintManager);
 
@@ -76,18 +83,19 @@ class MessageProcessingHintManager extends XmppManagerBase {
     Stanza stanza,
     StanzaHandlerData state,
   ) async {
-    // TODO(Unknown): Do we need to consider multiple hints?
-    final element = stanza.findTagsByXmlns(messageProcessingHintsXmlns).first;
-    return state..extensions.set(MessageProcessingHint.fromName(element.tag));
+    final elements = stanza.findTagsByXmlns(messageProcessingHintsXmlns);
+    return state
+      ..extensions.set(
+        MessageProcessingHintData(
+          elements.map((element) => MessageProcessingHint.fromName(element.tag)).toList(),
+        ),
+      );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
-    // TODO(Unknown): Do we need to consider multiple hints?
-    final data = extensions.get<MessageProcessingHint>();
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
+    final data = extensions.get<MessageProcessingHintData>();
     return data != null
-        ? [
-            data.toXML(),
-          ]
+        ? data.hints.map((hint) => hint.toXML()).toList()
         : [];
   }
 

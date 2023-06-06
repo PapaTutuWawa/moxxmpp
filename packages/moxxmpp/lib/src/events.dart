@@ -8,6 +8,7 @@ import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
 import 'package:moxxmpp/src/xeps/xep_0084.dart';
+import 'package:moxxmpp/src/xeps/xep_0333.dart';
 
 abstract class XmppEvent {}
 
@@ -90,7 +91,7 @@ class MessageEvent extends XmppEvent {
   final StanzaError? error;
 
   /// Data added by other handlers.
-  final TypedMap extensions;
+  final TypedMap<StanzaHandlerExtension> extensions;
 }
 
 /// Triggered when a client responds to our delivery receipt request
@@ -101,13 +102,19 @@ class DeliveryReceiptReceivedEvent extends XmppEvent {
 }
 
 class ChatMarkerEvent extends XmppEvent {
-  ChatMarkerEvent({
-    required this.type,
-    required this.from,
-    required this.id,
-  });
+  ChatMarkerEvent(
+    this.from,
+    this.type,
+    this.id,
+  );
+
+  /// The entity that sent the chat marker.
   final JID from;
-  final String type;
+
+  /// The type of chat marker that was sent.
+  final ChatMarker type;
+
+  /// The id of the message that the marker applies to.
   final String id;
 }
 

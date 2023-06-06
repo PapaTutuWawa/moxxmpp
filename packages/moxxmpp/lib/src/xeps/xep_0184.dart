@@ -10,7 +10,7 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 
-class MessageDeliveryReceiptData {
+class MessageDeliveryReceiptData implements StanzaHandlerExtension {
   const MessageDeliveryReceiptData(this.receiptRequested);
 
   /// Indicates whether a delivery receipt is requested or not.
@@ -28,7 +28,7 @@ class MessageDeliveryReceiptData {
   }
 }
 
-class MessageDeliveryReceivedData {
+class MessageDeliveryReceivedData implements StanzaHandlerExtension {
   const MessageDeliveryReceivedData(this.id);
 
   /// The stanza id of the message we received.
@@ -104,7 +104,7 @@ class MessageDeliveryReceiptManager extends XmppManagerBase {
     return state..done = true;
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<MessageDeliveryReceivedData>();
     return data != null
         ? [

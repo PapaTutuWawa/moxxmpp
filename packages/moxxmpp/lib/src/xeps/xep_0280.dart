@@ -14,7 +14,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0297.dart';
 import 'package:moxxmpp/src/xeps/xep_0386.dart';
 
-class CarbonsData {
+class CarbonsData implements StanzaHandlerExtension {
   const CarbonsData(this.isCarbon);
 
   /// Indicates whether this message is a carbon.

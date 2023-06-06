@@ -8,7 +8,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 
 @immutable
-class DelayedDeliveryData {
+class DelayedDeliveryData implements StanzaHandlerExtension {
   const DelayedDeliveryData(this.from, this.timestamp);
 
   /// The timestamp the message was originally sent.

@@ -6,7 +6,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
-enum ExplicitEncryptionType {
+enum ExplicitEncryptionType implements StanzaHandlerExtension {
   otr,
   legacyOpenPGP,
   openPGP,

@@ -34,7 +34,7 @@ class StanzaId {
   }
 }
 
-class StableIdData {
+class StableIdData implements StanzaHandlerExtension {
   const StableIdData(this.originId, this.stanzaIds);
 
   /// <origin-id />
@@ -123,7 +123,7 @@ class StableIdManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<StableIdData>();
     return data != null ? data.toXML() : [];
   }

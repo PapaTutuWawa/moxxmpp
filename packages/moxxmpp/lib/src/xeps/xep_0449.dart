@@ -229,7 +229,7 @@ class StickerPack {
   }
 }
 
-class StickersData {
+class StickersData implements StanzaHandlerExtension {
   const StickersData(this.stickerPackId, this.sticker);
 
   /// The id of the sticker pack the referenced sticker is from.
@@ -270,7 +270,7 @@ class StickersManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<StickersData>();
     return data != null
         ? [

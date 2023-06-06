@@ -11,7 +11,7 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 
 /// A reply to a message.
-class ReplyData {
+class ReplyData implements StanzaHandlerExtension {
   const ReplyData(
     this.id, {
     this.body,
@@ -103,7 +103,7 @@ class MessageRepliesManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   @visibleForTesting
-  List<XMLNode> messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<ReplyData>();
     return data != null
         ? [

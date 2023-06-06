@@ -533,7 +533,7 @@ class XmppConnection {
 
     // Run post-send handlers
     _log.fine('Running post stanza handlers..');
-    final extensions = TypedMap()
+    final extensions = TypedMap<StanzaHandlerExtension>()
       ..set(StreamManagementData(details.excludeFromStreamManagement));
     await _runOutgoingPostStanzaHandlers(
       newStanza,

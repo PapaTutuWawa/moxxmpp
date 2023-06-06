@@ -8,14 +8,14 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 
-enum ChatState {
+enum ChatState implements StanzaHandlerExtension {
   active,
   composing,
   paused,
   inactive,
   gone;
 
-  factory ChatState.fromString(String state) {
+  factory ChatState.fromName(String state) {
     switch (state) {
       case 'active':
         return ChatState.active;
@@ -27,9 +27,9 @@ enum ChatState {
         return ChatState.inactive;
       case 'gone':
         return ChatState.gone;
-      default:
-        return ChatState.gone;
     }
+
+    throw Exception('Invalid chat state $state');
   }
 
   @override
@@ -81,7 +81,13 @@ class ChatStateManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final element = state.stanza.firstTagByXmlns(chatStateXmlns)!;
-    state.extensions.set(ChatState.fromString(element.tag));
+
+    try {
+      state.extensions.set(ChatState.fromName(element.tag));
+    } catch (_) {
+      logger.finest('Ignoring invalid chat state ${element.tag}'); 
+    }
+
     return state;
   }
 
@@ -106,7 +112,7 @@ class ChatStateManager extends XmppManagerBase {
     );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<ChatState>();
     return data != null
         ? [

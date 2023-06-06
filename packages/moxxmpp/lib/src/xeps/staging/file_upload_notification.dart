@@ -13,7 +13,7 @@ import 'package:moxxmpp/src/xeps/xep_0446.dart';
 const fileUploadNotificationXmlns = 'proto:urn:xmpp:fun:0';
 
 /// Indicates a file upload notification.
-class FileUploadNotificationData {
+class FileUploadNotificationData implements StanzaHandlerExtension {
   const FileUploadNotificationData(this.metadata);
 
   /// The file metadata indicated in the upload notification.
@@ -31,7 +31,7 @@ class FileUploadNotificationData {
 }
 
 /// Indicates that a file upload has been cancelled.
-class FileUploadNotificationCancellationData {
+class FileUploadNotificationCancellationData implements StanzaHandlerExtension {
   const FileUploadNotificationCancellationData(this.id);
 
   /// The id of the upload notifiaction that is cancelled.
@@ -49,7 +49,7 @@ class FileUploadNotificationCancellationData {
 }
 
 /// Indicates that a file upload has been completed.
-class FileUploadNotificationReplacementData {
+class FileUploadNotificationReplacementData implements StanzaHandlerExtension {
   const FileUploadNotificationReplacementData(this.id);
 
   /// The id of the upload notifiaction that is replaced.
@@ -141,7 +141,7 @@ class FileUploadNotificationManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final fun = extensions.get<FileUploadNotificationData>();
     if (fun != null) {
       return [fun.toXML()];

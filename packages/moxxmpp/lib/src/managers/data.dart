@@ -1,6 +1,8 @@
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 
+abstract class StanzaHandlerExtension {}
+
 class StanzaHandlerData {
   StanzaHandlerData(
     this.done,
@@ -41,5 +43,5 @@ class StanzaHandlerData {
   bool forceEncryption;
 
   /// Additional data from other managers.
-  final TypedMap extensions;
+  final TypedMap<StanzaHandlerExtension> extensions;
 }

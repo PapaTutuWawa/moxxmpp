@@ -9,7 +9,7 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 
 /// A data class representing the jabber:x:oob tag.
-class OOBData {
+class OOBData implements StanzaHandlerExtension {
   const OOBData(this.url, this.desc);
 
   /// The communicated URL of the OOB data
@@ -68,7 +68,7 @@ class OOBManager extends XmppManagerBase {
       );
   }
 
-  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+  List<XMLNode> _messageSendingCallback(TypedMap<StanzaHandlerExtension> extensions) {
     final data = extensions.get<OOBData>();
     return data != null
         ? [

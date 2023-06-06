@@ -7,7 +7,7 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
 
-class StatelessMediaSharingData {
+class StatelessMediaSharingData implements StanzaHandlerExtension {
   const StatelessMediaSharingData({
     required this.mediaType,
     required this.size,
