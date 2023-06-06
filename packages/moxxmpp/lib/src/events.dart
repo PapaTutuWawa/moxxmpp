@@ -4,19 +4,10 @@ import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/roster/roster.dart';
 import 'package:moxxmpp/src/stanza.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
-import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0084.dart';
-import 'package:moxxmpp/src/xeps/xep_0085.dart';
-import 'package:moxxmpp/src/xeps/xep_0334.dart';
-import 'package:moxxmpp/src/xeps/xep_0359.dart';
-import 'package:moxxmpp/src/xeps/xep_0385.dart';
-import 'package:moxxmpp/src/xeps/xep_0424.dart';
-import 'package:moxxmpp/src/xeps/xep_0444.dart';
-import 'package:moxxmpp/src/xeps/xep_0446.dart';
-import 'package:moxxmpp/src/xeps/xep_0447.dart';
-import 'package:moxxmpp/src/xeps/xep_0461.dart';
 
 abstract class XmppEvent {}
 
@@ -75,60 +66,31 @@ class RosterUpdatedEvent extends XmppEvent {
 
 /// Triggered when a message is received
 class MessageEvent extends XmppEvent {
-  MessageEvent({
-    required this.body,
-    required this.fromJid,
-    required this.toJid,
-    required this.sid,
-    required this.isCarbon,
-    required this.deliveryReceiptRequested,
-    required this.isMarkable,
-    required this.encrypted,
-    required this.other,
-    this.originId,
-    this.stanzaIds,
-    this.error,
+  MessageEvent(
+    this.from,
+    this.to,
+    this.id,
+    this.extensions, {
     this.type,
-    this.oob,
-    this.sfs,
-    this.sims,
-    this.reply,
-    this.chatState,
-    this.fun,
-    this.funReplacement,
-    this.funCancellation,
-    this.messageRetraction,
-    this.messageCorrectionId,
-    this.messageReactions,
-    this.messageProcessingHints,
-    this.stickerPackId,
+    this.error,
   });
-  final StanzaError? error;
-  final String body;
-  final JID fromJid;
-  final JID toJid;
-  final String sid;
+
+  /// The from attribute of the message.
+  final JID from;
+
+  /// The to attribute of the message.
+  final JID to;
+
+  /// The id attribute of the message.
+  final String id;
+
+  /// The type attribute of the message.
   final String? type;
-  final String? originId;
-  final List<StanzaId>? stanzaIds;
-  final bool isCarbon;
-  final bool deliveryReceiptRequested;
-  final bool isMarkable;
-  final OOBData? oob;
-  final StatelessFileSharingData? sfs;
-  final StatelessMediaSharingData? sims;
-  final ReplyData? reply;
-  final ChatState? chatState;
-  final FileMetadataData? fun;
-  final String? funReplacement;
-  final String? funCancellation;
-  final bool encrypted;
-  final MessageRetractionData? messageRetraction;
-  final String? messageCorrectionId;
-  final MessageReactions? messageReactions;
-  final List<MessageProcessingHint>? messageProcessingHints;
-  final String? stickerPackId;
-  final Map<String, dynamic> other;
+
+  final StanzaError? error;
+
+  /// Data added by other handlers.
+  final TypedMap extensions;
 }
 
 /// Triggered when a client responds to our delivery receipt request

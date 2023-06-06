@@ -405,10 +405,12 @@ void main() {
     );
 
     await Future<void>.delayed(const Duration(seconds: 2));
-    expect(messageEvent?.stickerPackId, 'EpRv28DHHzFrE4zd+xaNpVb4');
-    expect(messageEvent?.sfs!.metadata.desc, '😘');
+    final sticker = messageEvent!.extensions.get<StickersData>()!;
+    final sfs = messageEvent!.extensions.get<StatelessFileSharingData>()!;
+    expect(sticker.stickerPackId, 'EpRv28DHHzFrE4zd+xaNpVb4');
+    expect(sfs.metadata.desc, '😘');
     expect(
-      messageEvent?.sfs!.sources.first is StatelessFileSharingUrlSource,
+      sfs.sources.first is StatelessFileSharingUrlSource,
       true,
     );
   });

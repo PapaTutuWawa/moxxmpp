@@ -5,21 +5,10 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
-import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
-import 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
-import 'package:moxxmpp/src/xeps/xep_0085.dart';
-import 'package:moxxmpp/src/xeps/xep_0184.dart';
-import 'package:moxxmpp/src/xeps/xep_0280.dart';
-import 'package:moxxmpp/src/xeps/xep_0333.dart';
-import 'package:moxxmpp/src/xeps/xep_0334.dart';
-import 'package:moxxmpp/src/xeps/xep_0359.dart';
-import 'package:moxxmpp/src/xeps/xep_0385.dart';
-import 'package:moxxmpp/src/xeps/xep_0424.dart';
-import 'package:moxxmpp/src/xeps/xep_0444.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0449.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
@@ -80,48 +69,14 @@ class MessageManager extends XmppManagerBase {
     Stanza _,
     StanzaHandlerData state,
   ) async {
-    final message = state.stanza;
-    final body = message.firstTag('body');
-
-    final hints = List<MessageProcessingHint>.empty(growable: true);
-    for (final element
-        in message.findTagsByXmlns(messageProcessingHintsXmlns)) {
-      hints.add(MessageProcessingHint.fromName(element.tag));
-    }
-
     getAttributes().sendEvent(
       MessageEvent(
-        body: body != null ? body.innerText() : '',
-        fromJid: JID.fromString(message.attributes['from']! as String),
-        toJid: JID.fromString(message.attributes['to']! as String),
-        sid: message.attributes['id']! as String,
-        originId: state.extensions.get<StableIdData>()?.originId,
-        stanzaIds: state.extensions.get<StableIdData>()?.stanzaIds,
-        isCarbon: state.extensions.get<CarbonsData>()?.isCarbon ?? false,
-        deliveryReceiptRequested: state.extensions
-                .get<MessageDeliveryReceiptData>()
-                ?.receiptRequested ??
-            false,
-        isMarkable: state.extensions.get<ChatMarkerData>()?.isMarkable ?? false,
-        type: message.attributes['type'] as String?,
-        oob: state.extensions.get<OOBData>(),
-        sfs: state.extensions.get<StatelessFileSharingData>(),
-        sims: state.extensions.get<StatelessMediaSharingData>(),
-        reply: state.extensions.get<ReplyData>(),
-        chatState: state.extensions.get<ChatState>(),
-        fun: state.extensions.get<FileUploadNotificationData>()?.metadata,
-        funReplacement:
-            state.extensions.get<FileUploadNotificationReplacementData>()?.id,
-        funCancellation:
-            state.extensions.get<FileUploadNotificationCancellationData>()?.id,
-        encrypted: state.encrypted,
-        messageRetraction: state.extensions.get<MessageRetractionData>(),
-        messageCorrectionId: state.extensions.get<MessageRetractionData>()?.id,
-        messageReactions: state.extensions.get<MessageReactions>(),
-        messageProcessingHints: hints.isEmpty ? null : hints,
-        stickerPackId: state.extensions.get<StickersData>()?.stickerPackId,
-        other: {},
-        error: StanzaError.fromStanza(message),
+        JID.fromString(state.stanza.attributes['from']! as String),
+        JID.fromString(state.stanza.attributes['to']! as String),
+        state.stanza.attributes['id']! as String,
+        state.extensions,
+        type: state.stanza.attributes['type'] as String?,
+        error: StanzaError.fromStanza(state.stanza),
       ),
     );
 

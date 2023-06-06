@@ -76,11 +76,13 @@ class MessageProcessingHintManager extends XmppManagerBase {
     Stanza stanza,
     StanzaHandlerData state,
   ) async {
+    // TODO(Unknown): Do we need to consider multiple hints?
     final element = stanza.findTagsByXmlns(messageProcessingHintsXmlns).first;
     return state..extensions.set(MessageProcessingHint.fromName(element.tag));
   }
 
   List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    // TODO(Unknown): Do we need to consider multiple hints?
     final data = extensions.get<MessageProcessingHint>();
     return data != null
         ? [

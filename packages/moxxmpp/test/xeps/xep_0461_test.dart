@@ -160,7 +160,7 @@ void main() {
     );
 
     await Future<void>.delayed(const Duration(seconds: 2));
-    final reply = messageEvent!.reply!;
+    final reply = messageEvent!.extensions.get<ReplyData>()!;
     expect(reply.withoutFallback, 'Great idea!');
     expect(reply.id, 'message-id1');
     expect(reply.jid, JID.fromString('anna@example.com/tablet'));
@@ -262,7 +262,7 @@ void main() {
     );
 
     await Future<void>.delayed(const Duration(seconds: 2));
-    final reply = messageEvent!.reply!;
+    final reply = messageEvent!.extensions.get<ReplyData>()!;
     expect(reply.withoutFallback, 'Great idea!');
     expect(reply.id, 'message-id1');
     expect(reply.jid, JID.fromString('anna@example.com/laptop'));

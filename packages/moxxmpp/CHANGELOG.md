@@ -13,6 +13,7 @@
 - Sent stanzas are now kept in a queue until sent.
 - **BREAKING**: `MessageManager.sendMessage` does not use `MessageDetails` anymore. Instead, use `TypedMap`.
 - `MessageManager` now allows registering callbacks for adding data whenever a message is sent.
+- **BREAKING**: `MessageEvent` now makes use of `TypedMap`.
 
 ## 0.3.1
 
