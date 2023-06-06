@@ -2,6 +2,7 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -53,11 +54,6 @@ enum ChatState {
       xmlns: chatStateXmlns,
     );
   }
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    final data = extensions.get<ChatState>();
-    return data != null ? [data.toXML()] : [];
-  }
 }
 
 class ChatStateManager extends XmppManagerBase {
@@ -108,5 +104,24 @@ class ChatStateManager extends XmppManagerBase {
         awaitable: false,
       ),
     );
+  }
+
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<ChatState>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

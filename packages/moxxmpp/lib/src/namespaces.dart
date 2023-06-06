@@ -96,7 +96,7 @@ const httpFileUploadXmlns = 'urn:xmpp:http:upload:0';
 // XEP-0372
 const referenceXmlns = 'urn:xmpp:reference:0';
 
-// XEP-380
+// XEP-0380
 const emeXmlns = 'urn:xmpp:eme:0';
 const emeOtr = 'urn:xmpp:otr:0';
 const emeLegacyOpenPGP = 'jabber:x:encrypted';

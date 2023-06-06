@@ -120,8 +120,7 @@ void main() {
       final ecm = EntityCapabilitiesManager('');
       final dm = DiscoManager([]);
 
-      await tm.register(dm);
-      await tm.register(ecm);
+      await tm.register([dm, ecm]);
 
       // Inject a capability hash into the cache
       final aliceJid = JID.fromString('alice@example.org/abc123');

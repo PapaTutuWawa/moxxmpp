@@ -40,15 +40,6 @@ class MessageBodyData {
       text: body,
     );
   }
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    if (extensions.get<ReplyData>() != null) {
-      return [];
-    }
-
-    final data = extensions.get<MessageBodyData>();
-    return data != null ? [data.toXML()] : [];
-  }
 }
 
 class MessageIdData {
@@ -113,11 +104,16 @@ class MessageDetails {
 }
 
 class MessageManager extends XmppManagerBase {
-  MessageManager(this.messageSendingCallbacks) : super(messageManager);
+  MessageManager() : super(messageManager);
 
   /// A list of callbacks that are called when a message is sent in order to add
   /// appropriate child elements.
-  final List<MessageSendingCallback> messageSendingCallbacks;
+  final List<MessageSendingCallback> _messageSendingCallbacks =
+      List<MessageSendingCallback>.empty(growable: true);
+
+  void registerMessageSendingCallback(MessageSendingCallback callback) {
+    _messageSendingCallbacks.add(callback);
+  }
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
@@ -190,7 +186,7 @@ class MessageManager extends XmppManagerBase {
           to: to.toString(),
           id: extensions.get<MessageIdData>()?.id,
           type: 'chat',
-          children: messageSendingCallbacks
+          children: _messageSendingCallbacks
               .map((c) => c(extensions))
               .flattened
               .toList(),
@@ -386,5 +382,31 @@ class MessageManager extends XmppManagerBase {
         awaitable: false,
       ),
     );
+  }
+
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    if (extensions.get<ReplyData>() != null) {
+      return [];
+    }
+    if (extensions.get<StickersData>() != null) {
+      return [];
+    }
+    if (extensions.get<StatelessFileSharingData>() != null) {
+      return [];
+    }
+    if (extensions.get<OOBData>() != null) {
+      return [];
+    }
+
+    final data = extensions.get<MessageBodyData>();
+    return data != null ? [data.toXML()] : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    registerMessageSendingCallback(_messageSendingCallback);
   }
 }

@@ -1,8 +1,10 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -50,44 +52,6 @@ class ReplyData {
     if (start == null || end == null) return body;
 
     return body!.replaceRange(start!, end, '');
-  }
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    final data = extensions.get<ReplyData>();
-    return data != null
-        ? [
-            XMLNode.xmlns(
-              tag: 'reply',
-              xmlns: replyXmlns,
-              attributes: {
-                // The to attribute is optional
-                if (data.jid != null) 'to': data.jid!.toString(),
-
-                'id': data.id,
-              },
-            ),
-            if (data.body != null)
-              XMLNode(
-                tag: 'body',
-                text: data.body,
-              ),
-            if (data.body != null)
-              XMLNode.xmlns(
-                tag: 'fallback',
-                xmlns: fallbackXmlns,
-                attributes: {'for': replyXmlns},
-                children: [
-                  XMLNode(
-                    tag: 'body',
-                    attributes: {
-                      'start': data.start!.toString(),
-                      'end': data.end!.toString(),
-                    },
-                  ),
-                ],
-              ),
-          ]
-        : [];
   }
 }
 
@@ -138,6 +102,45 @@ class MessageRepliesManager extends XmppManagerBase {
   @override
   Future<bool> isSupported() async => true;
 
+  @visibleForTesting
+  List<XMLNode> messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<ReplyData>();
+    return data != null
+        ? [
+            XMLNode.xmlns(
+              tag: 'reply',
+              xmlns: replyXmlns,
+              attributes: {
+                // The to attribute is optional
+                if (data.jid != null) 'to': data.jid!.toString(),
+
+                'id': data.id,
+              },
+            ),
+            if (data.body != null)
+              XMLNode(
+                tag: 'body',
+                text: data.body,
+              ),
+            if (data.body != null)
+              XMLNode.xmlns(
+                tag: 'fallback',
+                xmlns: fallbackXmlns,
+                attributes: {'for': replyXmlns},
+                children: [
+                  XMLNode(
+                    tag: 'body',
+                    attributes: {
+                      'start': data.start!.toString(),
+                      'end': data.end!.toString(),
+                    },
+                  ),
+                ],
+              ),
+          ]
+        : [];
+  }
+
   Future<StanzaHandlerData> _onMessage(
     Stanza stanza,
     StanzaHandlerData state,
@@ -166,5 +169,15 @@ class MessageRepliesManager extends XmppManagerBase {
           body: stanza.firstTag('body')?.innerText(),
         ),
       );
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(messageSendingCallback);
   }
 }

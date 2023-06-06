@@ -4,6 +4,7 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -25,15 +26,6 @@ class MessageDeliveryReceiptData {
       xmlns: deliveryXmlns,
     );
   }
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    final data = extensions.get<MessageDeliveryReceiptData>();
-    return data != null
-        ? [
-            data.toXML(),
-          ]
-        : [];
-  }
 }
 
 class MessageDeliveryReceivedData {
@@ -48,11 +40,6 @@ class MessageDeliveryReceivedData {
       xmlns: deliveryXmlns,
       attributes: {'id': id},
     );
-  }
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    final data = extensions.get<MessageDeliveryReceivedData>();
-    return data != null ? [data.toXML()] : [];
   }
 }
 
@@ -115,5 +102,24 @@ class MessageDeliveryReceiptManager extends XmppManagerBase {
       ),
     );
     return state..done = true;
+  }
+
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<MessageDeliveryReceivedData>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

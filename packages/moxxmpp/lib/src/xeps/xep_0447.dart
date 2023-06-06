@@ -3,6 +3,7 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -119,26 +120,6 @@ class StatelessFileSharingData {
           source is StatelessFileSharingUrlSource,
     ) as StatelessFileSharingUrlSource?;
   }
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    final data = extensions.get<StatelessFileSharingData>();
-    if (data == null) {
-      return [];
-    }
-
-    // TODO(Unknown): Consider all sources?
-    final source = data.sources.first;
-    OOBData? oob;
-    if (source is StatelessFileSharingUrlSource && data.includeOOBFallback) {
-      // SFS recommends OOB as a fallback
-      oob = OOBData(source.url, null);
-    }
-
-    return [
-      data.toXML(),
-      if (oob != null) oob.toXML(),
-    ];
-  }
 }
 
 class SFSManager extends XmppManagerBase {
@@ -159,6 +140,26 @@ class SFSManager extends XmppManagerBase {
   @override
   Future<bool> isSupported() async => true;
 
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<StatelessFileSharingData>();
+    if (data == null) {
+      return [];
+    }
+
+    // TODO(Unknown): Consider all sources?
+    final source = data.sources.first;
+    OOBData? oob;
+    if (source is StatelessFileSharingUrlSource && data.includeOOBFallback) {
+      // SFS recommends OOB as a fallback
+      oob = OOBData(source.url, null);
+    }
+
+    return [
+      data.toXML(),
+      if (oob != null) oob.toXML(),
+    ];
+  }
+
   Future<StanzaHandlerData> _onMessage(
     Stanza message,
     StanzaHandlerData state,
@@ -169,5 +170,15 @@ class SFSManager extends XmppManagerBase {
       ..extensions.set(
         StatelessFileSharingData.fromXML(sfs),
       );
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

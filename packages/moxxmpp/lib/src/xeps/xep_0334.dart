@@ -1,4 +1,10 @@
+import 'package:moxxmpp/src/managers/base.dart';
+import 'package:moxxmpp/src/managers/data.dart';
+import 'package:moxxmpp/src/managers/handlers.dart';
+import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 
@@ -46,13 +52,50 @@ enum MessageProcessingHint {
       xmlns: messageProcessingHintsXmlns,
     );
   }
+}
 
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
+class MessageProcessingHintManager extends XmppManagerBase {
+  MessageProcessingHintManager() : super(messageProcessingHintManager);
+
+  @override
+  Future<bool> isSupported() async => true;
+
+  @override
+  List<StanzaHandler> getIncomingStanzaHandlers() => [
+        StanzaHandler(
+          stanzaTag: 'message',
+          tagXmlns: messageProcessingHintsXmlns,
+          callback: _onMessage,
+          // Before the message handler
+          priority: -99,
+        ),
+      ];
+
+  // TODO: Test
+  Future<StanzaHandlerData> _onMessage(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
+    final element = stanza.findTagsByXmlns(messageProcessingHintsXmlns).first;
+    return state..extensions.set(MessageProcessingHint.fromName(element.tag));
+  }
+
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
     final data = extensions.get<MessageProcessingHint>();
     return data != null
         ? [
             data.toXML(),
           ]
         : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

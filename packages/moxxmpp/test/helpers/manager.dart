@@ -41,27 +41,31 @@ class TestingManagerHolder {
     return _managers[id] as T?;
   }
 
-  Future<void> register(XmppManagerBase manager) async {
-    manager.register(
-      XmppManagerAttributes(
-        sendStanza: _sendStanza,
-        getConnection: () => XmppConnection(
-          TestingReconnectionPolicy(),
-          AlwaysConnectedConnectivityManager(),
-          ClientToServerNegotiator(),
-          socket,
+  Future<void> register(List<XmppManagerBase> managers) async {
+    for (final manager in managers) {
+      manager.register(
+        XmppManagerAttributes(
+          sendStanza: _sendStanza,
+          getConnection: () => XmppConnection(
+            TestingReconnectionPolicy(),
+            AlwaysConnectedConnectivityManager(),
+            ClientToServerNegotiator(),
+            socket,
+          ),
+          getConnectionSettings: () => settings,
+          sendNonza: (_) {},
+          sendEvent: sentEvents.add,
+          getSocket: () => socket,
+          getNegotiatorById: getNegotiatorNullStub,
+          getFullJID: () => jid,
+          getManagerById: _getManagerById,
         ),
-        getConnectionSettings: () => settings,
-        sendNonza: (_) {},
-        sendEvent: sentEvents.add,
-        getSocket: () => socket,
-        getNegotiatorById: getNegotiatorNullStub,
-        getFullJID: () => jid,
-        getManagerById: _getManagerById,
-      ),
-    );
+      );
+      _managers[manager.id] = manager;
+    }
 
-    await manager.postRegisterCallback();
-    _managers[manager.id] = manager;
+    for (final manager in managers) {
+      await manager.postRegisterCallback();
+    }
   }
 }

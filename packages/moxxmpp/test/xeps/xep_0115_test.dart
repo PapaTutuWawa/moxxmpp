@@ -319,8 +319,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(StubbedDiscoManager());
-      await tm.register(manager);
+      await tm.register([
+        StubbedDiscoManager(),
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(
@@ -352,8 +354,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(StubbedDiscoManager());
-      await tm.register(manager);
+      await tm.register([
+        StubbedDiscoManager(),
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(
@@ -385,10 +389,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..multipleEqualIdentities = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(
@@ -420,10 +424,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..multipleEqualFeatures = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(
@@ -455,10 +459,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..multipleExtendedFormsWithSameType = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(
@@ -490,10 +494,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..invalidExtension1 = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(
@@ -527,10 +531,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..invalidExtension2 = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(
@@ -564,10 +568,10 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..invalidExtension3 = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
       await manager.onPresence(
         PresenceReceivedEvent(

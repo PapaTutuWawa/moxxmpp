@@ -4,9 +4,11 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 class ChatMarkerData {
   const ChatMarkerData(this.isMarkable);
@@ -78,5 +80,20 @@ class ChatMarkerManager extends XmppManagerBase {
     }
 
     return state..done = true;
+  }
+
+  // TODO: Implement
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    return [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

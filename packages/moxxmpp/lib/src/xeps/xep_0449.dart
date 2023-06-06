@@ -4,6 +4,7 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/rfcs/rfc_4790.dart';
 import 'package:moxxmpp/src/stanza.dart';
@@ -236,22 +237,6 @@ class StickersData {
 
   /// The metadata of the sticker.
   final StatelessFileSharingData sticker;
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    final data = extensions.get<StickersData>();
-    return data != null
-        ? [
-            XMLNode.xmlns(
-              tag: 'sticker',
-              xmlns: stickersXmlns,
-              attributes: {
-                'pack': data.stickerPackId,
-              },
-            ),
-            data.sticker.toXML(),
-          ]
-        : [];
-  }
 }
 
 class StickersManager extends XmppManagerBase {
@@ -283,6 +268,22 @@ class StickersManager extends XmppManagerBase {
           state.extensions.get<StatelessFileSharingData>()!,
         ),
       );
+  }
+
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<StickersData>();
+    return data != null
+        ? [
+            XMLNode.xmlns(
+              tag: 'sticker',
+              xmlns: stickersXmlns,
+              attributes: {
+                'pack': data.stickerPackId,
+              },
+            ),
+            data.sticker.toXML(),
+          ]
+        : [];
   }
 
   /// Publishes the StickerPack [pack] to the PubSub node of [jid]. If specified, then
@@ -349,5 +350,15 @@ class StickersManager extends XmppManagerBase {
     );
 
     return Result(stickerPack);
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

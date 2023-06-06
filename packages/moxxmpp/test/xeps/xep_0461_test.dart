@@ -45,7 +45,7 @@ void main() {
   });
 
   test('Test calling the message sending callback', () {
-    final result = ReplyData.messageSendingCallback(
+    final result = MessageRepliesManager().messageSendingCallback(
       TypedMap()
         ..set(
           ReplyData.fromQuoteData(
@@ -129,7 +129,7 @@ void main() {
         password: 'aaaa',
       );
     await conn.registerManagers([
-      MessageManager([]),
+      MessageManager(),
       MessageRepliesManager(),
     ]);
     await conn.registerFeatureNegotiators([
@@ -228,7 +228,7 @@ void main() {
         password: 'aaaa',
       );
     await conn.registerManagers([
-      MessageManager([]),
+      MessageManager(),
       MessageRepliesManager(),
     ]);
     await conn.registerFeatureNegotiators([

@@ -70,7 +70,9 @@ StatelessMediaSharingData parseSIMSElement(XMLNode node) {
   );
 }
 
+@Deprecated('Not maintained')
 class SIMSManager extends XmppManagerBase {
+  @Deprecated('Not maintained')
   SIMSManager() : super(simsManager);
 
   @override

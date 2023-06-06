@@ -55,8 +55,10 @@ void main() {
       () async {
     final manager = PubSubManager();
     final tm = TestingManagerHolder();
-    await tm.register(StubbedDiscoManager(false));
-    await tm.register(manager);
+    await tm.register([
+      StubbedDiscoManager(false),
+      manager,
+    ]);
 
     final result = await manager.preprocessPublishOptions(
       JID.fromString('pubsub.server.example.org'),
@@ -72,8 +74,10 @@ void main() {
       () async {
     final manager = PubSubManager();
     final tm = TestingManagerHolder();
-    await tm.register(StubbedDiscoManager(true));
-    await tm.register(manager);
+    await tm.register([
+      StubbedDiscoManager(true),
+      manager,
+    ]);
 
     final result = await manager.preprocessPublishOptions(
       JID.fromString('pubsub.server.example.org'),

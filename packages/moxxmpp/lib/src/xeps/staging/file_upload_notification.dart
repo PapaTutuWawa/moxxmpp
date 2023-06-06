@@ -2,8 +2,11 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
+import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 
 /// NOTE: Specified by https://github.com/PapaTutuWawa/custom-xeps/blob/master/xep-xxxx-file-upload-notifications.md
@@ -15,6 +18,16 @@ class FileUploadNotificationData {
 
   /// The file metadata indicated in the upload notification.
   final FileMetadataData metadata;
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'file-upload',
+      xmlns: fileUploadNotificationXmlns,
+      children: [
+        metadata.toXML(),
+      ],
+    );
+  }
 }
 
 /// Indicates that a file upload has been cancelled.
@@ -23,6 +36,16 @@ class FileUploadNotificationCancellationData {
 
   /// The id of the upload notifiaction that is cancelled.
   final String id;
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'cancelled',
+      xmlns: fileUploadNotificationXmlns,
+      attributes: {
+        'id': id,
+      },
+    );
+  }
 }
 
 /// Indicates that a file upload has been completed.
@@ -31,6 +54,16 @@ class FileUploadNotificationReplacementData {
 
   /// The id of the upload notifiaction that is replaced.
   final String id;
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'replaces',
+      xmlns: fileUploadNotificationXmlns,
+      attributes: {
+        'id': id,
+      },
+    );
+  }
 }
 
 class FileUploadNotificationManager extends XmppManagerBase {
@@ -106,5 +139,34 @@ class FileUploadNotificationManager extends XmppManagerBase {
           element.attributes['id']! as String,
         ),
       );
+  }
+
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    final fun = extensions.get<FileUploadNotificationData>();
+    if (fun != null) {
+      return [fun.toXML()];
+    }
+
+    final cancel = extensions.get<FileUploadNotificationCancellationData>();
+    if (cancel != null) {
+      return [cancel.toXML()];
+    }
+
+    final replace = extensions.get<FileUploadNotificationReplacementData>();
+    if (replace != null) {
+      return [replace.toXML()];
+    }
+
+    return [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

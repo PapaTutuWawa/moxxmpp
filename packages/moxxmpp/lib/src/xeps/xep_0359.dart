@@ -3,6 +3,7 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -65,11 +66,6 @@ class StableIdData {
       if (stanzaIds != null) ...stanzaIds!.map((s) => s.toXML()),
     ];
   }
-
-  static List<XMLNode> messageSendingCallback(TypedMap extensions) {
-    final data = extensions.get<StableIdData>();
-    return data != null ? data.toXML() : [];
-  }
 }
 
 class StableIdManager extends XmppManagerBase {
@@ -125,5 +121,20 @@ class StableIdManager extends XmppManagerBase {
           stanzaIds,
         ),
       );
+  }
+
+  List<XMLNode> _messageSendingCallback(TypedMap extensions) {
+    final data = extensions.get<StableIdData>();
+    return data != null ? data.toXML() : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

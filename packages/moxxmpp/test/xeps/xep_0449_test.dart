@@ -234,10 +234,7 @@ void main() {
   });
 
   test('Test sending a sticker', () async {
-    final manager = MessageManager([
-      StatelessFileSharingData.messageSendingCallback,
-      StickersData.messageSendingCallback,
-    ]);
+    final manager = MessageManager();
     final holder = TestingManagerHolder(
       stubSocket: StubTCPSocket([
         StanzaExpectation(
@@ -265,7 +262,11 @@ void main() {
         ),
       ]),
     );
-    await holder.register(manager);
+    await holder.register([
+      manager,
+      StickersManager(),
+      SFSManager(),
+    ]);
 
     await manager.sendMessage2(
       JID.fromString('user@example.org'),
@@ -360,7 +361,7 @@ void main() {
         password: 'aaaa',
       );
     await conn.registerManagers([
-      MessageManager([]),
+      MessageManager(),
       SFSManager(),
       StickersManager(),
     ]);
