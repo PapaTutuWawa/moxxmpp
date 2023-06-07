@@ -81,9 +81,11 @@ class MessageManager extends XmppManagerBase {
         JID.fromString(state.stanza.attributes['from']! as String),
         JID.fromString(state.stanza.attributes['to']! as String),
         state.stanza.attributes['id']! as String,
+        state.encrypted,
         state.extensions,
         type: state.stanza.attributes['type'] as String?,
         error: StanzaError.fromStanza(state.stanza),
+        encryptionError: state.encryptionError,
       ),
     );
 

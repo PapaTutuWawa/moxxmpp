@@ -71,9 +71,11 @@ class MessageEvent extends XmppEvent {
     this.from,
     this.to,
     this.id,
+    this.encrypted,
     this.extensions, {
     this.type,
     this.error,
+    this.encryptionError,
   });
 
   /// The from attribute of the message.
@@ -89,6 +91,12 @@ class MessageEvent extends XmppEvent {
   final String? type;
 
   final StanzaError? error;
+
+  /// Flag indicating whether the message was encrypted.
+  final bool encrypted;
+
+  /// The error in case an encryption error occurred.
+  final Object? encryptionError;
 
   /// Data added by other handlers.
   final TypedMap<StanzaHandlerExtension> extensions;
