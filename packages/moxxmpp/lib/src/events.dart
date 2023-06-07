@@ -92,6 +92,9 @@ class MessageEvent extends XmppEvent {
 
   /// Data added by other handlers.
   final TypedMap<StanzaHandlerExtension> extensions;
+
+  /// Shorthand for extensions.get<T>().
+  T? get<T>() => extensions.get<T>();
 }
 
 /// Triggered when a client responds to our delivery receipt request
