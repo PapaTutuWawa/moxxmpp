@@ -138,13 +138,6 @@ class ResourceBoundEvent extends XmppEvent {
   final String resource;
 }
 
-/// Triggered when we receive presence
-class PresenceReceivedEvent extends XmppEvent {
-  PresenceReceivedEvent(this.jid, this.presence);
-  final JID jid;
-  final Stanza presence;
-}
-
 /// Triggered when we are starting an connection attempt
 class ConnectingEvent extends XmppEvent {}
 

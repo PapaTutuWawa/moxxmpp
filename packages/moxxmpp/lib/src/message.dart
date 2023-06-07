@@ -46,6 +46,11 @@ class MessageIdData {
 class MessageManager extends XmppManagerBase {
   MessageManager() : super(messageManager);
 
+  /// The priority of the message handler. If a handler should run before this one,
+  /// which emits the [MessageEvent] event and terminates processing, make sure it
+  /// has a priority greater than [messageHandlerPriority].
+  static int messageHandlerPriority = -100;
+
   /// A list of callbacks that are called when a message is sent in order to add
   /// appropriate child elements.
   final List<MessageSendingCallback> _messageSendingCallbacks =
@@ -60,7 +65,7 @@ class MessageManager extends XmppManagerBase {
         StanzaHandler(
           stanzaTag: 'message',
           callback: _onMessage,
-          priority: -100,
+          priority: messageHandlerPriority,
         )
       ];
 

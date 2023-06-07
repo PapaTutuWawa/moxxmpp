@@ -23,11 +23,17 @@ class PresenceManager extends XmppManagerBase {
   final List<PresencePreSendCallback> _presenceCallbacks =
       List.empty(growable: true);
 
+  /// The priority of the presence handler. If a handler should run before this one,
+  /// which terminates processing, make sure the handler has a priority greater than
+  /// [presenceHandlerPriority].
+  static int presenceHandlerPriority = -100;
+
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
         StanzaHandler(
           stanzaTag: 'presence',
           callback: _onPresence,
+          priority: presenceHandlerPriority,
         )
       ];
 
@@ -75,9 +81,6 @@ class PresenceManager extends XmppManagerBase {
     if (presence.from != null) {
       logger.finest("Received presence from '${presence.from}'");
 
-      getAttributes().sendEvent(
-        PresenceReceivedEvent(JID.fromString(presence.from!), presence),
-      );
       return state..done = true;
     }
 

@@ -14,6 +14,7 @@
 - **BREAKING**: `MessageManager.sendMessage` does not use `MessageDetails` anymore. Instead, use `TypedMap`.
 - `MessageManager` now allows registering callbacks for adding data whenever a message is sent.
 - **BREAKING**: `MessageEvent` now makes use of `TypedMap`.
+- **BREAKING**: Removed `PresenceReceivedEvent`. Use a manager registering handlers with priority greater than `[PresenceManager.presenceHandlerPriority]` instead.
 
 ## 0.3.1
 
