@@ -32,8 +32,7 @@ enum ChatState implements StanzaHandlerExtension {
     throw Exception('Invalid chat state $state');
   }
 
-  @override
-  String toString() {
+  String toName() {
     switch (this) {
       case ChatState.active:
         return 'active';
@@ -50,7 +49,7 @@ enum ChatState implements StanzaHandlerExtension {
 
   XMLNode toXML() {
     return XMLNode.xmlns(
-      tag: toString(),
+      tag: toName(),
       xmlns: chatStateXmlns,
     );
   }
@@ -104,7 +103,7 @@ class ChatStateManager extends XmppManagerBase {
           to: to,
           type: messageType,
           children: [
-            XMLNode.xmlns(tag: state.toString(), xmlns: chatStateXmlns),
+            state.toXML(),
           ],
         ),
         awaitable: false,

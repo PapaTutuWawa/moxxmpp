@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:test/test.dart';
 import 'helpers/logging.dart';
 import 'helpers/xmpp.dart';

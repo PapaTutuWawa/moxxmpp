@@ -230,13 +230,16 @@ class StickerPack {
 }
 
 class StickersData implements StanzaHandlerExtension {
-  const StickersData(this.stickerPackId, this.sticker);
+  const StickersData(this.stickerPackId, this.sticker, {this.addBody = true});
 
   /// The id of the sticker pack the referenced sticker is from.
   final String stickerPackId;
 
   /// The metadata of the sticker.
   final StatelessFileSharingData sticker;
+
+  /// If true, sets the sticker's metadata desc attribute as the message body.
+  final bool addBody;
 }
 
 class StickersManager extends XmppManagerBase {
@@ -284,6 +287,10 @@ class StickersManager extends XmppManagerBase {
               },
             ),
             data.sticker.toXML(),
+
+            // Add a body
+            if (data.addBody && data.sticker.metadata.desc != null)
+              MessageBodyData(data.sticker.metadata.desc).toXML(),
           ]
         : [];
   }

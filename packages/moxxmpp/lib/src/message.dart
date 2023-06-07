@@ -21,7 +21,7 @@ typedef MessageSendingCallback = List<XMLNode> Function(
 );
 
 /// The raw content of the <body /> element.
-class MessageBodyData {
+class MessageBodyData implements StanzaHandlerExtension {
   const MessageBodyData(this.body);
 
   /// The content of the <body /> element.
@@ -36,7 +36,7 @@ class MessageBodyData {
 }
 
 /// The id attribute of the message stanza.
-class MessageIdData {
+class MessageIdData implements StanzaHandlerExtension {
   const MessageIdData(this.id);
 
   /// The id attribute of the stanza.
