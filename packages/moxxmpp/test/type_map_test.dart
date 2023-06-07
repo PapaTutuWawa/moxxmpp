@@ -24,4 +24,16 @@ void main() {
     expect(map.get<TestType1>()?.i, 1);
     expect(map.get<TestType2>()?.j, false);
   });
+
+  test('Test storing data in the type map using a list', () {
+    // Set
+    final map = TypedMap<BaseType>.fromList([
+      const TestType1(1),
+      const TestType2(false),
+    ]);
+
+    // And access
+    expect(map.get<TestType1>()?.i, 1);
+    expect(map.get<TestType2>()?.j, false);
+  });
 }
