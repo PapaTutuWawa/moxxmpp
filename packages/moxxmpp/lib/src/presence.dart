@@ -6,13 +6,43 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 
 /// A function that will be called when presence, outside of subscription request
 /// management, will be sent. Useful for managers that want to add [XMLNode]s to said
 /// presence.
 typedef PresencePreSendCallback = Future<List<XMLNode>> Function();
+
+/// A pseudo-negotiator that does not really negotiate anything. Instead, its purpose
+/// is to look for a stream feature indicating that we can pre-approve subscription
+/// requests, shown by [PresenceNegotiator.preApprovalSupported].
+class PresenceNegotiator extends XmppFeatureNegotiatorBase {
+  PresenceNegotiator()
+      : super(11, false, subscriptionPreApprovalXmlns, presenceNegotiator);
+
+  /// Flag indicating whether presence subscription pre-approval is supported
+  bool _supported = false;
+  bool get preApprovalSupported => _supported;
+
+  @override
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
+    _supported = true;
+    return const Result(NegotiatorState.done);
+  }
+
+  @override
+  void reset() {
+    _supported = false;
+
+    super.reset();
+  }
+}
 
 /// A mandatory manager that handles initial presence sending, sending of subscription
 /// request management requests and triggers events for incoming presence stanzas.
