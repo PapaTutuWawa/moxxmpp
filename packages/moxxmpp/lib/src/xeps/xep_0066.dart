@@ -2,32 +2,32 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 /// A data class representing the jabber:x:oob tag.
-class OOBData {
-  const OOBData({this.url, this.desc});
+class OOBData implements StanzaHandlerExtension {
+  const OOBData(this.url, this.desc);
+
+  /// The communicated URL of the OOB data
   final String? url;
+
+  /// The description of the url.
   final String? desc;
-}
 
-XMLNode constructOOBNode(OOBData data) {
-  final children = List<XMLNode>.empty(growable: true);
-
-  if (data.url != null) {
-    children.add(XMLNode(tag: 'url', text: data.url));
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'x',
+      xmlns: oobDataXmlns,
+      children: [
+        if (url != null) XMLNode(tag: 'url', text: url),
+        if (desc != null) XMLNode(tag: 'desc', text: desc),
+      ],
+    );
   }
-  if (data.desc != null) {
-    children.add(XMLNode(tag: 'desc', text: data.desc));
-  }
-
-  return XMLNode.xmlns(
-    tag: 'x',
-    xmlns: oobDataXmlns,
-    children: children,
-  );
 }
 
 class OOBManager extends XmppManagerBase {
@@ -59,11 +59,33 @@ class OOBManager extends XmppManagerBase {
     final url = x.firstTag('url');
     final desc = x.firstTag('desc');
 
-    return state.copyWith(
-      oob: OOBData(
-        url: url?.innerText(),
-        desc: desc?.innerText(),
-      ),
-    );
+    return state
+      ..extensions.set(
+        OOBData(
+          url?.innerText(),
+          desc?.innerText(),
+        ),
+      );
+  }
+
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
+    final data = extensions.get<OOBData>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

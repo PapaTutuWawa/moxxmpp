@@ -13,7 +13,7 @@ void main() {
       <size>3032449</size>
       <dimensions>4096x2160</dimensions>
       <hash xmlns='urn:xmpp:hashes:2' algo='sha3-256'>2XarmwTlNxDAMkvymloX3S5+VbylNrJt/l5QyPa+YoU=</hash>
-      <hash xmlns='urn:xmpp:hashes:2' algo='id-blake2b256'>2AfMGH8O7UNPTvUVAM9aK13mpCY=</hash>
+      <hash xmlns='urn:xmpp:hashes:2' algo='blake2b-256'>2AfMGH8O7UNPTvUVAM9aK13mpCY=</hash>
       <desc>Photo from the summit.</desc>
       <thumbnail xmlns='urn:xmpp:thumbs:1' uri='cid:sha1+ffd7c8d28e9c5e82afea41f97108c6b4@bob.xmpp.org' media-type='image/png' width='128' height='96'/>
     </file>
@@ -28,11 +28,11 @@ void main() {
     );
 
     expect(
-      sfs.metadata.hashes['sha3-256'],
+      sfs.metadata.hashes[HashFunction.sha3_256],
       '2XarmwTlNxDAMkvymloX3S5+VbylNrJt/l5QyPa+YoU=',
     );
     expect(
-      sfs.metadata.hashes['id-blake2b256'],
+      sfs.metadata.hashes[HashFunction.blake2b256],
       '2AfMGH8O7UNPTvUVAM9aK13mpCY=',
     );
   });

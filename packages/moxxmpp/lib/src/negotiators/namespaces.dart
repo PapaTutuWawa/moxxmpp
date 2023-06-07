@@ -11,3 +11,4 @@ const sasl2Negotiator = 'org.moxxmpp.sasl.sasl2';
 const bind2Negotiator = 'org.moxxmpp.bind2';
 const saslFASTNegotiator = 'org.moxxmpp.sasl.fast';
 const carbonsNegotiator = 'org.moxxmpp.bind2.carbons';
+const presenceNegotiator = 'org.moxxmpp.core.presence';

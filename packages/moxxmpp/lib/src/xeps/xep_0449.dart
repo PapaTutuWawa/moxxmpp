@@ -4,11 +4,13 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/rfcs/rfc_4790.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
 import 'package:moxxmpp/src/xeps/xep_0300.dart';
@@ -227,6 +229,19 @@ class StickerPack {
   }
 }
 
+class StickersData implements StanzaHandlerExtension {
+  const StickersData(this.stickerPackId, this.sticker, {this.addBody = true});
+
+  /// The id of the sticker pack the referenced sticker is from.
+  final String stickerPackId;
+
+  /// The metadata of the sticker.
+  final StatelessFileSharingData sticker;
+
+  /// If true, sets the sticker's metadata desc attribute as the message body.
+  final bool addBody;
+}
+
 class StickersManager extends XmppManagerBase {
   StickersManager() : super(stickersManager);
 
@@ -249,9 +264,35 @@ class StickersManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final sticker = stanza.firstTag('sticker', xmlns: stickersXmlns)!;
-    return state.copyWith(
-      stickerPackId: sticker.attributes['pack']! as String,
-    );
+    return state
+      ..extensions.set(
+        StickersData(
+          sticker.attributes['pack']! as String,
+          state.extensions.get<StatelessFileSharingData>()!,
+        ),
+      );
+  }
+
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
+    final data = extensions.get<StickersData>();
+    return data != null
+        ? [
+            XMLNode.xmlns(
+              tag: 'sticker',
+              xmlns: stickersXmlns,
+              attributes: {
+                'pack': data.stickerPackId,
+              },
+            ),
+            data.sticker.toXML(),
+
+            // Add a body
+            if (data.addBody && data.sticker.metadata.desc != null)
+              MessageBodyData(data.sticker.metadata.desc).toXML(),
+          ]
+        : [];
   }
 
   /// Publishes the StickerPack [pack] to the PubSub node of [jid]. If specified, then
@@ -318,5 +359,15 @@ class StickersManager extends XmppManagerBase {
     );
 
     return Result(stickerPack);
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

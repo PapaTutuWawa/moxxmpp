@@ -70,7 +70,7 @@ class BlockingManager extends XmppManagerBase {
       ),
     );
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
   Future<StanzaHandlerData> _unblockPush(
@@ -92,7 +92,7 @@ class BlockingManager extends XmppManagerBase {
       );
     }
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
   Future<bool> block(List<String> items) async {

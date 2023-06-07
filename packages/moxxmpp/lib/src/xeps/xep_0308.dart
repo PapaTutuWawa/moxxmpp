@@ -2,18 +2,27 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
-XMLNode makeLastMessageCorrectionEdit(String id) {
-  return XMLNode.xmlns(
-    tag: 'replace',
-    xmlns: lmcXmlns,
-    attributes: <String, String>{
-      'id': id,
-    },
-  );
+class LastMessageCorrectionData implements StanzaHandlerExtension {
+  const LastMessageCorrectionData(this.id);
+
+  /// The id the LMC applies to.
+  final String id;
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: 'replace',
+      xmlns: lmcXmlns,
+      attributes: {
+        'id': id,
+      },
+    );
+  }
 }
 
 class LastMessageCorrectionManager extends XmppManagerBase {
@@ -42,8 +51,30 @@ class LastMessageCorrectionManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final edit = stanza.firstTag('replace', xmlns: lmcXmlns)!;
-    return state.copyWith(
-      lastMessageCorrectionSid: edit.attributes['id']! as String,
-    );
+    return state
+      ..extensions.set(
+        LastMessageCorrectionData(edit.attributes['id']! as String),
+      );
+  }
+
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
+    final data = extensions.get<LastMessageCorrectionData>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

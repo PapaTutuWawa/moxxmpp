@@ -184,7 +184,7 @@ class DiscoManager extends XmppManagerBase {
         ],
       );
 
-      return state.copyWith(done: true);
+      return state..done = true;
     }
 
     await reply(
@@ -195,7 +195,7 @@ class DiscoManager extends XmppManagerBase {
       ],
     );
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
   Future<StanzaHandlerData> _onDiscoItemsRequest(
@@ -223,7 +223,7 @@ class DiscoManager extends XmppManagerBase {
         ],
       );
 
-      return state.copyWith(done: true);
+      return state..done = true;
     }
 
     return state;

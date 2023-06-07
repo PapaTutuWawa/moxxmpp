@@ -319,27 +319,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(StubbedDiscoManager());
-      await tm.register(manager);
+      await tm.register([
+        StubbedDiscoManager(),
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       expect(
@@ -352,27 +353,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(StubbedDiscoManager());
-      await tm.register(manager);
+      await tm.register([
+        StubbedDiscoManager(),
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94AAAAA=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94AAAAA=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       expect(
@@ -385,29 +387,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..multipleEqualIdentities = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       expect(
@@ -420,29 +421,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..multipleEqualFeatures = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       expect(
@@ -455,29 +455,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..multipleExtendedFormsWithSameType = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       expect(
@@ -490,29 +489,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..invalidExtension1 = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       final cachedItem = await manager.getCachedDiscoInfoFromJid(aliceJid);
@@ -527,29 +525,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..invalidExtension2 = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       final cachedItem = await manager.getCachedDiscoInfoFromJid(aliceJid);
@@ -564,29 +561,28 @@ void main() {
       final tm = TestingManagerHolder();
       final manager = EntityCapabilitiesManager('');
 
-      await tm.register(
+      await tm.register([
         StubbedDiscoManager()..invalidExtension3 = true,
-      );
-      await tm.register(manager);
+        manager,
+      ]);
 
-      await manager.onPresence(
-        PresenceReceivedEvent(
-          aliceJid,
-          Stanza.presence(
-            from: aliceJid.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'c',
-                xmlns: capsXmlns,
-                attributes: {
-                  'hash': 'sha-1',
-                  'node': 'http://example.org/client',
-                  'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
-                },
-              ),
-            ],
+      final stanza = Stanza.presence(
+        from: aliceJid.toString(),
+        children: [
+          XMLNode.xmlns(
+            tag: 'c',
+            xmlns: capsXmlns,
+            attributes: {
+              'hash': 'sha-1',
+              'node': 'http://example.org/client',
+              'ver': 'QgayPKawpkPSDYmwT/WM94uAlu0=',
+            },
           ),
-        ),
+        ],
+      );
+      await manager.onPresence(
+        stanza,
+        StanzaHandlerData(false, false, stanza, TypedMap()),
       );
 
       expect(

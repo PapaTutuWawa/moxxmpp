@@ -15,8 +15,8 @@ Future<void> runIncomingStanzaHandlers(
         StanzaHandlerData(
           false,
           false,
-          null,
           stanza,
+          TypedMap(),
         ),
       );
     }
@@ -34,8 +34,8 @@ Future<void> runOutgoingStanzaHandlers(
         StanzaHandlerData(
           false,
           false,
-          null,
           stanza,
+          TypedMap(),
         ),
       );
     }

@@ -1,4 +1,4 @@
-## 0.3.2
+## 0.4.0
 
 - **BREAKING**: Remove `lastResource` from `XmppConnection`'s `connect` method. Instead, set the `StreamManagementNegotiator`'s `resource` attribute instead. Since the resource can only really be restored by stream management, this is no issue.
 - **BREAKING**: Changed order of parameters of `CryptographicHashManager.hashFromData`
@@ -11,6 +11,11 @@
 - **BREAKING**: `PubSubManager` and `UserAvatarManager` now use `JID` instead of `String`.
 - **BREAKING**: `XmppConnection.sendStanza` not only takes a `StanzaDetails` argument.
 - Sent stanzas are now kept in a queue until sent.
+- **BREAKING**: `MessageManager.sendMessage` does not use `MessageDetails` anymore. Instead, use `TypedMap`.
+- `MessageManager` now allows registering callbacks for adding data whenever a message is sent.
+- **BREAKING**: `MessageEvent` now makes use of `TypedMap`.
+- **BREAKING**: Removed `PresenceReceivedEvent`. Use a manager registering handlers with priority greater than `[PresenceManager.presenceHandlerPriority]` instead.
+- **BREAKING**: `ChatState.toString()` is now `ChatState.toName()`
 
 ## 0.3.1
 

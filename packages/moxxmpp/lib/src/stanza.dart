@@ -9,6 +9,8 @@ class StanzaDetails {
     this.awaitable = true,
     this.encrypted = false,
     this.forceEncryption = false,
+    this.bypassQueue = false,
+    this.excludeFromStreamManagement = false,
   });
 
   /// The stanza to send.
@@ -23,6 +25,16 @@ class StanzaDetails {
   final bool encrypted;
 
   final bool forceEncryption;
+
+  /// Bypasses being put into the queue. Useful for sending stanzas that must go out
+  /// now, where it's okay if it does not get sent.
+  /// This should never have to be set to true.
+  final bool bypassQueue;
+
+  /// This makes the Stream Management implementation, when available, ignore the stanza,
+  /// meaning that it gets counted but excluded from resending.
+  /// This should never have to be set to true.
+  final bool excludeFromStreamManagement;
 }
 
 /// A simple description of the <error /> element that may be inside a stanza

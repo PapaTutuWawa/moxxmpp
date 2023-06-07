@@ -2,42 +2,58 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
-enum ChatState { active, composing, paused, inactive, gone }
+enum ChatState implements StanzaHandlerExtension {
+  active,
+  composing,
+  paused,
+  inactive,
+  gone;
 
-ChatState chatStateFromString(String raw) {
-  switch (raw) {
-    case 'active':
-      {
+  factory ChatState.fromName(String state) {
+    switch (state) {
+      case 'active':
         return ChatState.active;
-      }
-    case 'composing':
-      {
+      case 'composing':
         return ChatState.composing;
-      }
-    case 'paused':
-      {
+      case 'paused':
         return ChatState.paused;
-      }
-    case 'inactive':
-      {
+      case 'inactive':
         return ChatState.inactive;
-      }
-    case 'gone':
-      {
+      case 'gone':
         return ChatState.gone;
-      }
-    default:
-      {
-        return ChatState.gone;
-      }
+    }
+
+    throw Exception('Invalid chat state $state');
+  }
+
+  String toName() {
+    switch (this) {
+      case ChatState.active:
+        return 'active';
+      case ChatState.composing:
+        return 'composing';
+      case ChatState.paused:
+        return 'paused';
+      case ChatState.inactive:
+        return 'inactive';
+      case ChatState.gone:
+        return 'gone';
+    }
+  }
+
+  XMLNode toXML() {
+    return XMLNode.xmlns(
+      tag: toName(),
+      xmlns: chatStateXmlns,
+    );
   }
 }
-
-String chatStateToString(ChatState state) => state.toString().split('.').last;
 
 class ChatStateManager extends XmppManagerBase {
   ChatStateManager() : super(chatStateManager);
@@ -64,62 +80,55 @@ class ChatStateManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final element = state.stanza.firstTagByXmlns(chatStateXmlns)!;
-    ChatState? chatState;
 
-    switch (element.tag) {
-      case 'active':
-        {
-          chatState = ChatState.active;
-        }
-        break;
-      case 'composing':
-        {
-          chatState = ChatState.composing;
-        }
-        break;
-      case 'paused':
-        {
-          chatState = ChatState.paused;
-        }
-        break;
-      case 'inactive':
-        {
-          chatState = ChatState.inactive;
-        }
-        break;
-      case 'gone':
-        {
-          chatState = ChatState.gone;
-        }
-        break;
-      default:
-        {
-          logger.warning("Received invalid chat state '${element.tag}'");
-        }
+    try {
+      state.extensions.set(ChatState.fromName(element.tag));
+    } catch (_) {
+      logger.finest('Ignoring invalid chat state ${element.tag}');
     }
 
-    return state.copyWith(chatState: chatState);
+    return state;
   }
 
   /// Send a chat state notification to [to]. You can specify the type attribute
   /// of the message with [messageType].
-  void sendChatState(
+  Future<void> sendChatState(
     ChatState state,
     String to, {
     String messageType = 'chat',
-  }) {
-    final tagName = state.toString().split('.').last;
-
-    getAttributes().sendStanza(
+  }) async {
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.message(
           to: to,
           type: messageType,
           children: [
-            XMLNode.xmlns(tag: tagName, xmlns: chatStateXmlns),
+            state.toXML(),
           ],
         ),
+        awaitable: false,
       ),
     );
+  }
+
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
+    final data = extensions.get<ChatState>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

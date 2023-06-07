@@ -9,6 +9,7 @@ const fullStanzaXmlns = 'urn:ietf:params:xml:ns:xmpp-stanzas';
 // RFC 6121
 const rosterXmlns = 'jabber:iq:roster';
 const rosterVersioningXmlns = 'urn:xmpp:features:rosterver';
+const subscriptionPreApprovalXmlns = 'urn:xmpp:features:pre-approval';
 
 // XEP-0004
 const dataFormsXmlns = 'jabber:x:data';
@@ -96,7 +97,7 @@ const httpFileUploadXmlns = 'urn:xmpp:http:upload:0';
 // XEP-0372
 const referenceXmlns = 'urn:xmpp:reference:0';
 
-// XEP-380
+// XEP-0380
 const emeXmlns = 'urn:xmpp:eme:0';
 const emeOtr = 'urn:xmpp:otr:0';
 const emeLegacyOpenPGP = 'jabber:x:encrypted';
