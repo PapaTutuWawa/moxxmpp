@@ -161,13 +161,39 @@ class PresenceManager extends XmppManagerBase {
     );
   }
 
-  /// Sends a subscription request to [to].
-  // TODO(PapaTutuWawa): Check if we're allowed to pre-approve
-  Future<void> requestSubscription(JID to, {bool preApprove = false}) async {
+  /// Similar to [requestSubscription], but it also tells the server to automatically
+  /// accept a subscription request from [to], should it arrive.
+  /// This requires a [PresenceNegotiator] to be registered as this feature is optional.
+  ///
+  /// Returns true, when the stanza was sent. Returns false, when the stanza was not sent,
+  /// for example because the server does not support subscription pre-approvals.
+  Future<bool> preApproveSubscription(JID to) async {
+    final negotiator = getAttributes()
+        .getNegotiatorById<PresenceNegotiator>(presenceNegotiator);
+    assert(negotiator != null, 'No PresenceNegotiator registered');
+
+    if (!negotiator!.preApprovalSupported) {
+      return false;
+    }
+
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
-          type: preApprove ? 'subscribed' : 'subscribe',
+          type: 'subscribed',
+          to: to.toString(),
+        ),
+        awaitable: false,
+      ),
+    );
+    return true;
+  }
+
+  /// Sends a subscription request to [to].
+  Future<void> requestSubscription(JID to) async {
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          type: 'subscribe',
           to: to.toString(),
         ),
         awaitable: false,
@@ -177,7 +203,15 @@ class PresenceManager extends XmppManagerBase {
 
   /// Accept a subscription request from [to].
   Future<void> acceptSubscriptionRequest(JID to) async {
-    await requestSubscription(to, preApprove: true);
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          type: 'subscribed',
+          to: to.toString(),
+        ),
+        awaitable: false,
+      ),
+    );
   }
 
   /// Send a subscription request rejection to [to].
