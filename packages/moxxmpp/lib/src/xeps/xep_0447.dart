@@ -151,14 +151,17 @@ class SFSManager extends XmppManagerBase {
     // TODO(Unknown): Consider all sources?
     final source = data.sources.first;
     OOBData? oob;
+    MessageBodyData? body;
     if (source is StatelessFileSharingUrlSource && data.includeOOBFallback) {
       // SFS recommends OOB as a fallback
       oob = OOBData(source.url, null);
+      body = MessageBodyData(source.url);
     }
 
     return [
       data.toXML(),
       if (oob != null) oob.toXML(),
+      if (body != null) body.toXML(),
     ];
   }
 
