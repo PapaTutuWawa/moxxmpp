@@ -56,17 +56,17 @@ class VCardManager extends XmppManagerBase {
     final x = presence.firstTag('x', xmlns: vCardTempUpdate)!;
     final hash = x.firstTag('photo')!.innerText();
 
-    final from = JID.fromString(presence.from!).toBare().toString();
+    final from = JID.fromString(presence.from!).toBare();
     final lastHash = _lastHash[from];
     if (lastHash != hash) {
-      _lastHash[from] = hash;
+      _lastHash[from.toString()] = hash;
       final vcardResult = await requestVCard(from);
 
       if (vcardResult.isType<VCard>()) {
         final binval = vcardResult.get<VCard>().photo?.binval;
         if (binval != null) {
           getAttributes().sendEvent(
-            VCardAvatarUpdatedEvent(JID.fromString(from), binval, hash),
+            VCardAvatarUpdatedEvent(from, binval, hash),
           );
         } else {
           logger.warning('No avatar data found');
@@ -98,11 +98,11 @@ class VCardManager extends XmppManagerBase {
     );
   }
 
-  Future<Result<VCardError, VCard>> requestVCard(String jid) async {
+  Future<Result<VCardError, VCard>> requestVCard(JID jid) async {
     final result = (await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.iq(
-          to: jid,
+          to: jid.toString(),
           type: 'get',
           children: [
             XMLNode.xmlns(
