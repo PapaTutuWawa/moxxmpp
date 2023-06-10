@@ -16,6 +16,7 @@ abstract class AvatarError {}
 
 class UnknownAvatarError extends AvatarError {}
 
+/// The result of a successful query of a users avatar.
 class UserAvatarData {
   const UserAvatarData(this.base64, this.hash);
 
@@ -26,7 +27,9 @@ class UserAvatarData {
   final String hash;
 
   /// The raw avatar data.
-  List<int> get data => base64Decode(base64);
+  /// NOTE: Remove newlines because "Line feeds SHOULD NOT be added but MUST be accepted"
+  /// (https://xmpp.org/extensions/xep-0084.html#proto-data).
+  List<int> get data => base64Decode(base64.replaceAll('\n', ''));
 }
 
 class UserAvatarMetadata {
