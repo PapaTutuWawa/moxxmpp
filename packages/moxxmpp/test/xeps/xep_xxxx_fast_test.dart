@@ -141,8 +141,7 @@ void main() {
     final token = conn
         .getNegotiatorById<FASTSaslNegotiator>(saslFASTNegotiator)!
         .fastToken;
-    expect(token != null, true);
-    expect(token!.token, 'WXZzciBwYmFmdmZnZiBqdmd1IGp2eXFhcmZm');
+    expect(token, 'WXZzciBwYmFmdmZnZiBqdmd1IGp2eXFhcmZm');
 
     // Disconnect
     await conn.disconnect();
@@ -232,11 +231,7 @@ void main() {
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
-      FASTSaslNegotiator()
-        ..fastToken = const FASTToken(
-          'WXZzciBwYmFmdmZnZiBqdmd1IGp2eXFhcmZm',
-          '2020-03-12T14:36:15Z',
-        ),
+      FASTSaslNegotiator()..fastToken = 'WXZzciBwYmFmdmZnZiBqdmd1IGp2eXFhcmZm',
       Sasl2Negotiator()
         ..userAgent = const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
@@ -257,7 +252,6 @@ void main() {
     final token = conn
         .getNegotiatorById<FASTSaslNegotiator>(saslFASTNegotiator)!
         .fastToken;
-    expect(token != null, true);
-    expect(token!.token, 'ed00e36cb42449a365a306a413f51ffd5ea8');
+    expect(token, 'ed00e36cb42449a365a306a413f51ffd5ea8');
   });
 }

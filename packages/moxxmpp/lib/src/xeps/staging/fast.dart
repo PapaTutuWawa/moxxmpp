@@ -60,7 +60,7 @@ class FASTSaslNegotiator extends Sasl2AuthenticationNegotiator {
   final Logger _log = Logger('FASTSaslNegotiator');
 
   /// The token, if non-null, to use for authentication.
-  FASTToken? fastToken;
+  String? fastToken;
 
   @override
   bool matchesFeature(List<XMLNode> features) {
@@ -100,11 +100,12 @@ class FASTSaslNegotiator extends Sasl2AuthenticationNegotiator {
 
   @override
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
-    final token = response.firstTag('token', xmlns: fastXmlns);
-    if (token != null) {
-      fastToken = FASTToken.fromXml(token);
+    final tokenElement = response.firstTag('token', xmlns: fastXmlns);
+    if (tokenElement != null) {
+      final token = FASTToken.fromXml(tokenElement);
+      fastToken = token.token;
       await attributes.sendEvent(
-        NewFASTTokenReceivedEvent(fastToken!),
+        NewFASTTokenReceivedEvent(token),
       );
     }
 
@@ -155,7 +156,7 @@ class FASTSaslNegotiator extends Sasl2AuthenticationNegotiator {
 
   @override
   Future<String> getRawStep(String input) async {
-    return fastToken!.token;
+    return fastToken!;
   }
 
   @override
