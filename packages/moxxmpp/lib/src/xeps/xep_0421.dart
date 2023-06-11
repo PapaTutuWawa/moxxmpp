@@ -39,6 +39,8 @@ class OccupantIdManager extends XmppManagerBase {
   List<StanzaHandler> getIncomingStanzaHandlers() => [
         StanzaHandler(
           stanzaTag: 'message',
+          tagName: 'occupant-id',
+          tagXmlns: occupantIdXmlns,
           callback: _onMessage,
           // Before the MessageManager
           priority: -99,
@@ -52,15 +54,7 @@ class OccupantIdManager extends XmppManagerBase {
     Stanza stanza,
     StanzaHandlerData state,
   ) async {
-    OccupantIdData? occupantId;
-    final occupantIdElement =
-        stanza.firstTag('occupant-id', xmlns: occupantIdXmlns);
-    // Process the occupant id
-    if (occupantIdElement != null) {
-      occupantId =
-          OccupantIdData(occupantIdElement.attributes['id']! as String);
-      state.extensions.set(occupantId);
-    }
+    state.extensions.set(OccupantIdData(stanza.attributes['id']! as String));
     return state;
   }
 }
