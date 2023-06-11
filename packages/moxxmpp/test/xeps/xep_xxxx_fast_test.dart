@@ -121,13 +121,12 @@ void main() {
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
       FASTSaslNegotiator(),
-      Sasl2Negotiator(
-        userAgent: const UserAgent(
+      Sasl2Negotiator()
+        ..userAgent = const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
           software: 'moxxmpp',
           device: "PapaTutuWawa's awesome device",
         ),
-      ),
     ]);
 
     final result1 = await conn.connect(
@@ -238,13 +237,12 @@ void main() {
           'WXZzciBwYmFmdmZnZiBqdmd1IGp2eXFhcmZm',
           '2020-03-12T14:36:15Z',
         ),
-      Sasl2Negotiator(
-        userAgent: const UserAgent(
+      Sasl2Negotiator()
+        ..userAgent = const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
           software: 'moxxmpp',
           device: "PapaTutuWawa's awesome device",
         ),
-      ),
     ]);
 
     final result1 = await conn.connect(

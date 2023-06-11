@@ -20,12 +20,10 @@ enum Sasl2State {
 /// A negotiator that implements XEP-0388 SASL2. Alone, it does nothing. Has to be
 /// registered with other negotiators that register themselves against this one.
 class Sasl2Negotiator extends XmppFeatureNegotiatorBase {
-  Sasl2Negotiator({
-    this.userAgent,
-  }) : super(100, false, sasl2Xmlns, sasl2Negotiator);
+  Sasl2Negotiator() : super(100, false, sasl2Xmlns, sasl2Negotiator);
 
   /// The user agent data that will be sent to the server when authenticating.
-  final UserAgent? userAgent;
+  UserAgent? userAgent;
 
   /// List of callbacks that are registered against us. Will be called once we get
   /// SASL2 features.

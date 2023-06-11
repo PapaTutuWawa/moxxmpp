@@ -1,6 +1,6 @@
 import 'package:moxxmpp/src/stringxml.dart';
 
-/// A data class describing the user agent. See https://dyn.eightysoft.de/final/xep-0388.html#initiation
+/// A data class describing the user agent. See https://xmpp.org/extensions/xep-0388.html#initiation.
 class UserAgent {
   const UserAgent({
     this.id,
@@ -24,11 +24,9 @@ class UserAgent {
     );
     return XMLNode(
       tag: 'user-agent',
-      attributes: id != null
-          ? {
-              'id': id,
-            }
-          : {},
+      attributes: {
+        if (id != null) 'id': id,
+      },
       children: [
         if (software != null)
           XMLNode(

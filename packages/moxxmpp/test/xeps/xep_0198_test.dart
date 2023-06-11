@@ -850,13 +850,12 @@ void main() {
       SaslPlainNegotiator(),
       ResourceBindingNegotiator(),
       StreamManagementNegotiator()..resource = 'test-resource',
-      Sasl2Negotiator(
-        userAgent: const UserAgent(
+      Sasl2Negotiator()
+        ..userAgent = const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
           software: 'moxxmpp',
           device: "PapaTutuWawa's awesome device",
         ),
-      ),
     ]);
 
     final result = await conn.connect(
@@ -948,13 +947,12 @@ void main() {
       ResourceBindingNegotiator(),
       StreamManagementNegotiator()..resource = 'test-resource',
       Bind2Negotiator(),
-      Sasl2Negotiator(
-        userAgent: const UserAgent(
+      Sasl2Negotiator()
+        ..userAgent = const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
           software: 'moxxmpp',
           device: "PapaTutuWawa's awesome device",
         ),
-      ),
     ]);
 
     final result = await conn.connect(
@@ -1051,13 +1049,12 @@ void main() {
       ResourceBindingNegotiator(),
       smn,
       Bind2Negotiator(),
-      Sasl2Negotiator(
-        userAgent: const UserAgent(
+      Sasl2Negotiator()
+        ..userAgent = const UserAgent(
           id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
           software: 'moxxmpp',
           device: "PapaTutuWawa's awesome device",
         ),
-      ),
     ]);
 
     final result = await conn.connect(
