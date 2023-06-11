@@ -85,6 +85,7 @@ export 'package:moxxmpp/src/xeps/xep_0388/errors.dart';
 export 'package:moxxmpp/src/xeps/xep_0388/negotiators.dart';
 export 'package:moxxmpp/src/xeps/xep_0388/user_agent.dart';
 export 'package:moxxmpp/src/xeps/xep_0388/xep_0388.dart';
+export 'package:moxxmpp/src/xeps/xep_0421.dart';
 export 'package:moxxmpp/src/xeps/xep_0424.dart';
 export 'package:moxxmpp/src/xeps/xep_0444.dart';
 export 'package:moxxmpp/src/xeps/xep_0446.dart';
