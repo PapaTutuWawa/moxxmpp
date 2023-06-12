@@ -3,6 +3,7 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -43,7 +44,7 @@ class OccupantIdManager extends XmppManagerBase {
           tagXmlns: occupantIdXmlns,
           callback: _onMessage,
           // Before the MessageManager
-          priority: -99,
+          priority: MessageManager.messageHandlerPriority + 1,
         ),
       ];
 
@@ -54,7 +55,7 @@ class OccupantIdManager extends XmppManagerBase {
     Stanza stanza,
     StanzaHandlerData state,
   ) async {
-    state.extensions.set(OccupantIdData(stanza.attributes['id']! as String));
-    return state;
+    return state
+      ..extensions.set(OccupantIdData(stanza.attributes['id']! as String));
   }
 }
