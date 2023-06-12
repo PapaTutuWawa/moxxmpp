@@ -123,6 +123,9 @@ const sasl2Xmlns = 'urn:xmpp:sasl:2';
 // XEP-0420
 const sceXmlns = 'urn:xmpp:sce:1';
 
+// XEP-0421
+const occupantIdXmlns = 'urn:xmpp:occupant-id:0';
+
 // XEP-0422
 const fasteningXmlns = 'urn:xmpp:fasten:0';
 
