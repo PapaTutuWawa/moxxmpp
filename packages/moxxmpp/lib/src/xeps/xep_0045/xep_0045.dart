@@ -1,4 +1,13 @@
-import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/jid.dart';
+import 'package:moxxmpp/src/managers/base.dart';
+import 'package:moxxmpp/src/managers/data.dart';
+import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/stanza.dart';
+import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 

@@ -1,5 +1,5 @@
-import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
+import 'package:moxxmpp/src/jid.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 
 class RoomInformation {
   RoomInformation({
