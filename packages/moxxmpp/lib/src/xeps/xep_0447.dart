@@ -3,9 +3,12 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
+import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0448.dart';
 
@@ -70,8 +73,12 @@ List<StatelessFileSharingSource> processStatelessFileSharingSources(
   return sources;
 }
 
-class StatelessFileSharingData {
-  const StatelessFileSharingData(this.metadata, this.sources);
+class StatelessFileSharingData implements StanzaHandlerExtension {
+  const StatelessFileSharingData(
+    this.metadata,
+    this.sources, {
+    this.includeOOBFallback = false,
+  });
 
   /// Parse [node] as a StatelessFileSharingData element.
   factory StatelessFileSharingData.fromXML(XMLNode node) {
@@ -87,6 +94,10 @@ class StatelessFileSharingData {
 
   final FileMetadataData metadata;
   final List<StatelessFileSharingSource> sources;
+
+  /// Flag indicating whether an OOB fallback should be set. The value is only
+  /// relevant in the context of the messageSendingCallback.
+  final bool includeOOBFallback;
 
   XMLNode toXML() {
     return XMLNode.xmlns(
@@ -122,12 +133,37 @@ class SFSManager extends XmppManagerBase {
           tagXmlns: sfsXmlns,
           callback: _onMessage,
           // Before the message handler
-          priority: -99,
+          priority: -98,
         )
       ];
 
   @override
   Future<bool> isSupported() async => true;
+
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
+    final data = extensions.get<StatelessFileSharingData>();
+    if (data == null) {
+      return [];
+    }
+
+    // TODO(Unknown): Consider all sources?
+    final source = data.sources.first;
+    OOBData? oob;
+    MessageBodyData? body;
+    if (source is StatelessFileSharingUrlSource && data.includeOOBFallback) {
+      // SFS recommends OOB as a fallback
+      oob = OOBData(source.url, null);
+      body = MessageBodyData(source.url);
+    }
+
+    return [
+      data.toXML(),
+      if (oob != null) oob.toXML(),
+      if (body != null) body.toXML(),
+    ];
+  }
 
   Future<StanzaHandlerData> _onMessage(
     Stanza message,
@@ -135,10 +171,19 @@ class SFSManager extends XmppManagerBase {
   ) async {
     final sfs = message.firstTag('file-sharing', xmlns: sfsXmlns)!;
 
-    return state.copyWith(
-      sfs: StatelessFileSharingData.fromXML(
-        sfs,
-      ),
-    );
+    return state
+      ..extensions.set(
+        StatelessFileSharingData.fromXML(sfs),
+      );
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

@@ -78,8 +78,8 @@ Future<bool> testRosterManager(
         StanzaHandlerData(
           false,
           false,
-          null,
           stanza,
+          TypedMap(),
         ),
       );
     }
@@ -335,8 +335,8 @@ void main() {
             StanzaHandlerData(
               false,
               false,
-              null,
               maliciousStanza,
+              TypedMap(),
             ),
           );
         }
@@ -792,5 +792,21 @@ void main() {
 
     expect(fakeSocket.getState(), 9);
     expect(await stanzaFuture != null, true);
+  });
+
+  test('Test subscription pre-approval parsing', () async {
+    final rawFeatures = XMLNode.fromString(
+      '''
+<top-level>
+  <test-feature-1 xmlns="invalid:urn:features:1" />
+  <test-feature-2 xmlns="invalid:urn:features:2" />
+  <test-feature-3 xmlns="invalid:urn:features:3" />
+  <test-feature-4 xmlns="invalid:urn:features:4" />
+  <sub xmlns='urn:xmpp:features:pre-approval' />
+</top-level>
+      ''',
+    );
+
+    expect(PresenceNegotiator().matchesFeature(rawFeatures.children), true);
   });
 }

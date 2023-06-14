@@ -2,16 +2,18 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
+import 'package:moxxmpp/src/message.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
-class MessageReactions {
-  const MessageReactions(this.messageId, this.emojis);
+class MessageReactionsData implements StanzaHandlerExtension {
+  const MessageReactionsData(this.messageId, this.emojis);
   final String messageId;
   final List<String> emojis;
 
-  XMLNode toXml() {
+  XMLNode toXML() {
     return XMLNode.xmlns(
       tag: 'reactions',
       xmlns: messageReactionsXmlns,
@@ -55,14 +57,36 @@ class MessageReactionsManager extends XmppManagerBase {
   ) async {
     final reactionsElement =
         message.firstTag('reactions', xmlns: messageReactionsXmlns)!;
-    return state.copyWith(
-      messageReactions: MessageReactions(
-        reactionsElement.attributes['id']! as String,
-        reactionsElement.children
-            .where((c) => c.tag == 'reaction')
-            .map((c) => c.innerText())
-            .toList(),
-      ),
-    );
+    return state
+      ..extensions.set(
+        MessageReactionsData(
+          reactionsElement.attributes['id']! as String,
+          reactionsElement.children
+              .where((c) => c.tag == 'reaction')
+              .map((c) => c.innerText())
+              .toList(),
+        ),
+      );
+  }
+
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
+    final data = extensions.get<MessageReactionsData>();
+    return data != null
+        ? [
+            data.toXML(),
+          ]
+        : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    getAttributes()
+        .getManagerById<MessageManager>(messageManager)
+        ?.registerMessageSendingCallback(_messageSendingCallback);
   }
 }

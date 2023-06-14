@@ -27,7 +27,9 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/queue.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
 import 'package:synchronized/synchronized.dart';
@@ -405,8 +407,7 @@ class XmppConnection {
 
   /// Returns true if we can send data through the socket.
   Future<bool> _canSendData() async {
-    return [XmppConnectionState.connected, XmppConnectionState.connecting]
-        .contains(await getConnectionState());
+    return await getConnectionState() == XmppConnectionState.connected;
   }
 
   /// Sends a stanza described by [details] to the server. Until sent, the stanza is
@@ -424,12 +425,16 @@ class XmppConnection {
     );
 
     final completer = details.awaitable ? Completer<XMLNode>() : null;
-    await _stanzaQueue.enqueueStanza(
-      StanzaQueueEntry(
-        details,
-        completer,
-      ),
+    final entry = StanzaQueueEntry(
+      details,
+      completer,
     );
+
+    if (details.bypassQueue) {
+      await _sendStanzaImpl(entry);
+    } else {
+      await _stanzaQueue.enqueueStanza(entry);
+    }
 
     return completer?.future;
   }
@@ -471,8 +476,8 @@ class XmppConnection {
       initial: StanzaHandlerData(
         false,
         false,
-        null,
         newStanza,
+        TypedMap(),
         encrypted: details.encrypted,
         forceEncryption: details.forceEncryption,
       ),
@@ -523,18 +528,20 @@ class XmppConnection {
     if (await _canSendData()) {
       _socket.write(data.stanza.toXml());
     } else {
-      _log.fine('Not sending dat as _canSendData() returned false.');
+      _log.fine('Not sending data as _canSendData() returned false.');
     }
 
     // Run post-send handlers
     _log.fine('Running post stanza handlers..');
+    final extensions = TypedMap<StanzaHandlerExtension>()
+      ..set(StreamManagementData(details.excludeFromStreamManagement));
     await _runOutgoingPostStanzaHandlers(
       newStanza,
       initial: StanzaHandlerData(
         false,
         false,
-        null,
         newStanza,
+        extensions,
       ),
     );
     _log.fine('Done');
@@ -649,7 +656,7 @@ class XmppConnection {
     Stanza stanza, {
     StanzaHandlerData? initial,
   }) async {
-    var state = initial ?? StanzaHandlerData(false, false, null, stanza);
+    var state = initial ?? StanzaHandlerData(false, false, stanza, TypedMap());
     for (final handler in handlers) {
       if (handler.matches(state.stanza)) {
         state = await handler.callback(state.stanza, state);
@@ -724,7 +731,7 @@ class XmppConnection {
     // it.
     final incomingPreHandlers = await _runIncomingPreStanzaHandlers(stanza);
     final prefix = incomingPreHandlers.encrypted &&
-            incomingPreHandlers.other['encryption_error'] == null
+            incomingPreHandlers.encryptionError == null
         ? '(Encrypted) '
         : '';
     _log.finest('<== $prefix${incomingPreHandlers.stanza.toXml()}');
@@ -743,10 +750,10 @@ class XmppConnection {
       initial: StanzaHandlerData(
         false,
         incomingPreHandlers.cancel,
-        incomingPreHandlers.cancelReason,
         incomingPreHandlers.stanza,
+        incomingPreHandlers.extensions,
         encrypted: incomingPreHandlers.encrypted,
-        other: incomingPreHandlers.other,
+        cancelReason: incomingPreHandlers.cancelReason,
       ),
     );
     if (!incomingHandlers.done) {
@@ -835,7 +842,7 @@ class XmppConnection {
     await _reconnectionPolicy.setShouldReconnect(false);
 
     if (triggeredByUser) {
-      getPresenceManager()?.sendUnavailablePresence();
+      await getPresenceManager()?.sendUnavailablePresence();
     }
 
     _socket.prepareDisconnect();

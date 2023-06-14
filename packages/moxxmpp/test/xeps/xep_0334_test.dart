@@ -1,15 +1,11 @@
 import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
 import 'package:test/test.dart';
 
-import '../helpers/logging.dart';
 import '../helpers/manager.dart';
 import '../helpers/xmpp.dart';
 
 void main() {
-  initLogger();
-
-  test('Test having multiple disco requests for the same JID', () async {
+  test('Test receiving a message processing hint', () async {
     final fakeSocket = StubTCPSocket(
       [
         StringExpectation(
@@ -57,15 +53,6 @@ void main() {
           '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
           ignoreId: true,
         ),
-        StanzaExpectation(
-          "<presence xmlns='jabber:client'><show>chat</show><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://moxxmpp.example' ver='3QvQ2RAy45XBDhArjxy/vEWMl+E=' /></presence>",
-          '',
-        ),
-        StanzaExpectation(
-          "<iq type='get' id='ec325efc-9924-4c48-93f8-ed34a2b0e5fc' to='romeo@montague.lit/orchard' xmlns='jabber:client'><query xmlns='http://jabber.org/protocol/disco#info' /></iq>",
-          '',
-          ignoreId: true,
-        ),
       ],
     );
     final conn = XmppConnection(
@@ -78,68 +65,83 @@ void main() {
         password: 'aaaa',
       );
     await conn.registerManagers([
-      PresenceManager(),
-      RosterManager(TestingRosterStateManager(null, [])),
-      DiscoManager([]),
-      EntityCapabilitiesManager('http://moxxmpp.example'),
+      MessageManager(),
+      MessageProcessingHintManager(),
     ]);
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
-      SaslScramNegotiator(10, '', '', ScramHashType.sha512),
       ResourceBindingNegotiator(),
     ]);
-
-    final disco = conn.getManagerById<DiscoManager>(discoManager)!;
-
-    await conn.connect();
-    await Future<void>.delayed(const Duration(seconds: 3));
-
-    final jid = JID.fromString('romeo@montague.lit/orchard');
-    final result1 = disco.discoInfoQuery(jid);
-    final result2 = disco.discoInfoQuery(jid);
-
-    await Future<void>.delayed(const Duration(seconds: 1));
-    expect(
-      disco.infoTracker.getRunningTasks(DiscoCacheKey(jid, null)).length,
-      1,
+    await conn.connect(
+      shouldReconnect: false,
+      enableReconnectOnSuccess: false,
+      waitUntilLogin: true,
     );
+
+    MessageEvent? messageEvent;
+    conn.asBroadcastStream().listen((event) {
+      if (event is MessageEvent) {
+        messageEvent = event;
+      }
+    });
+
+    // Send the fake message
     fakeSocket.injectRawXml(
-      "<iq type='result' id='${fakeSocket.lastId!}' from='romeo@montague.lit/orchard' to='polynomdivision@test.server/MU29eEZn' xmlns='jabber:client'><query xmlns='http://jabber.org/protocol/disco#info' /></iq>",
+      '''
+<message id="aaaaaaaaa" from="user@example.org" to="polynomdivision@test.server/abc123" type="chat">
+  <no-copy xmlns="urn:xmpp:hints"/>
+  <no-store xmlns="urn:xmpp:hints"/>
+</message>
+''',
     );
 
     await Future<void>.delayed(const Duration(seconds: 2));
-
-    expect(fakeSocket.getState(), 6);
-    expect(await result1, await result2);
-    expect(disco.infoTracker.hasTasksRunning(), false);
+    expect(
+      messageEvent!.extensions
+          .get<MessageProcessingHintData>()!
+          .hints
+          .contains(MessageProcessingHint.noCopies),
+      true,
+    );
+    expect(
+      messageEvent!.extensions
+          .get<MessageProcessingHintData>()!
+          .hints
+          .contains(MessageProcessingHint.noStore),
+      true,
+    );
   });
 
-  group('Interactions with Entity Capabilities', () {
-    test('Do not query when the capability hash is cached', () async {
-      final tm = TestingManagerHolder();
-      final ecm = EntityCapabilitiesManager('');
-      final dm = DiscoManager([]);
-
-      await tm.register([dm, ecm]);
-
-      // Inject a capability hash into the cache
-      final aliceJid = JID.fromString('alice@example.org/abc123');
-      ecm.injectIntoCache(
-        aliceJid,
-        'AAAAAAAAAAAAA',
-        DiscoInfo(
-          const [],
-          const [],
-          const [],
+  test('Test sending a message processing hint', () async {
+    final manager = MessageManager();
+    final holder = TestingManagerHolder(
+      stubSocket: StubTCPSocket([
+        StanzaExpectation(
+          '''
+<message to="user@example.org" type="chat">
+  <no-copy xmlns="urn:xmpp:hints"/>
+  <no-store xmlns="urn:xmpp:hints"/>
+</message>
+''',
           '',
-          aliceJid,
-        ),
-      );
+        )
+      ]),
+    );
 
-      // Query Alice's device
-      final result = await dm.discoInfoQuery(aliceJid);
-      expect(result.isType<DiscoError>(), false);
-      expect(tm.socket.getState(), 0);
-    });
+    await holder.register([
+      manager,
+      MessageProcessingHintManager(),
+    ]);
+
+    await manager.sendMessage(
+      JID.fromString('user@example.org'),
+      TypedMap()
+        ..set(
+          const MessageProcessingHintData([
+            MessageProcessingHint.noCopies,
+            MessageProcessingHint.noStore,
+          ]),
+        ),
+    );
   });
 }

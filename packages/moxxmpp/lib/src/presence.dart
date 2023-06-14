@@ -6,13 +6,43 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/namespaces.dart';
+import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/types/result.dart';
 
 /// A function that will be called when presence, outside of subscription request
 /// management, will be sent. Useful for managers that want to add [XMLNode]s to said
 /// presence.
 typedef PresencePreSendCallback = Future<List<XMLNode>> Function();
+
+/// A pseudo-negotiator that does not really negotiate anything. Instead, its purpose
+/// is to look for a stream feature indicating that we can pre-approve subscription
+/// requests, shown by [PresenceNegotiator.preApprovalSupported].
+class PresenceNegotiator extends XmppFeatureNegotiatorBase {
+  PresenceNegotiator()
+      : super(11, false, subscriptionPreApprovalXmlns, presenceNegotiator);
+
+  /// Flag indicating whether presence subscription pre-approval is supported
+  bool _supported = false;
+  bool get preApprovalSupported => _supported;
+
+  @override
+  Future<Result<NegotiatorState, NegotiatorError>> negotiate(
+    XMLNode nonza,
+  ) async {
+    _supported = true;
+    return const Result(NegotiatorState.done);
+  }
+
+  @override
+  void reset() {
+    _supported = false;
+
+    super.reset();
+  }
+}
 
 /// A mandatory manager that handles initial presence sending, sending of subscription
 /// request management requests and triggers events for incoming presence stanzas.
@@ -23,11 +53,17 @@ class PresenceManager extends XmppManagerBase {
   final List<PresencePreSendCallback> _presenceCallbacks =
       List.empty(growable: true);
 
+  /// The priority of the presence handler. If a handler should run before this one,
+  /// which terminates processing, make sure the handler has a priority greater than
+  /// [presenceHandlerPriority].
+  static int presenceHandlerPriority = -100;
+
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
         StanzaHandler(
           stanzaTag: 'presence',
           callback: _onPresence,
+          priority: presenceHandlerPriority,
         )
       ];
 
@@ -66,7 +102,7 @@ class PresenceManager extends XmppManagerBase {
               from: JID.fromString(presence.from!),
             ),
           );
-          return state.copyWith(done: true);
+          return state..done = true;
         }
       default:
         break;
@@ -75,10 +111,7 @@ class PresenceManager extends XmppManagerBase {
     if (presence.from != null) {
       logger.finest("Received presence from '${presence.from}'");
 
-      getAttributes().sendEvent(
-        PresenceReceivedEvent(JID.fromString(presence.from!), presence),
-      );
-      return state.copyWith(done: true);
+      return state..done = true;
     }
 
     return state;
@@ -112,24 +145,82 @@ class PresenceManager extends XmppManagerBase {
   }
 
   /// Send an unavailable presence with no 'to' attribute.
-  void sendUnavailablePresence() {
-    getAttributes().sendStanza(
+  Future<void> sendUnavailablePresence() async {
+    // Bypass the queue so that this get's sent immediately.
+    // If we do it like this, we can also block the disconnection
+    // until we're actually ready.
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
           type: 'unavailable',
+        ),
+        awaitable: false,
+        bypassQueue: true,
+        excludeFromStreamManagement: true,
+      ),
+    );
+  }
+
+  /// Similar to [requestSubscription], but it also tells the server to automatically
+  /// accept a subscription request from [to], should it arrive.
+  /// This requires a [PresenceNegotiator] to be registered as this feature is optional.
+  ///
+  /// Returns true, when the stanza was sent. Returns false, when the stanza was not sent,
+  /// for example because the server does not support subscription pre-approvals.
+  Future<bool> preApproveSubscription(JID to) async {
+    final negotiator = getAttributes()
+        .getNegotiatorById<PresenceNegotiator>(presenceNegotiator);
+    assert(negotiator != null, 'No PresenceNegotiator registered');
+
+    if (!negotiator!.preApprovalSupported) {
+      return false;
+    }
+
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          type: 'subscribed',
+          to: to.toString(),
+        ),
+        awaitable: false,
+      ),
+    );
+    return true;
+  }
+
+  /// Sends a subscription request to [to].
+  Future<void> requestSubscription(JID to) async {
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          type: 'subscribe',
+          to: to.toString(),
         ),
         awaitable: false,
       ),
     );
   }
 
-  /// Sends a subscription request to [to].
-  void sendSubscriptionRequest(String to) {
-    getAttributes().sendStanza(
+  /// Accept a subscription request from [to].
+  Future<void> acceptSubscriptionRequest(JID to) async {
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
-          type: 'subscribe',
-          to: to,
+          type: 'subscribed',
+          to: to.toString(),
+        ),
+        awaitable: false,
+      ),
+    );
+  }
+
+  /// Send a subscription request rejection to [to].
+  Future<void> rejectSubscriptionRequest(JID to) async {
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          type: 'unsubscribed',
+          to: to.toString(),
         ),
         awaitable: false,
       ),
@@ -137,38 +228,12 @@ class PresenceManager extends XmppManagerBase {
   }
 
   /// Sends an unsubscription request to [to].
-  void sendUnsubscriptionRequest(String to) {
-    getAttributes().sendStanza(
+  Future<void> unsubscribe(JID to) async {
+    await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
           type: 'unsubscribe',
-          to: to,
-        ),
-        awaitable: false,
-      ),
-    );
-  }
-
-  /// Accept a presence subscription request for [to].
-  void sendSubscriptionRequestApproval(String to) {
-    getAttributes().sendStanza(
-      StanzaDetails(
-        Stanza.presence(
-          type: 'subscribed',
-          to: to,
-        ),
-        awaitable: false,
-      ),
-    );
-  }
-
-  /// Reject a presence subscription request for [to].
-  void sendSubscriptionRequestRejection(String to) {
-    getAttributes().sendStanza(
-      StanzaDetails(
-        Stanza.presence(
-          type: 'unsubscribed',
-          to: to,
+          to: to.toString(),
         ),
         awaitable: false,
       ),

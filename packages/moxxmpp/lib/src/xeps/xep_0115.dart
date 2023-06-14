@@ -4,10 +4,13 @@ import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
+import 'package:moxxmpp/src/managers/data.dart';
+import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/presence.dart';
 import 'package:moxxmpp/src/rfcs/rfc_4790.dart';
+import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/list.dart';
 import 'package:moxxmpp/src/xeps/xep_0004.dart';
@@ -105,7 +108,20 @@ class EntityCapabilitiesManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   @override
-  List<String> getDiscoFeatures() => [capsXmlns];
+  List<String> getDiscoFeatures() => [
+        capsXmlns,
+      ];
+
+  @override
+  List<StanzaHandler> getIncomingStanzaHandlers() => [
+        StanzaHandler(
+          stanzaTag: 'presence',
+          tagName: 'c',
+          tagXmlns: capsXmlns,
+          callback: onPresence,
+          priority: PresenceManager.presenceHandlerPriority + 1,
+        ),
+      ];
 
   /// Computes, if required, the capability hash of the data provided by
   /// the DiscoManager.
@@ -159,33 +175,38 @@ class EntityCapabilitiesManager extends XmppManagerBase {
   }
 
   @visibleForTesting
-  Future<void> onPresence(PresenceReceivedEvent event) async {
-    final c = event.presence.firstTag('c', xmlns: capsXmlns);
-    if (c == null) {
-      return;
+  Future<StanzaHandlerData> onPresence(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
+    if (stanza.from == null) {
+      return state;
     }
+
+    final from = JID.fromString(stanza.from!);
+    final c = stanza.firstTag('c', xmlns: capsXmlns)!;
 
     final hashFunctionName = c.attributes['hash'] as String?;
     final capabilityNode = c.attributes['node'] as String?;
     final ver = c.attributes['ver'] as String?;
     if (hashFunctionName == null || capabilityNode == null || ver == null) {
-      return;
+      return state;
     }
 
     // Check if we know of the hash
     final isCached =
         await _cacheLock.synchronized(() => _capHashCache.containsKey(ver));
     if (isCached) {
-      return;
+      return state;
     }
 
     final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
     final discoRequest = await dm.discoInfoQuery(
-      event.jid,
+      from,
       node: capabilityNode,
     );
     if (discoRequest.isType<DiscoError>()) {
-      return;
+      return state;
     }
     final discoInfo = discoRequest.get<DiscoInfo>();
 
@@ -194,13 +215,13 @@ class EntityCapabilitiesManager extends XmppManagerBase {
       await dm.addCachedDiscoInfo(
         MapEntry<DiscoCacheKey, DiscoInfo>(
           DiscoCacheKey(
-            event.jid,
+            from,
             null,
           ),
           discoInfo,
         ),
       );
-      return;
+      return state;
     }
 
     // Validate the disco#info result according to XEP-0115 § 5.4
@@ -214,7 +235,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
         logger.warning(
           'Malformed disco#info response: More than one equal identity',
         );
-        return;
+        return state;
       }
     }
 
@@ -225,7 +246,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
         logger.warning(
           'Malformed disco#info response: More than one equal feature',
         );
-        return;
+        return state;
       }
     }
 
@@ -253,7 +274,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
           logger.warning(
             'Malformed disco#info response: Extended Info FORM_TYPE contains more than one value(s) of different value.',
           );
-          return;
+          return state;
         }
       }
 
@@ -268,7 +289,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
         logger.warning(
           'Malformed disco#info response: More than one Extended Disco Info forms with the same FORM_TYPE value',
         );
-        return;
+        return state;
       }
 
       // Check if the field type is hidden
@@ -297,14 +318,16 @@ class EntityCapabilitiesManager extends XmppManagerBase {
 
     if (computedCapabilityHash == ver) {
       await _cacheLock.synchronized(() {
-        _jidToCapHashCache[event.jid.toString()] = ver;
+        _jidToCapHashCache[from.toString()] = ver;
         _capHashCache[ver] = newDiscoInfo;
       });
     } else {
       logger.warning(
-        'Capability hash mismatch from ${event.jid}: Received "$ver", expected "$computedCapabilityHash".',
+        'Capability hash mismatch from $from: Received "$ver", expected "$computedCapabilityHash".',
       );
     }
+
+    return state;
   }
 
   @visibleForTesting
@@ -315,9 +338,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
 
   @override
   Future<void> onXmppEvent(XmppEvent event) async {
-    if (event is PresenceReceivedEvent) {
-      unawaited(onPresence(event));
-    } else if (event is StreamNegotiationsDoneEvent) {
+    if (event is StreamNegotiationsDoneEvent) {
       // Clear the JID to cap. hash mapping.
       await _cacheLock.synchronized(_jidToCapHashCache.clear);
     }

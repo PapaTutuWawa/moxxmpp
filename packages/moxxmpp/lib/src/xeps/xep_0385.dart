@@ -7,7 +7,7 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
 
-class StatelessMediaSharingData {
+class StatelessMediaSharingData implements StanzaHandlerExtension {
   const StatelessMediaSharingData({
     required this.mediaType,
     required this.size,
@@ -70,7 +70,9 @@ StatelessMediaSharingData parseSIMSElement(XMLNode node) {
   );
 }
 
+@Deprecated('Not maintained')
 class SIMSManager extends XmppManagerBase {
+  @Deprecated('Not maintained')
   SIMSManager() : super(simsManager);
 
   @override
@@ -98,7 +100,7 @@ class SIMSManager extends XmppManagerBase {
     final references = message.findTags('reference', xmlns: referenceXmlns);
     for (final ref in references) {
       final sims = ref.firstTag('media-sharing', xmlns: simsXmlns);
-      if (sims != null) return state.copyWith(sims: parseSIMSElement(sims));
+      if (sims != null) return state..extensions.set(parseSIMSElement(sims));
     }
 
     return state;

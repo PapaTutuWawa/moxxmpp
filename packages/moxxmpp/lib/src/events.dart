@@ -4,18 +4,11 @@ import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/roster/roster.dart';
 import 'package:moxxmpp/src/stanza.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
-import 'package:moxxmpp/src/xeps/xep_0066.dart';
-import 'package:moxxmpp/src/xeps/xep_0085.dart';
-import 'package:moxxmpp/src/xeps/xep_0334.dart';
-import 'package:moxxmpp/src/xeps/xep_0359.dart';
-import 'package:moxxmpp/src/xeps/xep_0385.dart';
-import 'package:moxxmpp/src/xeps/xep_0424.dart';
-import 'package:moxxmpp/src/xeps/xep_0444.dart';
-import 'package:moxxmpp/src/xeps/xep_0446.dart';
-import 'package:moxxmpp/src/xeps/xep_0447.dart';
-import 'package:moxxmpp/src/xeps/xep_0461.dart';
+import 'package:moxxmpp/src/xeps/xep_0084.dart';
+import 'package:moxxmpp/src/xeps/xep_0333.dart';
 
 abstract class XmppEvent {}
 
@@ -74,58 +67,42 @@ class RosterUpdatedEvent extends XmppEvent {
 
 /// Triggered when a message is received
 class MessageEvent extends XmppEvent {
-  MessageEvent({
-    required this.body,
-    required this.fromJid,
-    required this.toJid,
-    required this.sid,
-    required this.stanzaId,
-    required this.isCarbon,
-    required this.deliveryReceiptRequested,
-    required this.isMarkable,
-    required this.encrypted,
-    required this.other,
-    this.error,
+  MessageEvent(
+    this.from,
+    this.to,
+    this.id,
+    this.encrypted,
+    this.extensions, {
     this.type,
-    this.oob,
-    this.sfs,
-    this.sims,
-    this.reply,
-    this.chatState,
-    this.fun,
-    this.funReplacement,
-    this.funCancellation,
-    this.messageRetraction,
-    this.messageCorrectionId,
-    this.messageReactions,
-    this.messageProcessingHints,
-    this.stickerPackId,
+    this.error,
+    this.encryptionError,
   });
-  final StanzaError? error;
-  final String body;
-  final JID fromJid;
-  final JID toJid;
-  final String sid;
+
+  /// The from attribute of the message.
+  final JID from;
+
+  /// The to attribute of the message.
+  final JID to;
+
+  /// The id attribute of the message.
+  final String id;
+
+  /// The type attribute of the message.
   final String? type;
-  final StableStanzaId stanzaId;
-  final bool isCarbon;
-  final bool deliveryReceiptRequested;
-  final bool isMarkable;
-  final OOBData? oob;
-  final StatelessFileSharingData? sfs;
-  final StatelessMediaSharingData? sims;
-  final ReplyData? reply;
-  final ChatState? chatState;
-  final FileMetadataData? fun;
-  final String? funReplacement;
-  final String? funCancellation;
+
+  final StanzaError? error;
+
+  /// Flag indicating whether the message was encrypted.
   final bool encrypted;
-  final MessageRetractionData? messageRetraction;
-  final String? messageCorrectionId;
-  final MessageReactions? messageReactions;
-  final List<MessageProcessingHint>? messageProcessingHints;
-  final String? stickerPackId;
-  final Map<String, dynamic> other;
+
+  /// The error in case an encryption error occurred.
+  final Object? encryptionError;
+
+  /// Data added by other handlers.
+  final TypedMap<StanzaHandlerExtension> extensions;
+
+  /// Shorthand for extensions.get<T>().
+  T? get<T>() => extensions.get<T>();
 }
 
 /// Triggered when a client responds to our delivery receipt request
@@ -136,13 +113,19 @@ class DeliveryReceiptReceivedEvent extends XmppEvent {
 }
 
 class ChatMarkerEvent extends XmppEvent {
-  ChatMarkerEvent({
-    required this.type,
-    required this.from,
-    required this.id,
-  });
+  ChatMarkerEvent(
+    this.from,
+    this.type,
+    this.id,
+  );
+
+  /// The entity that sent the chat marker.
   final JID from;
-  final String type;
+
+  /// The type of chat marker that was sent.
+  final ChatMarker type;
+
+  /// The id of the message that the marker applies to.
   final String id;
 }
 
@@ -166,13 +149,6 @@ class ResourceBoundEvent extends XmppEvent {
   final String resource;
 }
 
-/// Triggered when we receive presence
-class PresenceReceivedEvent extends XmppEvent {
-  PresenceReceivedEvent(this.jid, this.presence);
-  final JID jid;
-  final Stanza presence;
-}
-
 /// Triggered when we are starting an connection attempt
 class ConnectingEvent extends XmppEvent {}
 
@@ -190,15 +166,35 @@ class SubscriptionRequestReceivedEvent extends XmppEvent {
   final JID from;
 }
 
-/// Triggered when we receive a new or updated avatar
-class AvatarUpdatedEvent extends XmppEvent {
-  AvatarUpdatedEvent({
-    required this.jid,
-    required this.base64,
-    required this.hash,
-  });
-  final String jid;
+/// Triggered when we receive a new or updated avatar via XEP-0084
+class UserAvatarUpdatedEvent extends XmppEvent {
+  UserAvatarUpdatedEvent(
+    this.jid,
+    this.metadata,
+  );
+
+  /// The JID of the user updating their avatar.
+  final JID jid;
+
+  /// The metadata of the avatar.
+  final List<UserAvatarMetadata> metadata;
+}
+
+/// Triggered when we receive a new or updated avatar via XEP-0054
+class VCardAvatarUpdatedEvent extends XmppEvent {
+  VCardAvatarUpdatedEvent(
+    this.jid,
+    this.base64,
+    this.hash,
+  );
+
+  /// The JID of the entity that updated their avatar.
+  final JID jid;
+
+  /// The base64-encoded avatar data.
   final String base64;
+
+  /// The SHA-1 hash of the avatar.
   final String hash;
 }
 
