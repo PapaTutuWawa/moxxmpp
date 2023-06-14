@@ -2,42 +2,42 @@ import 'package:moxxmpp/moxxmpp.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 
+enum ConversationType { chat, groupchat, groupchatprivate }
+
+class ConversationTypeData extends StanzaHandlerExtension {
+  ConversationTypeData(this.conversationType);
+  final ConversationType conversationType;
+}
+
 class MUCManager extends XmppManagerBase {
   MUCManager() : super(mucManager);
 
   @override
   Future<bool> isSupported() async => true;
 
-  Future<Result<RoomInformation, MUCError>> queryRoomInformation({
-    required JID roomJID,
-  }) async {
-    final attrs = getAttributes();
+  Future<Result<RoomInformation, MUCError>> queryRoomInformation(
+    JID roomJID,
+  ) async {
     try {
-      final result = await attrs.sendStanza(
-        StanzaDetails(
-          Stanza.iq(
-            type: 'get',
-            to: roomJID.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'query',
-                xmlns: discoInfoXmlns,
-              )
-            ],
-          ),
-        ),
+      final attrs = getAttributes();
+      final result = await attrs
+          .getManagerById<DiscoManager>(discoManager)
+          ?.discoInfoQuery(roomJID);
+      if (result!.isType<DiscoError>()) {
+        return Result(InvalidStanzaFormat());
+      }
+      final roomInformation = RoomInformation.fromDiscoInfo(
+        discoInfo: result.get(),
       );
-      final roomInformation =
-          RoomInformation.fromStanza(roomJID: roomJID, stanza: result!);
       return Result(roomInformation);
     } catch (e) {
-      return Result(InvalidStanzaFormat());
+      return Result(InvalidDiscoInfoResponse);
     }
   }
 
-  Future<Result<bool, MUCError>> joinRoom({
-    required JID roomJIDWithNickname,
-  }) async {
+  Future<Result<bool, MUCError>> joinRoom(
+    JID roomJIDWithNickname,
+  ) async {
     if (roomJIDWithNickname.resource.isEmpty) {
       return Result(NoNicknameSpecified());
     }
@@ -62,9 +62,9 @@ class MUCManager extends XmppManagerBase {
     }
   }
 
-  Future<Result<bool, MUCError>> leaveRoom({
-    required JID roomJIDWithNickname,
-  }) async {
+  Future<Result<bool, MUCError>> leaveRoom(
+    JID roomJIDWithNickname,
+  ) async {
     if (roomJIDWithNickname.resource.isEmpty) {
       return Result(NoNicknameSpecified());
     }

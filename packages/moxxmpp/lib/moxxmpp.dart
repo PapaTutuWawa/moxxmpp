@@ -48,6 +48,8 @@ export 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 export 'package:moxxmpp/src/xeps/xep_0030/helpers.dart';
 export 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 export 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
+export 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
+export 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 export 'package:moxxmpp/src/xeps/xep_0045/xep_0045.dart';
 export 'package:moxxmpp/src/xeps/xep_0054.dart';
 export 'package:moxxmpp/src/xeps/xep_0060/errors.dart';

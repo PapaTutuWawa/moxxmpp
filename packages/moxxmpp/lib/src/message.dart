@@ -1,89 +1,72 @@
-import 'package:moxlib/moxlib.dart';
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
-import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
+import 'package:moxxmpp/src/xeps/xep_0045/xep_0045.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
-import 'package:moxxmpp/src/xeps/xep_0085.dart';
-import 'package:moxxmpp/src/xeps/xep_0184.dart';
-import 'package:moxxmpp/src/xeps/xep_0308.dart';
-import 'package:moxxmpp/src/xeps/xep_0333.dart';
-import 'package:moxxmpp/src/xeps/xep_0334.dart';
-import 'package:moxxmpp/src/xeps/xep_0359.dart';
-import 'package:moxxmpp/src/xeps/xep_0424.dart';
-import 'package:moxxmpp/src/xeps/xep_0444.dart';
-import 'package:moxxmpp/src/xeps/xep_0446.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
-import 'package:moxxmpp/src/xeps/xep_0448.dart';
+import 'package:moxxmpp/src/xeps/xep_0449.dart';
 import 'package:moxxmpp/src/xeps/xep_0461.dart';
 
-/// Data used to build a message stanza.
-///
-/// [setOOBFallbackBody] indicates, when using SFS, whether a OOB fallback should be
-/// added. This is recommended when sharing files but may cause issues when the message
-/// stanza should include a SFS element without any fallbacks.
-class MessageDetails {
-  const MessageDetails({
-    required this.to,
-    this.body,
-    this.requestDeliveryReceipt = false,
-    this.requestChatMarkers = true,
-    this.id,
-    this.originId,
-    this.quoteBody,
-    this.quoteId,
-    this.quoteFrom,
-    this.chatState,
-    this.sfs,
-    this.fun,
-    this.funReplacement,
-    this.funCancellation,
-    this.shouldEncrypt = false,
-    this.messageRetraction,
-    this.lastMessageCorrectionId,
-    this.messageReactions,
-    this.messageProcessingHints,
-    this.stickerPackId,
-    this.setOOBFallbackBody = true,
-  });
-  final String to;
+/// A callback that is called whenever a message is sent using
+/// [MessageManager.sendMessage]. The input the typed map that is passed to
+/// sendMessage.
+typedef MessageSendingCallback = List<XMLNode> Function(
+  TypedMap<StanzaHandlerExtension>,
+);
+
+/// The raw content of the <body /> element.
+class MessageBodyData implements StanzaHandlerExtension {
+  const MessageBodyData(this.body);
+
+  /// The content of the <body /> element.
   final String? body;
-  final bool requestDeliveryReceipt;
-  final bool requestChatMarkers;
-  final String? id;
-  final String? originId;
-  final String? quoteBody;
-  final String? quoteId;
-  final String? quoteFrom;
-  final ChatState? chatState;
-  final StatelessFileSharingData? sfs;
-  final FileMetadataData? fun;
-  final String? funReplacement;
-  final String? funCancellation;
-  final bool shouldEncrypt;
-  final MessageRetractionData? messageRetraction;
-  final String? lastMessageCorrectionId;
-  final MessageReactions? messageReactions;
-  final String? stickerPackId;
-  final List<MessageProcessingHint>? messageProcessingHints;
-  final bool setOOBFallbackBody;
+
+  XMLNode toXML() {
+    return XMLNode(
+      tag: 'body',
+      text: body,
+    );
+  }
+}
+
+/// The id attribute of the message stanza.
+class MessageIdData implements StanzaHandlerExtension {
+  const MessageIdData(this.id);
+
+  /// The id attribute of the stanza.
+  final String id;
 }
 
 class MessageManager extends XmppManagerBase {
   MessageManager() : super(messageManager);
+
+  /// The priority of the message handler. If a handler should run before this one,
+  /// which emits the [MessageEvent] event and terminates processing, make sure it
+  /// has a priority greater than [messageHandlerPriority].
+  static int messageHandlerPriority = -100;
+
+  /// A list of callbacks that are called when a message is sent in order to add
+  /// appropriate child elements.
+  final List<MessageSendingCallback> _messageSendingCallbacks =
+      List<MessageSendingCallback>.empty(growable: true);
+
+  void registerMessageSendingCallback(MessageSendingCallback callback) {
+    _messageSendingCallbacks.add(callback);
+  }
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
         StanzaHandler(
           stanzaTag: 'message',
           callback: _onMessage,
-          priority: -100,
+          priority: messageHandlerPriority,
         )
       ];
 
@@ -94,237 +77,72 @@ class MessageManager extends XmppManagerBase {
     Stanza _,
     StanzaHandlerData state,
   ) async {
-    final message = state.stanza;
-    final body = message.firstTag('body');
-
-    final hints = List<MessageProcessingHint>.empty(growable: true);
-    for (final element
-        in message.findTagsByXmlns(messageProcessingHintsXmlns)) {
-      hints.add(messageProcessingHintFromXml(element));
-    }
-
     getAttributes().sendEvent(
       MessageEvent(
-        body: body != null ? body.innerText() : '',
-        fromJid: JID.fromString(message.attributes['from']! as String),
-        toJid: JID.fromString(message.attributes['to']! as String),
-        sid: message.attributes['id']! as String,
-        stanzaId: state.stableId ?? const StableStanzaId(),
-        isCarbon: state.isCarbon,
-        deliveryReceiptRequested: state.deliveryReceiptRequested,
-        isMarkable: state.isMarkable,
-        type: message.attributes['type'] as String?,
-        oob: state.oob,
-        sfs: state.sfs,
-        sims: state.sims,
-        reply: state.reply,
-        chatState: state.chatState,
-        fun: state.fun,
-        funReplacement: state.funReplacement,
-        funCancellation: state.funCancellation,
-        encrypted: state.encrypted,
-        messageRetraction: state.messageRetraction,
-        messageCorrectionId: state.lastMessageCorrectionSid,
-        messageReactions: state.messageReactions,
-        messageProcessingHints: hints.isEmpty ? null : hints,
-        stickerPackId: state.stickerPackId,
-        other: state.other,
-        error: StanzaError.fromStanza(message),
+        JID.fromString(state.stanza.attributes['from']! as String),
+        JID.fromString(state.stanza.attributes['to']! as String),
+        state.stanza.attributes['id']! as String,
+        state.encrypted,
+        state.extensions,
+        type: state.stanza.attributes['type'] as String?,
+        error: StanzaError.fromStanza(state.stanza),
+        encryptionError: state.encryptionError,
       ),
     );
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 
-  /// Send a message to to with the content body. If deliveryRequest is true, then
-  /// the message will also request a delivery receipt from the receiver.
-  /// If id is non-null, then it will be the id of the message stanza.
-  /// element to this id. If originId is non-null, then it will create an "origin-id"
-  /// child in the message stanza and set its id to originId.
-  void sendMessage(MessageDetails details) {
-    assert(
-      implies(
-        details.quoteBody != null,
-        details.quoteFrom != null && details.quoteId != null,
-      ),
-      'When quoting a message, then quoteFrom and quoteId must also be non-null',
-    );
-
-    final stanza = Stanza.message(
-      to: details.to,
-      type: 'chat',
-      id: details.id,
-      children: [],
-    );
-
-    if (details.quoteBody != null) {
-      final quote = QuoteData.fromBodies(details.quoteBody!, details.body!);
-
-      stanza
-        ..addChild(
-          XMLNode(tag: 'body', text: quote.body),
-        )
-        ..addChild(
-          XMLNode.xmlns(
-            tag: 'reply',
-            xmlns: replyXmlns,
-            attributes: {'to': details.quoteFrom!, 'id': details.quoteId!},
-          ),
-        )
-        ..addChild(
-          XMLNode.xmlns(
-            tag: 'fallback',
-            xmlns: fallbackXmlns,
-            attributes: {'for': replyXmlns},
-            children: [
-              XMLNode(
-                tag: 'body',
-                attributes: <String, String>{
-                  'start': '0',
-                  'end': '${quote.fallbackLength}',
-                },
-              )
-            ],
-          ),
-        );
-    } else {
-      var body = details.body;
-      if (details.sfs != null && details.setOOBFallbackBody) {
-        // TODO(Unknown): Maybe find a better solution
-        final firstSource = details.sfs!.sources.first;
-        if (firstSource is StatelessFileSharingUrlSource) {
-          body = firstSource.url;
-        } else if (firstSource is StatelessFileSharingEncryptedSource) {
-          body = firstSource.source.url;
-        }
-      } else if (details.messageRetraction?.fallback != null) {
-        body = details.messageRetraction!.fallback;
-      }
-
-      if (body != null) {
-        stanza.addChild(
-          XMLNode(tag: 'body', text: body),
-        );
-      }
-    }
-
-    if (details.requestDeliveryReceipt) {
-      stanza.addChild(makeMessageDeliveryRequest());
-    }
-    if (details.requestChatMarkers) {
-      stanza.addChild(makeChatMarkerMarkable());
-    }
-    if (details.originId != null) {
-      stanza.addChild(makeOriginIdElement(details.originId!));
-    }
-
-    if (details.sfs != null) {
-      stanza.addChild(details.sfs!.toXML());
-
-      final source = details.sfs!.sources.first;
-      if (source is StatelessFileSharingUrlSource &&
-          details.setOOBFallbackBody) {
-        // SFS recommends OOB as a fallback
-        stanza.addChild(constructOOBNode(OOBData(url: source.url)));
-      }
-    }
-
-    if (details.chatState != null) {
-      stanza.addChild(
-        // TODO(Unknown): Move this into xep_0085.dart
-        XMLNode.xmlns(
-          tag: chatStateToString(details.chatState!),
-          xmlns: chatStateXmlns,
-        ),
-      );
-    }
-
-    if (details.fun != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'file-upload',
-          xmlns: fileUploadNotificationXmlns,
-          children: [
-            details.fun!.toXML(),
-          ],
-        ),
-      );
-    }
-
-    if (details.funReplacement != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'replaces',
-          xmlns: fileUploadNotificationXmlns,
-          attributes: <String, String>{
-            'id': details.funReplacement!,
-          },
-        ),
-      );
-    }
-
-    if (details.messageRetraction != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'apply-to',
-          xmlns: fasteningXmlns,
-          attributes: <String, String>{
-            'id': details.messageRetraction!.id,
-          },
-          children: [
-            XMLNode.xmlns(
-              tag: 'retract',
-              xmlns: messageRetractionXmlns,
-            ),
-          ],
-        ),
-      );
-
-      if (details.messageRetraction!.fallback != null) {
-        stanza.addChild(
-          XMLNode.xmlns(
-            tag: 'fallback',
-            xmlns: fallbackIndicationXmlns,
-          ),
-        );
-      }
-    }
-
-    if (details.lastMessageCorrectionId != null) {
-      stanza.addChild(
-        makeLastMessageCorrectionEdit(
-          details.lastMessageCorrectionId!,
-        ),
-      );
-    }
-
-    if (details.messageReactions != null) {
-      stanza.addChild(details.messageReactions!.toXml());
-    }
-
-    if (details.messageProcessingHints != null) {
-      for (final hint in details.messageProcessingHints!) {
-        stanza.addChild(hint.toXml());
-      }
-    }
-
-    if (details.stickerPackId != null) {
-      stanza.addChild(
-        XMLNode.xmlns(
-          tag: 'sticker',
-          xmlns: stickersXmlns,
-          attributes: {
-            'pack': details.stickerPackId!,
-          },
-        ),
-      );
-    }
-
-    getAttributes().sendStanza(
+  /// Send an unawaitable message to [to]. [extensions] is a typed map that contains
+  /// data for building the message.
+  Future<void> sendMessage(
+    JID to,
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) async {
+    await getAttributes().sendStanza(
       StanzaDetails(
-        stanza,
+        Stanza.message(
+          to: to.toString(),
+          id: extensions.get<MessageIdData>()?.id,
+          type: extensions.get<ConversationTypeData>()?.conversationType ==
+                  ConversationType.groupchat
+              ? 'groupchat'
+              : 'chat',
+          children: _messageSendingCallbacks
+              .map((c) => c(extensions))
+              .flattened
+              .toList(),
+        ),
         awaitable: false,
       ),
     );
+  }
+
+  List<XMLNode> _messageSendingCallback(
+    TypedMap<StanzaHandlerExtension> extensions,
+  ) {
+    if (extensions.get<ReplyData>() != null) {
+      return [];
+    }
+    if (extensions.get<StickersData>() != null) {
+      return [];
+    }
+    if (extensions.get<StatelessFileSharingData>() != null) {
+      return [];
+    }
+    if (extensions.get<OOBData>() != null) {
+      return [];
+    }
+
+    final data = extensions.get<MessageBodyData>();
+    return data != null ? [data.toXML()] : [];
+  }
+
+  @override
+  Future<void> postRegisterCallback() async {
+    await super.postRegisterCallback();
+
+    // Register the sending callback
+    registerMessageSendingCallback(_messageSendingCallback);
   }
 }
