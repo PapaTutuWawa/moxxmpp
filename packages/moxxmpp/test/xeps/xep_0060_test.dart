@@ -1,3 +1,4 @@
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
 

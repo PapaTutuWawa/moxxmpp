@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/connection.dart';
@@ -8,7 +9,6 @@ import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 
 /// The state a negotiator is currently in
 enum NegotiatorState {
@@ -117,8 +117,7 @@ abstract class XmppFeatureNegotiatorBase {
   /// Returns true if a feature in [features], which are the children of the
   /// <stream:features /> nonza, can be negotiated. Otherwise, returns false.
   bool matchesFeature(List<XMLNode> features) {
-    return firstWhereOrNull(
-          features,
+    return features.firstWhereOrNull(
           (XMLNode feature) => feature.attributes['xmlns'] == negotiatingXmlns,
         ) !=
         null;

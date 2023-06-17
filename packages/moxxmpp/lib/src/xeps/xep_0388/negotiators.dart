@@ -1,7 +1,7 @@
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/rfcs/rfc_6120/sasl/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 
 /// A special type of [XmppFeatureNegotiatorBase] that is aware of SASL2.
 abstract class Sasl2FeatureNegotiator extends XmppFeatureNegotiatorBase {

@@ -25,7 +25,6 @@ import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';

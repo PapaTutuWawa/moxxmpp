@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -10,7 +11,6 @@ import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 
 /// A function that will be called when presence, outside of subscription request
 /// management, will be sent. Useful for managers that want to add [XMLNode]s to said

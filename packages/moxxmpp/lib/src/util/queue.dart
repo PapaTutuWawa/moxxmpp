@@ -33,7 +33,7 @@ class AsyncStanzaQueue {
     this._canSendCallback,
   );
 
-  /// The lock for accessing [AsyncStanzaQueue._lock] and [AsyncStanzaQueue._running].
+  /// The lock for accessing [AsyncStanzaQueue._queue].
   final Lock _lock = Lock();
 
   /// The actual job queue.
@@ -43,9 +43,6 @@ class AsyncStanzaQueue {
   final SendStanzaFunction _sendStanzaFunction;
 
   final CanSendCallback _canSendCallback;
-
-  /// Indicates whether we are currently executing a job.
-  bool _running = false;
 
   @visibleForTesting
   Queue<StanzaQueueEntry> get queue => _queue;
@@ -75,8 +72,6 @@ class AsyncStanzaQueue {
         unawaited(
           _runJob(_queue.removeFirst()),
         );
-      } else {
-        _running = false;
       }
     });
   }
@@ -86,7 +81,6 @@ class AsyncStanzaQueue {
 
     await _lock.synchronized(() {
       if (_queue.isNotEmpty) {
-        _running = true;
         unawaited(
           _runJob(_queue.removeFirst()),
         );

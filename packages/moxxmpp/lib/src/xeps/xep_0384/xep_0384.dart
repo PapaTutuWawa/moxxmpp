@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:meta/meta.dart';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -10,7 +11,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
@@ -205,15 +205,18 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   ) {
     final keyElements = <String, List<XMLNode>>{};
     for (final keys in result.encryptedKeys.entries) {
-      keyElements[keys.key] = keys.value.map((ek) => XMLNode(
-        tag: 'key',
-        attributes: {
-          'rid': ek.rid.toString(),
-          if (ek.kex)
-            'kex': 'true',
-        },
-        text: ek.value,
-      ),).toList();
+      keyElements[keys.key] = keys.value
+          .map(
+            (ek) => XMLNode(
+              tag: 'key',
+              attributes: {
+                'rid': ek.rid.toString(),
+                if (ek.kex) 'kex': 'true',
+              },
+              text: ek.value,
+            ),
+          )
+          .toList();
     }
 
     final keysElements = keyElements.entries.map((entry) {
@@ -235,7 +238,6 @@ abstract class BaseOmemoManager extends XmppManagerBase {
             tag: 'payload',
             text: base64Encode(result.ciphertext!),
           ),
-
         XMLNode(
           tag: 'header',
           attributes: <String, String>{
@@ -364,8 +366,8 @@ abstract class BaseOmemoManager extends XmppManagerBase {
         ..cancel = true
         // If we have no device list for toJid, then the contact most likely does not
         // support OMEMO:2
-        ..cancelReason = result.deviceEncryptionErrors[toJid.toString()]!.first.error
-                is omemo.NoKeyMaterialAvailableError
+        ..cancelReason = result.deviceEncryptionErrors[toJid.toString()]!.first
+                .error is omemo.NoKeyMaterialAvailableError
             ? OmemoNotSupportedForContactException()
             : UnknownOmemoError()
         // TODO
@@ -578,7 +580,8 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   /// nodes.
   ///
   /// On success, returns true. On failure, returns an OmemoError.
-  Future<Result<OmemoError, bool>> publishBundle(omemo.OmemoBundle bundle) async {
+  Future<Result<OmemoError, bool>> publishBundle(
+      omemo.OmemoBundle bundle,) async {
     final attrs = getAttributes();
     final pm = attrs.getManagerById<PubSubManager>(pubsubManager)!;
     final bareJid = attrs.getFullJID().toBare();
@@ -651,7 +654,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   /// On failure, returns an OmemoError.
   Future<Result<OmemoError, bool>> supportsOmemo(JID jid) async {
     final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
-    final items = await dm.discoItemsQuery(jid.toBare(), shouldEncrypt: false);
+    final items = await dm.discoItemsQuery(jid.toBare());
 
     if (items.isType<DiscoError>()) return Result(UnknownOmemoError());
 

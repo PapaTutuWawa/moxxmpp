@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:moxlib/moxlib.dart';
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0300.dart';
@@ -54,8 +54,7 @@ class StatelessFileSharingEncryptedSource extends StatelessFileSharingSource {
     final sources = element.firstTag('sources', xmlns: sfsXmlns)!.children;
 
     // Find the first URL source
-    final source = firstWhereOrNull(
-      sources,
+    final source = sources.firstWhereOrNull(
       (XMLNode child) =>
           child.tag == 'url-data' && child.attributes['xmlns'] == urlDataXmlns,
     )!;

@@ -1,4 +1,4 @@
-import 'package:moxlib/moxlib.dart';
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
@@ -100,10 +100,10 @@ class StanzaHandler extends Handler {
         matches &= firstTag?.xmlns == tagXmlns;
       }
     } else if (tagXmlns != null) {
-      matches &= listContains(
-        node.children,
-        (XMLNode node_) => node_.attributes['xmlns'] == tagXmlns,
-      );
+      matches &= node.children.firstWhereOrNull(
+            (XMLNode node_) => node_.attributes['xmlns'] == tagXmlns,
+          ) !=
+          null;
     }
 
     return matches;

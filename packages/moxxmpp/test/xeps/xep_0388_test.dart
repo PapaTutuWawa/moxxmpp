@@ -1,6 +1,8 @@
 import 'package:collection/collection.dart';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:test/test.dart';
+
 import '../helpers/logging.dart';
 import '../helpers/xmpp.dart';
 
