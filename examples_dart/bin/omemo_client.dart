@@ -6,24 +6,6 @@ import 'package:moxxmpp/moxxmpp.dart';
 import 'package:moxxmpp_socket_tcp/moxxmpp_socket_tcp.dart';
 import 'package:omemo_dart/omemo_dart.dart' as omemo;
 
-class TestingOmemoManager extends BaseOmemoManager {
-  TestingOmemoManager(this._encryptToJid);
-
-  final JID _encryptToJid;
-
-  late omemo.OmemoManager manager;
-
-  @override
-  Future<omemo.OmemoManager> getOmemoManager() async {
-    return manager;
-  }
-
-  @override
-  Future<bool> shouldEncryptStanza(JID toJid, Stanza stanza) async {
-    return toJid.toBare() == _encryptToJid;
-  }
-}
-
 class TestingTCPSocketWrapper extends TCPSocketWrapper {
   @override
   bool onBadCertificate(dynamic certificate, String domain) {
@@ -66,17 +48,21 @@ void main(List<String> args) async {
   );
 
   // Generate OMEMO data
-  final moxxmppOmemo = TestingOmemoManager(to);
-  final omemoManager = omemo.OmemoManager(
+  omemo.OmemoManager? oom;
+  final moxxmppOmemo = OmemoManager(
+    () async => oom!,
+    (toJid, _) async => toJid == to,
+  );
+  oom = omemo.OmemoManager(
     await omemo.OmemoDevice.generateNewDevice(jid.toString(), opkAmount: 5),
     omemo.BlindTrustBeforeVerificationTrustManager(),
     moxxmppOmemo.sendEmptyMessageImpl,
     moxxmppOmemo.fetchDeviceList,
     moxxmppOmemo.fetchDeviceBundle,
     moxxmppOmemo.subscribeToDeviceListImpl,
+    moxxmppOmemo.publishDeviceImpl,
   );
-  moxxmppOmemo.manager = omemoManager;
-  final deviceId = await omemoManager.getDeviceId();
+  final deviceId = await oom.getDeviceId();
   Logger.root.info('Our device id: $deviceId');
 
   // Register the managers and negotiators
@@ -85,7 +71,7 @@ void main(List<String> args) async {
     DiscoManager([]),
     PubSubManager(),
     MessageManager(),
-    moxxmppOmemo,
+    moxxmppOmemo, 
   ]);
   await connection.registerFeatureNegotiators([
     SaslPlainNegotiator(),
@@ -118,7 +104,7 @@ void main(List<String> args) async {
 
   // Publish our bundle
   Logger.root.info('Publishing bundle');
-  final device = await moxxmppOmemo.manager.getDevice();
+  final device = await oom.getDevice();
   final omemoResult = await moxxmppOmemo.publishBundle(await device.toBundle());
   if (!omemoResult.isType<bool>()) {
     Logger.root.severe('Failed to publish OMEMO bundle: ${omemoResult.get<OmemoError>()}');
