@@ -30,7 +30,6 @@ void main() {
 
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(queue.queue.length, 2);
-    expect(queue.isRunning, false);
   });
 
   test('Test sending', () async {
@@ -58,7 +57,6 @@ void main() {
 
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(queue.queue.length, 0);
-    expect(queue.isRunning, false);
   });
 
   test('Test partial sending and resuming', () async {
@@ -89,12 +87,10 @@ void main() {
 
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(queue.queue.length, 1);
-    expect(queue.isRunning, false);
 
     canRun = true;
     await queue.restart();
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(queue.queue.length, 0);
-    expect(queue.isRunning, false);
   });
 }

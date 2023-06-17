@@ -73,16 +73,23 @@ class MessageManager extends XmppManagerBase {
   Future<bool> isSupported() async => true;
 
   Future<StanzaHandlerData> _onMessage(
-    Stanza _,
+    Stanza stanza,
     StanzaHandlerData state,
   ) async {
+    final body = stanza.firstTag('body');
+    if (body != null) {
+      state.extensions.set(
+        MessageBodyData(body.innerText()),
+      );
+    }
+
     getAttributes().sendEvent(
       MessageEvent(
         JID.fromString(state.stanza.attributes['from']! as String),
         JID.fromString(state.stanza.attributes['to']! as String),
-        state.stanza.attributes['id']! as String,
         state.encrypted,
         state.extensions,
+        id: state.stanza.attributes['id'] as String?,
         type: state.stanza.attributes['type'] as String?,
         error: StanzaError.fromStanza(state.stanza),
         encryptionError: state.encryptionError,

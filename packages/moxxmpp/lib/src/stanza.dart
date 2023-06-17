@@ -7,6 +7,7 @@ class StanzaDetails {
     this.stanza, {
     this.addId = true,
     this.awaitable = true,
+    this.shouldEncrypt = true,
     this.encrypted = false,
     this.forceEncryption = false,
     this.bypassQueue = false,
@@ -22,9 +23,16 @@ class StanzaDetails {
   /// Track the stanza to allow awaiting its response.
   final bool awaitable;
 
+  final bool forceEncryption;
+
+  /// Flag indicating whether the stanza that is sent is already encrypted (true)
+  /// or not (false). This is only useful for E2EE implementations that have to
+  /// send heartbeats that must bypass themselves.
   final bool encrypted;
 
-  final bool forceEncryption;
+  /// Tells an E2EE implementation, if available, to encrypt the stanza (true) or
+  /// ignore the stanza (false).
+  final bool shouldEncrypt;
 
   /// Bypasses being put into the queue. Useful for sending stanzas that must go out
   /// now, where it's okay if it does not get sent.

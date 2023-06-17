@@ -202,6 +202,7 @@ class PubSubManager extends XmppManagerBase {
             ),
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
 
@@ -245,6 +246,7 @@ class PubSubManager extends XmppManagerBase {
             ),
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
 
@@ -329,6 +331,7 @@ class PubSubManager extends XmppManagerBase {
             )
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
     if (result.attributes['type'] != 'result') {
@@ -419,6 +422,7 @@ class PubSubManager extends XmppManagerBase {
             )
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
 
@@ -471,6 +475,7 @@ class PubSubManager extends XmppManagerBase {
             ),
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
 
@@ -521,6 +526,7 @@ class PubSubManager extends XmppManagerBase {
             ),
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
     if (form.attributes['type'] != 'result') {
@@ -550,6 +556,7 @@ class PubSubManager extends XmppManagerBase {
             ),
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
     if (submit.attributes['type'] != 'result') {
@@ -580,6 +587,7 @@ class PubSubManager extends XmppManagerBase {
             ),
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
 
@@ -624,6 +632,7 @@ class PubSubManager extends XmppManagerBase {
             ),
           ],
         ),
+        shouldEncrypt: false,
       ),
     ))!;
 

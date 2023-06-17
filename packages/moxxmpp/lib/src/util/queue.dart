@@ -50,16 +50,12 @@ class AsyncStanzaQueue {
   @visibleForTesting
   Queue<StanzaQueueEntry> get queue => _queue;
 
-  @visibleForTesting
-  bool get isRunning => _running;
-
   /// Adds a job [entry] to the queue.
   Future<void> enqueueStanza(StanzaQueueEntry entry) async {
     await _lock.synchronized(() async {
       _queue.add(entry);
 
-      if (!_running && _queue.isNotEmpty && await _canSendCallback()) {
-        _running = true;
+      if (_queue.isNotEmpty && await _canSendCallback()) {
         unawaited(
           _runJob(_queue.removeFirst()),
         );

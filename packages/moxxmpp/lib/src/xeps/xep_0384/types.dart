@@ -16,6 +16,6 @@ class OmemoEncryptionError {
   const OmemoEncryptionError(this.jids, this.devices);
 
   /// See omemo_dart's EncryptionResult for info on these fields.
-  final Map<String, OmemoException> jids;
-  final Map<RatchetMapKey, OmemoException> devices;
+  final Map<String, OmemoError> jids;
+  final Map<RatchetMapKey, OmemoError> devices;
 }

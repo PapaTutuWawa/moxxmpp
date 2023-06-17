@@ -255,7 +255,7 @@ class DiscoManager extends XmppManagerBase {
   Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
     JID entity, {
     String? node,
-    bool shouldEncrypt = true,
+    bool shouldEncrypt = false,
     bool shouldCache = true,
   }) async {
     DiscoInfo? info;
@@ -294,7 +294,7 @@ class DiscoManager extends XmppManagerBase {
     final stanza = (await getAttributes().sendStanza(
       StanzaDetails(
         buildDiscoInfoQueryStanza(entity, node),
-        encrypted: !shouldEncrypt,
+        shouldEncrypt: shouldEncrypt,
       ),
     ))!;
     final query = stanza.firstTag('query');
@@ -325,7 +325,7 @@ class DiscoManager extends XmppManagerBase {
   Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(
     JID entity, {
     String? node,
-    bool shouldEncrypt = true,
+    bool shouldEncrypt = false,
   }) async {
     final key = DiscoCacheKey(entity, node);
     final future = await _discoItemsTracker.waitFor(key);
