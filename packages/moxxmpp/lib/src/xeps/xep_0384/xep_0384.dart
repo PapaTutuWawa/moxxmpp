@@ -16,7 +16,6 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
-import 'package:moxxmpp/src/xeps/xep_0203.dart';
 import 'package:moxxmpp/src/xeps/xep_0280.dart';
 import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0380.dart';
@@ -370,10 +369,8 @@ abstract class BaseOmemoManager extends XmppManagerBase {
                 .error is omemo.NoKeyMaterialAvailableError
             ? OmemoNotSupportedForContactException()
             : UnknownOmemoError()
-        // TODO
-        ..encryptionError = const OmemoEncryptionError(
-          {},
-          {},
+        ..encryptionError = OmemoEncryptionError(
+          result.deviceEncryptionErrors,
         );
     }
 
@@ -415,37 +412,35 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     final encrypted = stanza.firstTag('encrypted', xmlns: omemoXmlns)!;
     final fromJid = JID.fromString(stanza.from!).toBare();
     final header = encrypted.firstTag('header')!;
-    final payloadElement = encrypted.firstTag('payload');
-    // TODO: Only extract our own keys by the JID attribute
+    final ourJid = getAttributes().getFullJID();
+    final ourJidString = ourJid.toBare().toString();
     final keys = List<omemo.EncryptedKey>.empty(growable: true);
     for (final keysElement in header.findTags('keys')) {
+      // We only care about our own JID
       final jid = keysElement.attributes['jid']! as String;
-      for (final key in keysElement.findTags('key')) {
-        keys.add(
-          omemo.EncryptedKey(
-            int.parse(key.attributes['rid']! as String),
-            key.innerText(),
-            key.attributes['kex'] == 'true',
-          ),
-        );
+      if (jid != ourJidString) {
+        continue;
       }
+
+      keys.addAll(
+        keysElement.findTags('key').map(
+              (key) => omemo.EncryptedKey(
+                int.parse(key.attributes['rid']! as String),
+                key.innerText(),
+                key.attributes['kex'] == 'true',
+              ),
+            ),
+      );
     }
 
-    final ourJid = getAttributes().getFullJID();
     final sid = int.parse(header.attributes['sid']! as String);
-
     final om = await getOmemoManager();
     final result = await om.onIncomingStanza(
       omemo.OmemoIncomingStanza(
         fromJid.toString(),
         sid,
-        state.extensions
-                .get<DelayedDeliveryData>()
-                ?.timestamp
-                .millisecondsSinceEpoch ??
-            DateTime.now().millisecondsSinceEpoch,
         keys,
-        payloadElement?.innerText(),
+        encrypted.firstTag('payload')?.innerText(),
         false,
       ),
     );
@@ -581,7 +576,8 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   ///
   /// On success, returns true. On failure, returns an OmemoError.
   Future<Result<OmemoError, bool>> publishBundle(
-      omemo.OmemoBundle bundle,) async {
+    omemo.OmemoBundle bundle,
+  ) async {
     final attrs = getAttributes();
     final pm = attrs.getManagerById<PubSubManager>(pubsubManager)!;
     final bareJid = attrs.getFullJID().toBare();
