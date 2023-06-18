@@ -1,10 +1,9 @@
-import 'package:args/args.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:cli_repl/cli_repl.dart';
+import 'package:example_dart/arguments.dart';
 import 'package:example_dart/socket.dart';
 import 'package:logging/logging.dart';
 import 'package:moxxmpp/moxxmpp.dart';
-import 'package:moxxmpp_socket_tcp/moxxmpp_socket_tcp.dart';
 import 'package:omemo_dart/omemo_dart.dart' as omemo;
 
 void main(List<String> args) async {
@@ -17,43 +16,22 @@ void main(List<String> args) async {
     );
   });
 
-  final parser = ArgParser()
-    ..addOption('jid')
-    ..addOption('password')
-    ..addOption('host')
-    ..addOption('port')
-    ..addOption('to')
-    ..addOption('xmpps-srv');
-  final options = parser.parse(args);
-
-  // Parse a potential xmpps-client SRV record here.
-  // Format: --xmpps-srv <priority>,<weight>,<target>,<port>
-  MoxSrvRecord? srvRecord;
-  if (options['xmpps-srv'] != null) {
-    final parts = (options['xmpps-srv']! as String).split(',');
-    srvRecord = MoxSrvRecord(
-      int.parse(parts[0]),
-      int.parse(parts[1]),
-      parts[2],
-      int.parse(parts[3]),
-    );
+  final parser = ArgumentParser()
+    ..parser.addOption('to', help: 'The JID to send messages to');
+  final options = parser.handleArguments(args);
+  if (options == null) {
+    return;
   }
 
   // Connect
-  final jid = JID.fromString(options['jid']! as String);
+  final jid = parser.jid;
   final to = JID.fromString(options['to']! as String).toBare();
-  final portString = options['port'] as String?;
   final connection = XmppConnection(
     TestingReconnectionPolicy(),
     AlwaysConnectedConnectivityManager(),
     ClientToServerNegotiator(),
-    ExampleTCPSocketWrapper(srvRecord),
-  )..connectionSettings = ConnectionSettings(
-      jid: jid,
-      password: options['password']! as String,
-      host: options['host'] as String?,
-      port: portString != null ? int.parse(portString) : null,
-    );
+    ExampleTCPSocketWrapper(parser.srvRecord),
+  )..connectionSettings = parser.connectionSettings;
 
   // Generate OMEMO data
   omemo.OmemoManager? oom;
