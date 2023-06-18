@@ -7,6 +7,7 @@ import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
+import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
@@ -27,16 +28,15 @@ class MUCManager extends XmppManagerBase {
   Future<Result<RoomInformation, MUCError>> queryRoomInformation(
     JID roomJID,
   ) async {
+    final result = await getAttributes()
+        .getManagerById<DiscoManager>(discoManager)!
+        .discoInfoQuery(roomJID);
+    if (result.isType<DiscoError>()) {
+      return Result(InvalidStanzaFormat());
+    }
     try {
-      final attrs = getAttributes();
-      final result = await attrs
-          .getManagerById<DiscoManager>(discoManager)
-          ?.discoInfoQuery(roomJID);
-      if (result!.isType<DiscoError>()) {
-        return Result(InvalidStanzaFormat());
-      }
       final roomInformation = RoomInformation.fromDiscoInfo(
-        discoInfo: result.get(),
+        discoInfo: result.get<DiscoInfo>(),
       );
       return Result(roomInformation);
     } catch (e) {
@@ -45,30 +45,26 @@ class MUCManager extends XmppManagerBase {
   }
 
   Future<Result<bool, MUCError>> joinRoom(
-    JID roomJIDWithNickname,
+    JID roomJID,
+    String nick,
   ) async {
-    if (roomJIDWithNickname.resource.isEmpty) {
+    if (nick.isEmpty) {
       return Result(NoNicknameSpecified());
     }
-    final attrs = getAttributes();
-    try {
-      await attrs.sendStanza(
-        StanzaDetails(
-          Stanza.presence(
-            to: roomJIDWithNickname.toString(),
-            children: [
-              XMLNode.xmlns(
-                tag: 'x',
-                xmlns: mucXmlns,
-              )
-            ],
-          ),
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          to: roomJID.withResource(nick).toString(),
+          children: [
+            XMLNode.xmlns(
+              tag: 'x',
+              xmlns: mucXmlns,
+            )
+          ],
         ),
-      );
-      return const Result(true);
-    } catch (e) {
-      return Result(InvalidStanzaFormat());
-    }
+      ),
+    );
+    return const Result(true);
   }
 
   Future<Result<bool, MUCError>> leaveRoom(
@@ -77,19 +73,14 @@ class MUCManager extends XmppManagerBase {
     if (roomJIDWithNickname.resource.isEmpty) {
       return Result(NoNicknameSpecified());
     }
-    final attrs = getAttributes();
-    try {
-      await attrs.sendStanza(
-        StanzaDetails(
-          Stanza.presence(
-            to: roomJIDWithNickname.toString(),
-            type: 'unavailable',
-          ),
+    await getAttributes().sendStanza(
+      StanzaDetails(
+        Stanza.presence(
+          to: roomJIDWithNickname.toString(),
+          type: 'unavailable',
         ),
-      );
-      return const Result(true);
-    } catch (e) {
-      return Result(InvalidStanzaFormat());
-    }
+      ),
+    );
+    return const Result(true);
   }
 }

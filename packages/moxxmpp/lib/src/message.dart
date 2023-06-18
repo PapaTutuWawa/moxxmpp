@@ -8,7 +8,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
-import 'package:moxxmpp/src/xeps/xep_0045/xep_0045.dart';
 import 'package:moxxmpp/src/xeps/xep_0066.dart';
 import 'package:moxxmpp/src/xeps/xep_0447.dart';
 import 'package:moxxmpp/src/xeps/xep_0449.dart';
@@ -97,17 +96,15 @@ class MessageManager extends XmppManagerBase {
   /// data for building the message.
   Future<void> sendMessage(
     JID to,
-    TypedMap<StanzaHandlerExtension> extensions,
-  ) async {
+    TypedMap<StanzaHandlerExtension> extensions, {
+    String type = 'chat',
+  }) async {
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.message(
           to: to.toString(),
           id: extensions.get<MessageIdData>()?.id,
-          type: extensions.get<ConversationTypeData>()?.conversationType ==
-                  ConversationType.groupchat
-              ? 'groupchat'
-              : 'chat',
+          type: type,
           children: _messageSendingCallbacks
               .map((c) => c(extensions))
               .flattened
