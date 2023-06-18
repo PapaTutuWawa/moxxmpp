@@ -32,3 +32,14 @@ class RoomInformation {
   /// The name or title of the Multi-User Chat (MUC) room.
   final String name;
 }
+
+class RoomState {
+  RoomState({
+    required this.roomJid,
+    required this.roomInformation,
+    this.nick,
+  });
+  final JID roomJid;
+  final RoomInformation roomInformation;
+  String? nick;
+}
