@@ -1,4 +1,4 @@
-import 'package:moxlib/moxlib.dart';
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
@@ -114,8 +114,7 @@ class StatelessFileSharingData implements StanzaHandlerExtension {
   }
 
   StatelessFileSharingUrlSource? getFirstUrlSource() {
-    return firstWhereOrNull(
-      sources,
+    return sources.firstWhereOrNull(
       (StatelessFileSharingSource source) =>
           source is StatelessFileSharingUrlSource,
     ) as StatelessFileSharingUrlSource?;

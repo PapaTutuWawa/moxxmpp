@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:meta/meta.dart';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -9,7 +10,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/wait.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
@@ -255,7 +255,7 @@ class DiscoManager extends XmppManagerBase {
   Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
     JID entity, {
     String? node,
-    bool shouldEncrypt = true,
+    bool shouldEncrypt = false,
     bool shouldCache = true,
   }) async {
     DiscoInfo? info;
@@ -294,7 +294,7 @@ class DiscoManager extends XmppManagerBase {
     final stanza = (await getAttributes().sendStanza(
       StanzaDetails(
         buildDiscoInfoQueryStanza(entity, node),
-        encrypted: !shouldEncrypt,
+        shouldEncrypt: shouldEncrypt,
       ),
     ))!;
     final query = stanza.firstTag('query');
@@ -325,7 +325,7 @@ class DiscoManager extends XmppManagerBase {
   Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(
     JID entity, {
     String? node,
-    bool shouldEncrypt = true,
+    bool shouldEncrypt = false,
   }) async {
     final key = DiscoCacheKey(entity, node);
     final future = await _discoItemsTracker.waitFor(key);

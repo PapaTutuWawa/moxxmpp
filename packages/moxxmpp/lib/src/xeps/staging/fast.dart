@@ -1,11 +1,11 @@
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0388/negotiators.dart';
 import 'package:moxxmpp/src/xeps/xep_0388/xep_0388.dart';
 

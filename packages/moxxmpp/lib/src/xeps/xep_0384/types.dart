@@ -13,9 +13,8 @@ class DoNotEncrypt {
 
 /// An encryption error caused by OMEMO.
 class OmemoEncryptionError {
-  const OmemoEncryptionError(this.jids, this.devices);
+  const OmemoEncryptionError(this.deviceEncryptionErrors);
 
-  /// See omemo_dart's EncryptionResult for info on these fields.
-  final Map<String, OmemoException> jids;
-  final Map<RatchetMapKey, OmemoException> devices;
+  /// See omemo_dart's EncryptionResult for info on this field.
+  final Map<String, List<EncryptToJidError>> deviceEncryptionErrors;
 }

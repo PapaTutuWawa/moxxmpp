@@ -1,4 +1,4 @@
-import 'package:moxlib/moxlib.dart';
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 
@@ -80,7 +80,7 @@ class DataForm {
   final List<List<DataFormField>> items;
 
   DataFormField? getFieldByVar(String varAttr) {
-    return firstWhereOrNull(fields, (field) => field.varAttr == varAttr);
+    return fields.firstWhereOrNull((field) => field.varAttr == varAttr);
   }
 
   XMLNode toXml() {

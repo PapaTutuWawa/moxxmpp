@@ -25,7 +25,6 @@ import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
@@ -479,6 +478,7 @@ class XmppConnection {
         newStanza,
         TypedMap(),
         encrypted: details.encrypted,
+        shouldEncrypt: details.shouldEncrypt,
         forceEncryption: details.forceEncryption,
       ),
     );
@@ -736,6 +736,13 @@ class XmppConnection {
         : '';
     _log.finest('<== $prefix${incomingPreHandlers.stanza.toXml()}');
 
+    if (incomingPreHandlers.skip) {
+      _log.fine(
+        'Not processing stanza (${incomingPreHandlers.stanza.tag}, ${incomingPreHandlers.stanza.id}) due to skip=true.',
+      );
+      return;
+    }
+
     final awaited = await _stanzaAwaiter.onData(
       incomingPreHandlers.stanza,
       connectionSettings.jid.toBare(),
@@ -753,6 +760,7 @@ class XmppConnection {
         incomingPreHandlers.stanza,
         incomingPreHandlers.extensions,
         encrypted: incomingPreHandlers.encrypted,
+        encryptionError: incomingPreHandlers.encryptionError,
         cancelReason: incomingPreHandlers.cancelReason,
       ),
     );

@@ -1,6 +1,8 @@
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:moxxmpp/src/parser.dart';
 import 'package:test/test.dart';
+
 import 'helpers/logging.dart';
 
 const exampleXmlns1 = 'im:moxxmpp:example1';

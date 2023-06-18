@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
@@ -7,7 +8,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
@@ -58,10 +58,10 @@ class HttpFileUploadManager extends XmppManagerBase {
   /// Returns whether the entity provided an identity that tells us that we can ask it
   /// for an HTTP upload slot.
   bool _containsFileUploadIdentity(DiscoInfo info) {
-    return listContains(
-      info.identities,
-      (Identity id) => id.category == 'store' && id.type == 'file',
-    );
+    return info.identities.firstWhereOrNull(
+          (Identity id) => id.category == 'store' && id.type == 'file',
+        ) !=
+        null;
   }
 
   /// Extract the maximum filesize in octets from the disco response. Returns null

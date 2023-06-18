@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:meta/meta.dart';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -10,13 +11,11 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
-import 'package:moxxmpp/src/xeps/xep_0203.dart';
 import 'package:moxxmpp/src/xeps/xep_0280.dart';
 import 'package:moxxmpp/src/xeps/xep_0334.dart';
 import 'package:moxxmpp/src/xeps/xep_0380.dart';
@@ -24,8 +23,20 @@ import 'package:moxxmpp/src/xeps/xep_0384/crypto.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/helpers.dart';
 import 'package:moxxmpp/src/xeps/xep_0384/types.dart';
-import 'package:omemo_dart/omemo_dart.dart';
+import 'package:omemo_dart/omemo_dart.dart' as omemo;
 import 'package:xml/xml.dart';
+
+/// A callback that is executed whenever we need to acquire the OmemoManager backing
+/// the manager.
+typedef GetOmemoManagerCallback = Future<omemo.OmemoManager> Function();
+
+/// A callback for figuring out whether a stanza should be encrypted or not. Note that
+/// returning true here does not necessarily mean that a stanza gets encrypted because
+/// handlers can indicate that a stanza should not be encrypted, e.g. PubSub.
+typedef ShouldEncryptStanzaCallback = Future<bool> Function(
+  JID toJid,
+  Stanza stanza,
+);
 
 const _doNotEncryptList = [
   // XEP-0033
@@ -43,8 +54,15 @@ const _doNotEncryptList = [
   DoNotEncrypt('stanza-id', stableIdXmlns),
 ];
 
-abstract class BaseOmemoManager extends XmppManagerBase {
-  BaseOmemoManager() : super(omemoManager);
+class OmemoManager extends XmppManagerBase {
+  OmemoManager(this._getOmemoManager, this._shouldEncryptStanza)
+      : super(omemoManager);
+
+  /// Callback for getting the [omemo.OmemoManager].
+  final GetOmemoManagerCallback _getOmemoManager;
+
+  /// Callback for checking whether a stanza should be encrypted or not.
+  final ShouldEncryptStanzaCallback _shouldEncryptStanza;
 
   // TODO(Unknown): Technically, this is not always true
   @override
@@ -113,22 +131,19 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       }
 
       // Tell the OmemoManager
-      (await getOmemoManager()).onDeviceListUpdate(jid.toString(), ids);
+      await (await _getOmemoManager()).onDeviceListUpdate(jid.toString(), ids);
 
       // Generate an event
       getAttributes().sendEvent(OmemoDeviceListUpdatedEvent(jid, ids));
     }
   }
 
-  @visibleForOverriding
-  Future<OmemoManager> getOmemoManager();
+  /// Wrapper around using getSessionManager and then calling getDeviceId on it.
+  Future<int> _getDeviceId() async => (await _getOmemoManager()).getDeviceId();
 
   /// Wrapper around using getSessionManager and then calling getDeviceId on it.
-  Future<int> _getDeviceId() async => (await getOmemoManager()).getDeviceId();
-
-  /// Wrapper around using getSessionManager and then calling getDeviceId on it.
-  Future<OmemoBundle> _getDeviceBundle() async {
-    final om = await getOmemoManager();
+  Future<omemo.OmemoBundle> _getDeviceBundle() async {
+    final om = await _getOmemoManager();
     final device = await om.getDevice();
     return device.toBundle();
   }
@@ -199,53 +214,45 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   }
 
   XMLNode _buildEncryptedElement(
-    EncryptionResult result,
+    omemo.EncryptionResult result,
     String recipientJid,
     int deviceId,
   ) {
     final keyElements = <String, List<XMLNode>>{};
-    for (final key in result.encryptedKeys) {
-      final keyElement = XMLNode(
-        tag: 'key',
-        attributes: <String, String>{
-          'rid': '${key.rid}',
-          'kex': key.kex ? 'true' : 'false',
-        },
-        text: key.value,
-      );
-
-      if (keyElements.containsKey(key.jid)) {
-        keyElements[key.jid]!.add(keyElement);
-      } else {
-        keyElements[key.jid] = [keyElement];
-      }
+    for (final keys in result.encryptedKeys.entries) {
+      keyElements[keys.key] = keys.value
+          .map(
+            (ek) => XMLNode(
+              tag: 'key',
+              attributes: {
+                'rid': ek.rid.toString(),
+                if (ek.kex) 'kex': 'true',
+              },
+              text: ek.value,
+            ),
+          )
+          .toList();
     }
 
     final keysElements = keyElements.entries.map((entry) {
       return XMLNode(
         tag: 'keys',
-        attributes: <String, String>{
+        attributes: {
           'jid': entry.key,
         },
         children: entry.value,
       );
     }).toList();
 
-    var payloadElement = <XMLNode>[];
-    if (result.ciphertext != null) {
-      payloadElement = [
-        XMLNode(
-          tag: 'payload',
-          text: base64.encode(result.ciphertext!),
-        ),
-      ];
-    }
-
     return XMLNode.xmlns(
       tag: 'encrypted',
       xmlns: omemoXmlns,
       children: [
-        ...payloadElement,
+        if (result.ciphertext != null)
+          XMLNode(
+            tag: 'payload',
+            text: base64Encode(result.ciphertext!),
+          ),
         XMLNode(
           tag: 'header',
           attributes: <String, String>{
@@ -259,7 +266,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
 
   /// For usage with omemo_dart's OmemoManager.
   Future<void> sendEmptyMessageImpl(
-    EncryptionResult result,
+    omemo.EncryptionResult result,
     String toJid,
   ) async {
     await getAttributes().sendStanza(
@@ -288,7 +295,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
 
   /// Send a heartbeat message to [jid].
   Future<void> sendOmemoHeartbeat(String jid) async {
-    final om = await getOmemoManager();
+    final om = await _getOmemoManager();
     await om.sendOmemoHeartbeat(jid);
   }
 
@@ -301,17 +308,22 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   }
 
   /// For usage with omemo_dart's OmemoManager
-  Future<OmemoBundle?> fetchDeviceBundle(String jid, int id) async {
+  Future<omemo.OmemoBundle?> fetchDeviceBundle(String jid, int id) async {
     final result = await retrieveDeviceBundle(JID.fromString(jid), id);
     if (result.isType<OmemoError>()) return null;
 
-    return result.get<OmemoBundle>();
+    return result.get<omemo.OmemoBundle>();
   }
 
   Future<StanzaHandlerData> _onOutgoingStanza(
     Stanza stanza,
     StanzaHandlerData state,
   ) async {
+    if (!state.shouldEncrypt) {
+      logger.finest('Not encrypting since state.shouldEncrypt is false');
+      return state;
+    }
+
     if (state.encrypted) {
       logger.finest('Not encrypting since state.encrypted is true');
       return state;
@@ -324,7 +336,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
     }
 
     final toJid = JID.fromString(stanza.to!).toBare();
-    final shouldEncryptResult = await shouldEncryptStanza(toJid, stanza);
+    final shouldEncryptResult = await _shouldEncryptStanza(toJid, stanza);
     if (!shouldEncryptResult && !state.forceEncryption) {
       logger.finest(
         'Not encrypting stanza for $toJid: Both shouldEncryptStanza and forceEncryption are false.',
@@ -351,29 +363,29 @@ abstract class BaseOmemoManager extends XmppManagerBase {
             .getManagerById<CarbonsManager>(carbonsManager)
             ?.isEnabled ??
         false;
-    final om = await getOmemoManager();
+    final om = await _getOmemoManager();
+    final encryptToJids = [
+      toJid.toString(),
+      if (carbonsEnabled) getAttributes().getFullJID().toBare().toString(),
+    ];
     final result = await om.onOutgoingStanza(
-      OmemoOutgoingStanza(
-        [
-          toJid.toString(),
-          if (carbonsEnabled) getAttributes().getFullJID().toBare().toString(),
-        ],
+      omemo.OmemoOutgoingStanza(
+        encryptToJids,
         _buildEnvelope(toEncrypt, toJid.toString()),
       ),
     );
     logger.finest('Encryption done');
 
-    if (!result.isSuccess(2)) {
+    if (!result.canSend) {
       return state
         ..cancel = true
         // If we have no device list for toJid, then the contact most likely does not
         // support OMEMO:2
-        ..cancelReason = result.jidEncryptionErrors[toJid.toString()]
-                is NoKeyMaterialAvailableException
+        ..cancelReason = result.deviceEncryptionErrors[toJid.toString()]!.first
+                .error is omemo.NoKeyMaterialAvailableError
             ? OmemoNotSupportedForContactException()
             : UnknownOmemoError()
         ..encryptionError = OmemoEncryptionError(
-          result.jidEncryptionErrors,
           result.deviceEncryptionErrors,
         );
     }
@@ -401,53 +413,45 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       ..encrypted = true;
   }
 
-  /// This function is called whenever a message is to be encrypted. If it returns true,
-  /// then the message will be encrypted. If it returns false, the message won't be
-  /// encrypted.
-  @visibleForOverriding
-  Future<bool> shouldEncryptStanza(JID toJid, Stanza stanza);
-
   Future<StanzaHandlerData> _onIncomingStanza(
     Stanza stanza,
     StanzaHandlerData state,
   ) async {
-    final encrypted = stanza.firstTag('encrypted', xmlns: omemoXmlns);
-    if (encrypted == null) return state;
     if (stanza.from == null) return state;
 
+    final encrypted = stanza.firstTag('encrypted', xmlns: omemoXmlns)!;
     final fromJid = JID.fromString(stanza.from!).toBare();
     final header = encrypted.firstTag('header')!;
-    final payloadElement = encrypted.firstTag('payload');
-    final keys = List<EncryptedKey>.empty(growable: true);
+    final ourJid = getAttributes().getFullJID();
+    final ourJidString = ourJid.toBare().toString();
+    final keys = List<omemo.EncryptedKey>.empty(growable: true);
     for (final keysElement in header.findTags('keys')) {
+      // We only care about our own JID
       final jid = keysElement.attributes['jid']! as String;
-      for (final key in keysElement.findTags('key')) {
-        keys.add(
-          EncryptedKey(
-            jid,
-            int.parse(key.attributes['rid']! as String),
-            key.innerText(),
-            key.attributes['kex'] == 'true',
-          ),
-        );
+      if (jid != ourJidString) {
+        continue;
       }
+
+      keys.addAll(
+        keysElement.findTags('key').map(
+              (key) => omemo.EncryptedKey(
+                int.parse(key.attributes['rid']! as String),
+                key.innerText(),
+                key.attributes['kex'] == 'true',
+              ),
+            ),
+      );
     }
 
-    final ourJid = getAttributes().getFullJID();
     final sid = int.parse(header.attributes['sid']! as String);
-
-    final om = await getOmemoManager();
+    final om = await _getOmemoManager();
     final result = await om.onIncomingStanza(
-      OmemoIncomingStanza(
+      omemo.OmemoIncomingStanza(
         fromJid.toString(),
         sid,
-        state.extensions
-                .get<DelayedDeliveryData>()
-                ?.timestamp
-                .millisecondsSinceEpoch ??
-            DateTime.now().millisecondsSinceEpoch,
         keys,
-        payloadElement?.innerText(),
+        encrypted.firstTag('payload')?.innerText(),
+        false,
       ),
     );
 
@@ -464,6 +468,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
           .toList();
     }
 
+    logger.finest('Got payload: ${result.payload != null}');
     if (result.payload != null) {
       XMLNode envelope;
       try {
@@ -481,6 +486,8 @@ abstract class BaseOmemoManager extends XmppManagerBase {
           // Do not add forbidden elements from the envelope
           envelopeChildren.where(shouldEncryptElement),
         );
+
+        logger.finest('Adding children: ${envelopeChildren.map((c) => c.tag)}');
       } else {
         logger.warning('Invalid envelope element: No <content /> element');
       }
@@ -488,6 +495,15 @@ abstract class BaseOmemoManager extends XmppManagerBase {
       if (!checkAffixElements(envelope, stanza.from!, ourJid)) {
         state.encryptionError = InvalidAffixElementsException();
       }
+    }
+
+    // Ignore heartbeat messages
+    if (stanza.tag == 'message' && encrypted.firstTag('payload') == null) {
+      logger.finest('Received empty OMEMO message. Ending processing early.');
+      return state
+        ..encrypted = true
+        ..skip = true
+        ..done = true;
     }
 
     return state
@@ -532,7 +548,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   /// Retrieve all device bundles for the JID [jid].
   ///
   /// On success, returns a list of devices. On failure, returns am OmemoError.
-  Future<Result<OmemoError, List<OmemoBundle>>> retrieveDeviceBundles(
+  Future<Result<OmemoError, List<omemo.OmemoBundle>>> retrieveDeviceBundles(
     JID jid,
   ) async {
     // TODO(Unknown): Should we query the device list first?
@@ -553,7 +569,7 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   /// Retrieves a bundle from entity [jid] with the device id [deviceId].
   ///
   /// On success, returns the device bundle. On failure, returns an OmemoError.
-  Future<Result<OmemoError, OmemoBundle>> retrieveDeviceBundle(
+  Future<Result<OmemoError, omemo.OmemoBundle>> retrieveDeviceBundle(
     JID jid,
     int deviceId,
   ) async {
@@ -569,7 +585,9 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   /// nodes.
   ///
   /// On success, returns true. On failure, returns an OmemoError.
-  Future<Result<OmemoError, bool>> publishBundle(OmemoBundle bundle) async {
+  Future<Result<OmemoError, bool>> publishBundle(
+    omemo.OmemoBundle bundle,
+  ) async {
     final attrs = getAttributes();
     final pm = attrs.getManagerById<PubSubManager>(pubsubManager)!;
     final bareJid = attrs.getFullJID().toBare();
@@ -634,6 +652,11 @@ abstract class BaseOmemoManager extends XmppManagerBase {
   Future<void> subscribeToDeviceListImpl(String jid) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
     await pm.subscribe(JID.fromString(jid), omemoDevicesXmlns);
+  }
+
+  /// Implementation for publishing our device [device].
+  Future<void> publishDeviceImpl(omemo.OmemoDevice device) async {
+    await publishBundle(await device.toBundle());
   }
 
   /// Attempts to find out if [jid] supports omemo:2.
