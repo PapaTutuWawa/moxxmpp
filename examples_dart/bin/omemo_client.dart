@@ -1,17 +1,11 @@
 import 'package:args/args.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:cli_repl/cli_repl.dart';
+import 'package:example_dart/socket.dart';
 import 'package:logging/logging.dart';
 import 'package:moxxmpp/moxxmpp.dart';
 import 'package:moxxmpp_socket_tcp/moxxmpp_socket_tcp.dart';
 import 'package:omemo_dart/omemo_dart.dart' as omemo;
-
-class TestingTCPSocketWrapper extends TCPSocketWrapper {
-  @override
-  bool onBadCertificate(dynamic certificate, String domain) {
-    return true;
-  }
-}
 
 void main(List<String> args) async {
   // Set up logging
@@ -28,8 +22,22 @@ void main(List<String> args) async {
     ..addOption('password')
     ..addOption('host')
     ..addOption('port')
-    ..addOption('to');
+    ..addOption('to')
+    ..addOption('xmpps-srv');
   final options = parser.parse(args);
+
+  // Parse a potential xmpps-client SRV record here.
+  // Format: --xmpps-srv <priority>,<weight>,<target>,<port>
+  MoxSrvRecord? srvRecord;
+  if (options['xmpps-srv'] != null) {
+    final parts = (options['xmpps-srv']! as String).split(',');
+    srvRecord = MoxSrvRecord(
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+      parts[2],
+      int.parse(parts[3]),
+    );
+  }
 
   // Connect
   final jid = JID.fromString(options['jid']! as String);
@@ -39,13 +47,13 @@ void main(List<String> args) async {
     TestingReconnectionPolicy(),
     AlwaysConnectedConnectivityManager(),
     ClientToServerNegotiator(),
-    TestingTCPSocketWrapper(),
+    ExampleTCPSocketWrapper(srvRecord),
   )..connectionSettings = ConnectionSettings(
-    jid: jid,
-    password: options['password']! as String,
-    host: options['host'] as String?,
-    port: portString != null ? int.parse(portString) : null,
-  );
+      jid: jid,
+      password: options['password']! as String,
+      host: options['host'] as String?,
+      port: portString != null ? int.parse(portString) : null,
+    );
 
   // Generate OMEMO data
   omemo.OmemoManager? oom;
@@ -71,7 +79,7 @@ void main(List<String> args) async {
     DiscoManager([]),
     PubSubManager(),
     MessageManager(),
-    moxxmppOmemo, 
+    moxxmppOmemo,
   ]);
   await connection.registerFeatureNegotiators([
     SaslPlainNegotiator(),
@@ -87,15 +95,16 @@ void main(List<String> args) async {
       Logger.root.info(event.extensions.keys.toList());
 
       final body = event.encryptionError != null
-        ? chalk.red('Failed to decrypt message: ${event.encryptionError}')
-        : chalk.green(event.get<MessageBodyData>()?.body ?? '');
-      print('[${event.from.toString()}] ' + body);
+          ? chalk.red('Failed to decrypt message: ${event.encryptionError}')
+          : chalk.green(event.get<MessageBodyData>()?.body ?? '');
+      print('[${event.from.toString()}] $body');
     }
   });
 
   // Connect
   Logger.root.info('Connecting...');
-  final result = await connection.connect(shouldReconnect: false, waitUntilLogin: true);
+  final result =
+      await connection.connect(shouldReconnect: false, waitUntilLogin: true);
   if (!result.isType<bool>()) {
     Logger.root.severe('Authentication failed!');
     return;
@@ -107,18 +116,21 @@ void main(List<String> args) async {
   final device = await oom.getDevice();
   final omemoResult = await moxxmppOmemo.publishBundle(await device.toBundle());
   if (!omemoResult.isType<bool>()) {
-    Logger.root.severe('Failed to publish OMEMO bundle: ${omemoResult.get<OmemoError>()}');
+    Logger.root.severe(
+        'Failed to publish OMEMO bundle: ${omemoResult.get<OmemoError>()}');
     return;
   }
 
   final repl = Repl(prompt: '> ');
   await for (final line in repl.runAsync()) {
-    await connection.getManagerById<MessageManager>(messageManager)!.sendMessage(
-      to,
-      TypedMap<StanzaHandlerExtension>.fromList([
-        MessageBodyData(line),
-      ]),
-    );
+    await connection
+        .getManagerById<MessageManager>(messageManager)!
+        .sendMessage(
+          to,
+          TypedMap<StanzaHandlerExtension>.fromList([
+            MessageBodyData(line),
+          ]),
+        );
   }
 
   // Disconnect
