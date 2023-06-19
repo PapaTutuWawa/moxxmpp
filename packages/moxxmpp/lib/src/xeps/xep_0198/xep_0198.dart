@@ -61,7 +61,7 @@ class StreamManagementManager extends XmppManagerBase {
   final Lock _ackLock = Lock();
 
   /// Functions for testing
-  /// @visibleForTesting
+  @visibleForTesting
   Map<int, SMQueueEntry> getUnackedStanzas() => _unackedStanzas;
 
   @visibleForTesting
