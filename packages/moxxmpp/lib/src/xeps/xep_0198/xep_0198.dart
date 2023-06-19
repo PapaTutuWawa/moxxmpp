@@ -32,7 +32,7 @@ class StreamManagementManager extends XmppManagerBase {
   final Map<int, SMQueueEntry> _unackedStanzas = {};
 
   /// Commitable state of the StreamManagementManager
-  StreamManagementState _state = StreamManagementState(0, 0);
+  StreamManagementState _state = const StreamManagementState(0, 0);
 
   /// Mutex lock for _state
   final Lock _stateLock = Lock();

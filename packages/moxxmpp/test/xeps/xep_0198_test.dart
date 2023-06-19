@@ -507,7 +507,7 @@ void main() {
         StreamManagementNegotiator()..resource = 'test-resource',
       ]);
       await conn.getManagerById<StreamManagementManager>(smManager)!.setState(
-            StreamManagementState(
+            const StreamManagementState(
               10,
               10,
               streamResumptionId: 'id-1',
@@ -606,7 +606,7 @@ void main() {
         StreamManagementNegotiator()..resource = 'abc123',
       ]);
       await conn.getManagerById<StreamManagementManager>(smManager)!.setState(
-            StreamManagementState(
+            const StreamManagementState(
               10,
               10,
               streamResumptionId: 'id-1',
@@ -751,7 +751,7 @@ void main() {
       StreamManagementNegotiator()..resource = 'abc123',
     ]);
     await conn.getManagerById<StreamManagementManager>(smManager)!.setState(
-          StreamManagementState(
+          const StreamManagementState(
             10,
             10,
             streamResumptionId: 'id-1',
