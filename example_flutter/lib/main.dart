@@ -83,8 +83,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         MessageManager(),
         PresenceManager(),
-        OccupantIdManager(),
-        MUCManager()
       ])
       ..registerFeatureNegotiators([
         ResourceBindingNegotiator(),
@@ -159,47 +157,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 labelText: 'Password',
               ),
               obscureText: true,
-            ),
-            TextButton(
-              onPressed: () async {
-                // final muc = connection.getManagerById<MUCManager>(mucManager);
-                // final roomInformationResult = await muc!.queryRoomInformation(
-                //     JID.fromString('moxxmpp-muc-test@muc.moxxy.org'));
-                // if (roomInformationResult.isType<RoomInformation>()) {
-                //   print('Room information received');
-                //   print(roomInformationResult.get<RoomInformation>().jid);
-                //   print(roomInformationResult.get<RoomInformation>().name);
-                //   print(roomInformationResult.get<RoomInformation>().features);
-                // }
-
-                // final muc = connection.getManagerById<MUCManager>(mucManager);
-                // print('joining room');
-                // final roomInformationResult = await muc!.joinRoom(
-                //     JID.fromString('moxxmpp-muc-test@muc.moxxy.org/test_1'));
-                // if (roomInformationResult.isType<MUCError>()) {
-                //   print(roomInformationResult.get());
-                // } else {
-                //   print(roomInformationResult.get());
-                // }
-
-                print('HERE IS YOUR JID');
-                print(connection.resource);
-                final sid = connection.generateId();
-                final originId = connection.generateId();
-                final message =
-                    connection.getManagerById<MessageManager>(messageManager);
-                message!.sendMessage(
-                  JID.fromString('moxxmpp-muc-test@muc.moxxy.org/ISD'),
-                  TypedMap<StanzaHandlerExtension>.fromList([
-                    const MessageBodyData('Testing'),
-                    const MarkableData(true),
-                    MessageIdData(sid),
-                    StableIdData(originId, null),
-                    ConversationTypeData(ConversationType.groupchatprivate)
-                  ]),
-                );
-              },
-              child: const Text('Test'),
             ),
           ],
         ),

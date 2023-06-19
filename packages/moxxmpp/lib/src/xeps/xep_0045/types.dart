@@ -23,7 +23,7 @@ class RoomInformation {
             .name!,
       );
 
-  /// The JID (Jabber ID) of the Multi-User Chat (MUC) room.
+  /// The JID of the Multi-User Chat (MUC) room.
   final JID jid;
 
   /// A list of features supported by the Multi-User Chat (MUC) room.
@@ -36,10 +36,8 @@ class RoomInformation {
 class RoomState {
   RoomState({
     required this.roomJid,
-    required this.roomInformation,
     this.nick,
   });
   final JID roomJid;
-  final RoomInformation roomInformation;
   String? nick;
 }

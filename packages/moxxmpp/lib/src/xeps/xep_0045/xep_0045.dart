@@ -13,13 +13,6 @@ import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 import 'package:synchronized/synchronized.dart';
 
-enum ConversationType { chat, groupchat, groupchatprivate }
-
-class ConversationTypeData extends StanzaHandlerExtension {
-  ConversationTypeData(this.conversationType);
-  final ConversationType conversationType;
-}
-
 class MUCManager extends XmppManagerBase {
   MUCManager() : super(mucManager);
 
@@ -44,14 +37,6 @@ class MUCManager extends XmppManagerBase {
     try {
       final roomInformation = RoomInformation.fromDiscoInfo(
         discoInfo: result.get<DiscoInfo>(),
-      );
-      await _cacheLock.synchronized(
-        () async {
-          _mucRoomCache[roomJID] = RoomState(
-            roomJid: roomJID,
-            roomInformation: roomInformation,
-          );
-        },
       );
       return Result(roomInformation);
     } catch (e) {
@@ -80,7 +65,7 @@ class MUCManager extends XmppManagerBase {
       ),
     );
     await _cacheLock.synchronized(
-      () async {
+      () {
         _mucRoomCache[roomJID]!.nick = nick;
       },
     );
@@ -90,15 +75,8 @@ class MUCManager extends XmppManagerBase {
   Future<Result<bool, MUCError>> leaveRoom(
     JID roomJID,
   ) async {
-    String? nick;
-    await _cacheLock.synchronized(
-      () async {
-        nick = _mucRoomCache[roomJID]!.nick;
-      },
-    );
-    if (nick!.isEmpty) {
-      return Result(NoNicknameSpecified());
-    }
+    final nick =
+        await _cacheLock.synchronized(() => _mucRoomCache[roomJID]!.nick);
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
@@ -108,7 +86,7 @@ class MUCManager extends XmppManagerBase {
       ),
     );
     await _cacheLock.synchronized(
-      () async {
+      () {
         _mucRoomCache.remove(roomJID);
       },
     );
