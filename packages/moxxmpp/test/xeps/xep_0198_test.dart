@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:moxxmpp/moxxmpp.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/types.dart';
 import 'package:test/test.dart';
 import '../helpers/logging.dart';
 import '../helpers/xmpp.dart';
@@ -42,10 +43,10 @@ Future<void> runOutgoingStanzaHandlers(
   }
 }
 
-XmppManagerAttributes mkAttributes(void Function(Stanza) callback) {
+XmppManagerAttributes mkAttributes(void Function(StanzaDetails) callback) {
   return XmppManagerAttributes(
     sendStanza: (StanzaDetails details) async {
-      callback(details.stanza);
+      callback(details);
 
       return Stanza.message();
     },
@@ -1068,5 +1069,50 @@ void main() {
     expect(smn.resumeFailed, true);
     expect(smn.streamEnablementFailed, true);
     expect(conn.resource, 'test-resource');
+  });
+
+  test('Test resending state changes', () async {
+    final manager = StreamManagementManager();
+    final attributes = mkAttributes((details) async {
+      for (final handler in manager.getOutgoingPostStanzaHandlers()) {
+        await handler.callback(
+          details.stanza,
+          StanzaHandlerData(
+            false,
+            false,
+            stanza,
+            details.postSendExtensions ?? TypedMap(),
+          ),
+        );
+      }
+    });
+    manager.register(attributes);
+
+    await manager.onXmppEvent(
+      StreamManagementEnabledEvent(resource: 'hallo'),
+    );
+
+    // Send a stanza 5 times
+    for (var i = 0; i < 5; i++) {
+      await runOutgoingStanzaHandlers(manager, stanza);
+    }
+
+    // <a h='3'/>
+    await manager.runNonzaHandlers(mkAck(3));
+    //expect(manager.getUnackedStanzas().length, 2);
+    final oldC2s = manager.state.c2s;
+    final oldQueue = Map<int, SMQueueEntry>.from(manager.getUnackedStanzas());
+
+    // Disconnect and reconnect
+    await manager.onXmppEvent(ConnectingEvent());
+    await manager.onXmppEvent(StreamResumedEvent(h: 3));
+
+    expect(manager.state.c2s, oldC2s);
+    expect(manager.getUnackedStanzas(), oldQueue);
+
+    // Now they get acked
+    await manager.runNonzaHandlers(mkAck(5));
+    expect(manager.getUnackedStanzas().length, 0);
+    expect(manager.state.c2s, 5);
   });
 }

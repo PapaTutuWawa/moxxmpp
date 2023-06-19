@@ -11,6 +11,8 @@ import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
+import 'package:moxxmpp/src/xeps/xep_0198/types.dart';
 
 /// A function that will be called when presence, outside of subscription request
 /// management, will be sent. Useful for managers that want to add [XMLNode]s to said
@@ -156,7 +158,9 @@ class PresenceManager extends XmppManagerBase {
         ),
         awaitable: false,
         bypassQueue: true,
-        excludeFromStreamManagement: true,
+        postSendExtensions: TypedMap<StanzaHandlerExtension>.fromList([
+          const StreamManagementData(true, null),
+        ]),
       ),
     );
   }

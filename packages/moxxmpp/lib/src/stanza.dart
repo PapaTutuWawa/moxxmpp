@@ -1,5 +1,7 @@
+import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 /// A description of a stanza to send.
 class StanzaDetails {
@@ -11,7 +13,7 @@ class StanzaDetails {
     this.encrypted = false,
     this.forceEncryption = false,
     this.bypassQueue = false,
-    this.excludeFromStreamManagement = false,
+    this.postSendExtensions,
   });
 
   /// The stanza to send.
@@ -42,7 +44,7 @@ class StanzaDetails {
   /// This makes the Stream Management implementation, when available, ignore the stanza,
   /// meaning that it gets counted but excluded from resending.
   /// This should never have to be set to true.
-  final bool excludeFromStreamManagement;
+  final TypedMap<StanzaHandlerExtension>? postSendExtensions;
 }
 
 /// A simple description of the <error /> element that may be inside a stanza

@@ -28,7 +28,6 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
-import 'package:moxxmpp/src/xeps/xep_0198/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
 import 'package:synchronized/synchronized.dart';
@@ -533,15 +532,14 @@ class XmppConnection {
 
     // Run post-send handlers
     _log.fine('Running post stanza handlers..');
-    final extensions = TypedMap<StanzaHandlerExtension>()
-      ..set(StreamManagementData(details.excludeFromStreamManagement));
     await _runOutgoingPostStanzaHandlers(
       newStanza,
       initial: StanzaHandlerData(
         false,
         false,
         newStanza,
-        extensions,
+        details.postSendExtensions ?? TypedMap<StanzaHandlerExtension>(),
+        encrypted: data.encrypted,
       ),
     );
     _log.fine('Done');
