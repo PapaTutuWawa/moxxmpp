@@ -105,11 +105,6 @@ class MUCManager extends XmppManagerBase {
         ),
       ),
     );
-    await _cacheLock.synchronized(
-      () {
-        _mucRoomCache.remove(roomJid);
-      },
-    );
     return const Result(true);
   }
 }
