@@ -516,6 +516,12 @@ class OmemoManager extends XmppManagerBase {
         children: children,
         tag: stanza.tag,
         attributes: Map<String, String>.from(stanza.attributes),
+      )
+      ..extensions.set<OmemoData>(
+        OmemoData(
+          result.newRatchets,
+          result.replacedRatchets,
+        ),
       );
   }
 
