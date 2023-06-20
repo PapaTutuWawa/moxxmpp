@@ -25,6 +25,11 @@ class MUCManager extends XmppManagerBase {
   /// Cache lock
   final Lock _cacheLock = Lock();
 
+  /// Queries the information of a Multi-User Chat room.
+  ///
+  /// Retrieves the information about the specified MUC room by performing a
+  /// disco info query. Returns a [Result] with the [RoomInformation] on success
+  /// or an appropriate [MUCError] on failure.
   Future<Result<RoomInformation, MUCError>> queryRoomInformation(
     JID roomJID,
   ) async {
@@ -44,6 +49,12 @@ class MUCManager extends XmppManagerBase {
     }
   }
 
+  /// Joins a Multi-User Chat room.
+  ///
+  /// Joins the specified MUC room using the provided nickname. Sends a presence
+  /// stanza with the appropriate attributes to join the room. Returns a [Result]
+  /// with a boolean value indicating success or failure, or an [MUCError]
+  /// if applicable.
   Future<Result<bool, MUCError>> joinRoom(
     JID roomJid,
     String nick,
@@ -72,6 +83,12 @@ class MUCManager extends XmppManagerBase {
     return const Result(true);
   }
 
+  /// Leaves a Multi-User Chat room.
+  ///
+  /// Leaves the specified MUC room by sending an 'unavailable' presence stanza.
+  /// Removes the corresponding room entry from the cache. Returns a [Result]
+  /// with a boolean value indicating success or failure, or an [MUCError]
+  /// if applicable.
   Future<Result<bool, MUCError>> leaveRoom(
     JID roomJid,
   ) async {
