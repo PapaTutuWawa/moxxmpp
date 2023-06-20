@@ -45,7 +45,7 @@ class MUCManager extends XmppManagerBase {
   }
 
   Future<Result<bool, MUCError>> joinRoom(
-    JID roomJID,
+    JID roomJid,
     String nick,
   ) async {
     if (nick.isEmpty) {
@@ -54,7 +54,7 @@ class MUCManager extends XmppManagerBase {
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
-          to: roomJID.withResource(nick).toString(),
+          to: roomJid.withResource(nick).toString(),
           children: [
             XMLNode.xmlns(
               tag: 'x',
@@ -66,28 +66,31 @@ class MUCManager extends XmppManagerBase {
     );
     await _cacheLock.synchronized(
       () {
-        _mucRoomCache[roomJID]!.nick = nick;
+        _mucRoomCache[roomJid] = RoomState(roomJid: roomJid, nick: nick);
       },
     );
     return const Result(true);
   }
 
   Future<Result<bool, MUCError>> leaveRoom(
-    JID roomJID,
+    JID roomJid,
   ) async {
-    final nick =
-        await _cacheLock.synchronized(() => _mucRoomCache[roomJID]!.nick);
+    final nick = await _cacheLock.synchronized(() {
+      final nick = _mucRoomCache[roomJid]?.nick;
+      _mucRoomCache.remove(roomJid);
+      return nick;
+    });
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
-          to: roomJID.withResource(nick!).toString(),
+          to: roomJid.withResource(nick!).toString(),
           type: 'unavailable',
         ),
       ),
     );
     await _cacheLock.synchronized(
       () {
-        _mucRoomCache.remove(roomJID);
+        _mucRoomCache.remove(roomJid);
       },
     );
     return const Result(true);
