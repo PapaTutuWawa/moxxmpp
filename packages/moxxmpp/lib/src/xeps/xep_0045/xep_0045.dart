@@ -97,6 +97,9 @@ class MUCManager extends XmppManagerBase {
       _mucRoomCache.remove(roomJid);
       return nick;
     });
+    if (nick == null) {
+      return Result(RoomNotJoinedError);
+    }
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(

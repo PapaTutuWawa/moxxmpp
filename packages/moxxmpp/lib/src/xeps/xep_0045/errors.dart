@@ -12,3 +12,8 @@ class InvalidDiscoInfoResponse extends MUCError {}
 /// Returned when no nickname was specified from the client side while trying to
 /// perform some actions on the MUC, such as joining the room.
 class NoNicknameSpecified extends MUCError {}
+
+/// This error occurs when a user attempts to perform an action that requires
+/// them to be a member of a room, but they are not currently joined to
+/// that room.
+class RoomNotJoinedError extends MUCError {}
