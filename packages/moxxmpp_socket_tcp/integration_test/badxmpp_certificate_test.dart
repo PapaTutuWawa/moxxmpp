@@ -17,25 +17,15 @@ Future<void> _runTest(String domain) async {
   final connection = XmppConnection(
     TestingReconnectionPolicy(),
     AlwaysConnectedConnectivityManager(),
+    ClientToServerNegotiator(),
     socket,
-  );
+  )..connectionSettings = ConnectionSettings(
+      jid: JID.fromString('testuser@$domain'),
+      password: 'abc123',
+    );
   await connection.registerFeatureNegotiators([
     StartTlsNegotiator(),
   ]);
-  await connection.registerManagers([
-    DiscoManager([]),
-    RosterManager(TestingRosterStateManager('', [])),
-    MessageManager(),
-    PresenceManager(),
-  ]);
-
-  connection.setConnectionSettings(
-    ConnectionSettings(
-      jid: JID.fromString('testuser@$domain'),
-      password: 'abc123',
-      useDirectTLS: true,
-    ),
-  );
 
   final result = await connection.connect(
     shouldReconnect: false,

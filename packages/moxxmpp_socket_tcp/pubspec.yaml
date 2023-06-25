@@ -12,7 +12,13 @@ dependencies:
   meta: ^1.6.0
   moxxmpp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
-    version: ^0.3.0
+    version: ^0.4.0
+
+dependency_overrides:
+  moxxmpp:
+    git:
+      url: https://codeberg.org/moxxy/moxxmpp.git
+      rev: 05e3d804a4036e9cd93fd27473a1e970fda3c3fc
 
 dev_dependencies:
   lints: ^2.0.0
