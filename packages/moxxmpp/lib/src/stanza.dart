@@ -47,27 +47,56 @@ class StanzaDetails {
   final TypedMap<StanzaHandlerExtension>? postSendExtensions;
 }
 
-/// A simple description of the <error /> element that may be inside a stanza
-class StanzaError {
-  StanzaError(this.type, this.error);
-  String type;
-  String error;
+/// A general error type for errors.
+abstract class StanzaError {
+  static StanzaError? fromXMLNode(XMLNode node) {
+    final error = node.firstTag('error');
+    if (error == null) {
+      return null;
+    }
 
-  /// Returns a StanzaError if [stanza] contains a <error /> element. If not, returns
-  /// null.
+    final specificError = error.firstTagByXmlns(fullStanzaXmlns);
+    if (specificError == null) {
+      return UnknownStanzaError();
+    }
+
+    switch (specificError.tag) {
+      case RemoteServerNotFoundError.tag:
+        return RemoteServerNotFoundError();
+      case RemoteServerTimeoutError.tag:
+        return RemoteServerTimeoutError();
+      case ServiceUnavailableError.tag:
+        return ServiceUnavailableError();
+    }
+
+    return UnknownStanzaError();
+  }
+
   static StanzaError? fromStanza(Stanza stanza) {
-    final error = stanza.firstTag('error');
-    if (error == null) return null;
-
-    final stanzaError = error.firstTagByXmlns(fullStanzaXmlns);
-    if (stanzaError == null) return null;
-
-    return StanzaError(
-      error.attributes['type']! as String,
-      stanzaError.tag,
-    );
+    return fromXMLNode(stanza);
   }
 }
+
+/// Recipient does not provide a given service.
+/// https://xmpp.org/rfcs/rfc6120.html#stanzas-error-conditions-service-unavailable
+class ServiceUnavailableError extends StanzaError {
+  static const tag = 'service-unavailable';
+}
+
+/// Could not connect to the remote server.
+/// https://xmpp.org/rfcs/rfc6120.html#stanzas-error-conditions-remote-server-not-found
+class RemoteServerNotFoundError extends StanzaError {
+  static const tag = 'remote-server-not-found';
+}
+
+/// The connection to the remote server timed out.
+/// https://xmpp.org/rfcs/rfc6120.html#stanzas-error-conditions-remote-server-timeout
+class RemoteServerTimeoutError extends StanzaError {
+  static const tag = 'remote-server-timeout';
+}
+
+/// An unknown error.
+class UnknownStanzaError extends StanzaError {}
 
 class Stanza extends XMLNode {
   // ignore: use_super_parameters
