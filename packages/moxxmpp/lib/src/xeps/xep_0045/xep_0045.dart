@@ -35,7 +35,7 @@ class MUCManager extends XmppManagerBase {
     final result = await getAttributes()
         .getManagerById<DiscoManager>(discoManager)!
         .discoInfoQuery(roomJID);
-    if (result.isType<DiscoError>()) {
+    if (result.isType<StanzaError>()) {
       return Result(InvalidStanzaFormat());
     }
     try {
