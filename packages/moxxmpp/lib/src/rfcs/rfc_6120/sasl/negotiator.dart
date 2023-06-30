@@ -1,4 +1,4 @@
-import 'package:moxlib/moxlib.dart';
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/negotiator.dart';
 import 'package:moxxmpp/src/stringxml.dart';
@@ -13,15 +13,13 @@ abstract class SaslNegotiator extends XmppFeatureNegotiatorBase {
   @override
   bool matchesFeature(List<XMLNode> features) {
     // Is SASL advertised?
-    final mechanisms = firstWhereOrNull(
-      features,
+    final mechanisms = features.firstWhereOrNull(
       (XMLNode feature) => feature.attributes['xmlns'] == saslXmlns,
     );
     if (mechanisms == null) return false;
 
     // Is SASL PLAIN advertised?
-    return firstWhereOrNull(
-          mechanisms.children,
+    return mechanisms.children.firstWhereOrNull(
           (XMLNode mechanism) => mechanism.text == mechanismName,
         ) !=
         null;

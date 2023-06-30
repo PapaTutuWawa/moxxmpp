@@ -1,5 +1,7 @@
+import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 
 /// A description of a stanza to send.
 class StanzaDetails {
@@ -7,10 +9,11 @@ class StanzaDetails {
     this.stanza, {
     this.addId = true,
     this.awaitable = true,
+    this.shouldEncrypt = true,
     this.encrypted = false,
     this.forceEncryption = false,
     this.bypassQueue = false,
-    this.excludeFromStreamManagement = false,
+    this.postSendExtensions,
   });
 
   /// The stanza to send.
@@ -22,9 +25,16 @@ class StanzaDetails {
   /// Track the stanza to allow awaiting its response.
   final bool awaitable;
 
+  final bool forceEncryption;
+
+  /// Flag indicating whether the stanza that is sent is already encrypted (true)
+  /// or not (false). This is only useful for E2EE implementations that have to
+  /// send heartbeats that must bypass themselves.
   final bool encrypted;
 
-  final bool forceEncryption;
+  /// Tells an E2EE implementation, if available, to encrypt the stanza (true) or
+  /// ignore the stanza (false).
+  final bool shouldEncrypt;
 
   /// Bypasses being put into the queue. Useful for sending stanzas that must go out
   /// now, where it's okay if it does not get sent.
@@ -34,30 +44,59 @@ class StanzaDetails {
   /// This makes the Stream Management implementation, when available, ignore the stanza,
   /// meaning that it gets counted but excluded from resending.
   /// This should never have to be set to true.
-  final bool excludeFromStreamManagement;
+  final TypedMap<StanzaHandlerExtension>? postSendExtensions;
 }
 
-/// A simple description of the <error /> element that may be inside a stanza
-class StanzaError {
-  StanzaError(this.type, this.error);
-  String type;
-  String error;
+/// A general error type for errors.
+abstract class StanzaError {
+  static StanzaError? fromXMLNode(XMLNode node) {
+    final error = node.firstTag('error');
+    if (error == null) {
+      return null;
+    }
 
-  /// Returns a StanzaError if [stanza] contains a <error /> element. If not, returns
-  /// null.
+    final specificError = error.firstTagByXmlns(fullStanzaXmlns);
+    if (specificError == null) {
+      return UnknownStanzaError();
+    }
+
+    switch (specificError.tag) {
+      case RemoteServerNotFoundError.tag:
+        return RemoteServerNotFoundError();
+      case RemoteServerTimeoutError.tag:
+        return RemoteServerTimeoutError();
+      case ServiceUnavailableError.tag:
+        return ServiceUnavailableError();
+    }
+
+    return UnknownStanzaError();
+  }
+
   static StanzaError? fromStanza(Stanza stanza) {
-    final error = stanza.firstTag('error');
-    if (error == null) return null;
-
-    final stanzaError = error.firstTagByXmlns(fullStanzaXmlns);
-    if (stanzaError == null) return null;
-
-    return StanzaError(
-      error.attributes['type']! as String,
-      stanzaError.tag,
-    );
+    return fromXMLNode(stanza);
   }
 }
+
+/// Recipient does not provide a given service.
+/// https://xmpp.org/rfcs/rfc6120.html#stanzas-error-conditions-service-unavailable
+class ServiceUnavailableError extends StanzaError {
+  static const tag = 'service-unavailable';
+}
+
+/// Could not connect to the remote server.
+/// https://xmpp.org/rfcs/rfc6120.html#stanzas-error-conditions-remote-server-not-found
+class RemoteServerNotFoundError extends StanzaError {
+  static const tag = 'remote-server-not-found';
+}
+
+/// The connection to the remote server timed out.
+/// https://xmpp.org/rfcs/rfc6120.html#stanzas-error-conditions-remote-server-timeout
+class RemoteServerTimeoutError extends StanzaError {
+  static const tag = 'remote-server-timeout';
+}
+
+/// An unknown error.
+class UnknownStanzaError extends StanzaError {}
 
 class Stanza extends XMLNode {
   // ignore: use_super_parameters

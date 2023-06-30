@@ -33,7 +33,7 @@ class AsyncStanzaQueue {
     this._canSendCallback,
   );
 
-  /// The lock for accessing [AsyncStanzaQueue._lock] and [AsyncStanzaQueue._running].
+  /// The lock for accessing [AsyncStanzaQueue._queue].
   final Lock _lock = Lock();
 
   /// The actual job queue.
@@ -44,22 +44,15 @@ class AsyncStanzaQueue {
 
   final CanSendCallback _canSendCallback;
 
-  /// Indicates whether we are currently executing a job.
-  bool _running = false;
-
   @visibleForTesting
   Queue<StanzaQueueEntry> get queue => _queue;
-
-  @visibleForTesting
-  bool get isRunning => _running;
 
   /// Adds a job [entry] to the queue.
   Future<void> enqueueStanza(StanzaQueueEntry entry) async {
     await _lock.synchronized(() async {
       _queue.add(entry);
 
-      if (!_running && _queue.isNotEmpty && await _canSendCallback()) {
-        _running = true;
+      if (_queue.isNotEmpty && await _canSendCallback()) {
         unawaited(
           _runJob(_queue.removeFirst()),
         );
@@ -79,8 +72,6 @@ class AsyncStanzaQueue {
         unawaited(
           _runJob(_queue.removeFirst()),
         );
-      } else {
-        _running = false;
       }
     });
   }
@@ -90,7 +81,6 @@ class AsyncStanzaQueue {
 
     await _lock.synchronized(() {
       if (_queue.isNotEmpty) {
-        _running = true;
         unawaited(
           _runJob(_queue.removeFirst()),
         );

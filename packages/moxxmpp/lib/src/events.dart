@@ -70,9 +70,9 @@ class MessageEvent extends XmppEvent {
   MessageEvent(
     this.from,
     this.to,
-    this.id,
     this.encrypted,
     this.extensions, {
+    this.id,
     this.type,
     this.error,
     this.encryptionError,
@@ -85,7 +85,7 @@ class MessageEvent extends XmppEvent {
   final JID to;
 
   /// The id attribute of the message.
-  final String id;
+  final String? id;
 
   /// The type attribute of the message.
   final String? type;

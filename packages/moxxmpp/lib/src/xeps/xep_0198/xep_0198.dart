@@ -11,6 +11,7 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/negotiators/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/negotiator.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
@@ -28,10 +29,10 @@ class StreamManagementManager extends XmppManagerBase {
   }) : super(smManager);
 
   /// The queue of stanzas that are not (yet) acked
-  final Map<int, Stanza> _unackedStanzas = {};
+  final Map<int, SMQueueEntry> _unackedStanzas = {};
 
   /// Commitable state of the StreamManagementManager
-  StreamManagementState _state = StreamManagementState(0, 0);
+  StreamManagementState _state = const StreamManagementState(0, 0);
 
   /// Mutex lock for _state
   final Lock _stateLock = Lock();
@@ -61,7 +62,7 @@ class StreamManagementManager extends XmppManagerBase {
 
   /// Functions for testing
   @visibleForTesting
-  Map<int, Stanza> getUnackedStanzas() => _unackedStanzas;
+  Map<int, SMQueueEntry> getUnackedStanzas() => _unackedStanzas;
 
   @visibleForTesting
   Future<int> getPendingAcks() async {
@@ -306,6 +307,10 @@ class StreamManagementManager extends XmppManagerBase {
         if (_pendingAcks > 0) {
           // Prevent diff from becoming negative
           final diff = max(_state.c2s - h, 0);
+
+          logger.finest(
+            'Setting _pendingAcks to $diff (was $_pendingAcks before): max(${_state.c2s} - $h, 0)',
+          );
           _pendingAcks = diff;
 
           // Reset the timer
@@ -336,15 +341,18 @@ class StreamManagementManager extends XmppManagerBase {
       final attrs = getAttributes();
       final sequences = _unackedStanzas.keys.toList()..sort();
       for (final height in sequences) {
+        logger.finest('Unacked stanza: height $height, h $h');
+
         // Do nothing if the ack does not concern this stanza
         if (height > h) continue;
 
-        final stanza = _unackedStanzas[height]!;
+        logger.finest('Removing stanza with height $height');
+        final entry = _unackedStanzas[height]!;
         _unackedStanzas.remove(height);
 
         // Create a StanzaAckedEvent if the stanza is correct
-        if (shouldTriggerAckedEvent(stanza)) {
-          attrs.sendEvent(StanzaAckedEvent(stanza));
+        if (shouldTriggerAckedEvent(entry.stanza)) {
+          attrs.sendEvent(StanzaAckedEvent(entry.stanza));
         }
       }
 
@@ -401,13 +409,29 @@ class StreamManagementManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     if (isStreamManagementEnabled()) {
-      await _incrementC2S();
+      final smData = state.extensions.get<StreamManagementData>();
+      logger.finest('Should count stanza: ${smData?.shouldCountStanza}');
+      if (smData?.shouldCountStanza ?? true) {
+        await _incrementC2S();
+      }
 
-      if (state.extensions.get<StreamManagementData>()?.exclude ?? false) {
+      if (smData?.exclude ?? false) {
         return state;
       }
 
-      _unackedStanzas[_state.c2s] = stanza;
+      int queueId;
+      if (smData?.queueId != null) {
+        logger.finest('Reusing queue id ${smData!.queueId}');
+        queueId = smData.queueId!;
+      } else {
+        queueId = await _stateLock.synchronized(() => _state.c2s);
+      }
+
+      _unackedStanzas[queueId] = SMQueueEntry(
+        stanza,
+        // Prevent an E2EE message being encrypted again
+        state.encrypted,
+      );
       await _sendAckRequest();
     }
 
@@ -415,16 +439,23 @@ class StreamManagementManager extends XmppManagerBase {
   }
 
   Future<void> _resendStanzas() async {
-    final stanzas = _unackedStanzas.values.toList();
-    _unackedStanzas.clear();
-
-    for (final stanza in stanzas) {
-      logger
-          .finest('Resending ${stanza.tag} with id ${stanza.attributes["id"]}');
+    final queueCopy = _unackedStanzas.entries.toList();
+    for (final entry in queueCopy) {
+      logger.finest(
+        'Resending ${entry.value.stanza.tag} with id ${entry.value.stanza.attributes["id"]}',
+      );
       await getAttributes().sendStanza(
         StanzaDetails(
-          stanza,
+          entry.value.stanza,
+          postSendExtensions: TypedMap<StanzaHandlerExtension>.fromList([
+            StreamManagementData(
+              false,
+              entry.key,
+            ),
+          ]),
           awaitable: false,
+          // Prevent an E2EE message being encrypted again
+          encrypted: entry.value.encrypted,
         ),
       );
     }

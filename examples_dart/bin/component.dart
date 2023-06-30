@@ -30,24 +30,26 @@ class EchoMessageManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     final body = stanza.firstTag('body');
-    if (body == null) return state.copyWith(done: true);
+    if (body == null) return state..done = true;
 
     final bodyText = body.innerText();
 
     await getAttributes().sendStanza(
-      Stanza.message(
-        to: stanza.from,
-        children: [
-          XMLNode(
-            tag: 'body',
-            text: 'Hello, ${stanza.from}! You said "$bodyText"',
-          ),
-        ],
+      StanzaDetails(
+        Stanza.message(
+          to: stanza.from,
+          children: [
+            XMLNode(
+              tag: 'body',
+              text: 'Hello, ${stanza.from}! You said "$bodyText"',
+            ),
+          ],
+        ),
+        awaitable: false,
       ),
-      awaitable: false,
     );
 
-    return state.copyWith(done: true);
+    return state..done = true;
   }
 }
 

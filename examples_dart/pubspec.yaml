@@ -1,12 +1,14 @@
 name: example_dart
-description: A sample command-line application.
+description: A collection of samples for moxxmpp.
 version: 1.0.0
-# homepage: https://www.example.com
 
 environment:
   sdk: '>=2.18.0 <3.0.0'
 
 dependencies:
+  args: 2.4.1
+  chalkdart: 2.0.9
+  cli_repl: 0.2.3
   logging: ^1.0.2
   moxxmpp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
@@ -14,12 +16,19 @@ dependencies:
   moxxmpp_socket_tcp:
     hosted: https://git.polynom.me/api/packages/Moxxy/pub
     version: 0.3.1
+  omemo_dart:
+    hosted: https://git.polynom.me/api/packages/PapaTutuWawa/pub
+    version: ^0.5.1
 
 dependency_overrides:
   moxxmpp:
     path: ../packages/moxxmpp
   moxxmpp_socket_tcp:
     path: ../packages/moxxmpp_socket_tcp
+  omemo_dart:
+    git:
+      url: https://github.com/PapaTutuWawa/omemo_dart.git
+      rev: 49c7e114e6cf80dcde55fbbd218bba3182045862
     
 dev_dependencies:
   lints: ^2.0.0

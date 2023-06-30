@@ -20,4 +20,6 @@ class TypedMap<B> {
 
   /// Return the object of type [T] from the map, if it has been stored.
   T? get<T>() => _data[T] as T?;
+
+  Iterable<Object> get keys => _data.keys;
 }

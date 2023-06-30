@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/attributes.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -14,7 +15,6 @@ import 'package:moxxmpp/src/roster/errors.dart';
 import 'package:moxxmpp/src/roster/state.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 
 @immutable
 class XmppRosterItem {

@@ -16,6 +16,8 @@
 - **BREAKING**: `MessageEvent` now makes use of `TypedMap`.
 - **BREAKING**: Removed `PresenceReceivedEvent`. Use a manager registering handlers with priority greater than `[PresenceManager.presenceHandlerPriority]` instead.
 - **BREAKING**: `ChatState.toString()` is now `ChatState.toName()`
+- **BREAKING**: Overriding `BaseOmemoManager` is no longer required. `OmemoManager` now takes callback methods instead.
+- Removed `ErrorResponseDiscoError` from the possible XEP-0030 errors.
 
 ## 0.3.1
 

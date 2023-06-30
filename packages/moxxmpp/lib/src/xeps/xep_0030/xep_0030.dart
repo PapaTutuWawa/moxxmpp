@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:meta/meta.dart';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
@@ -9,7 +10,6 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/wait.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
@@ -44,11 +44,11 @@ class DiscoManager extends XmppManagerBase {
   final Map<DiscoCacheKey, DiscoInfo> _discoInfoCache = {};
 
   /// The tracker for tracking disco#info queries that are in flight.
-  final WaitForTracker<DiscoCacheKey, Result<DiscoError, DiscoInfo>>
+  final WaitForTracker<DiscoCacheKey, Result<StanzaError, DiscoInfo>>
       _discoInfoTracker = WaitForTracker();
 
   /// The tracker for tracking disco#info queries that are in flight.
-  final WaitForTracker<DiscoCacheKey, Result<DiscoError, List<DiscoItem>>>
+  final WaitForTracker<DiscoCacheKey, Result<StanzaError, List<DiscoItem>>>
       _discoItemsTracker = WaitForTracker();
 
   /// Cache lock
@@ -67,7 +67,7 @@ class DiscoManager extends XmppManagerBase {
   List<String> get features => _features;
 
   @visibleForTesting
-  WaitForTracker<DiscoCacheKey, Result<DiscoError, DiscoInfo>>
+  WaitForTracker<DiscoCacheKey, Result<StanzaError, DiscoInfo>>
       get infoTracker => _discoInfoTracker;
 
   @override
@@ -231,7 +231,7 @@ class DiscoManager extends XmppManagerBase {
 
   Future<void> _exitDiscoInfoCriticalSection(
     DiscoCacheKey key,
-    Result<DiscoError, DiscoInfo> result,
+    Result<StanzaError, DiscoInfo> result,
     bool shouldCache,
   ) async {
     await _cacheLock.synchronized(() async {
@@ -252,10 +252,10 @@ class DiscoManager extends XmppManagerBase {
   ///
   /// [shouldCache] indicates whether the successful result of the disco#info query
   /// should be cached (true) or not(false).
-  Future<Result<DiscoError, DiscoInfo>> discoInfoQuery(
+  Future<Result<StanzaError, DiscoInfo>> discoInfoQuery(
     JID entity, {
     String? node,
-    bool shouldEncrypt = true,
+    bool shouldEncrypt = false,
     bool shouldCache = true,
   }) async {
     DiscoInfo? info;
@@ -263,7 +263,7 @@ class DiscoManager extends XmppManagerBase {
     final ecm = getAttributes()
         .getManagerById<EntityCapabilitiesManager>(entityCapabilitiesManager);
     final ffuture = await _cacheLock
-        .synchronized<Future<Future<Result<DiscoError, DiscoInfo>>?>?>(
+        .synchronized<Future<Future<Result<StanzaError, DiscoInfo>>?>?>(
             () async {
       // Check if we already know what the JID supports
       if (_discoInfoCache.containsKey(cacheKey)) {
@@ -294,19 +294,21 @@ class DiscoManager extends XmppManagerBase {
     final stanza = (await getAttributes().sendStanza(
       StanzaDetails(
         buildDiscoInfoQueryStanza(entity, node),
-        encrypted: !shouldEncrypt,
+        shouldEncrypt: shouldEncrypt,
       ),
     ))!;
-    final query = stanza.firstTag('query');
-    if (query == null) {
-      final result = Result<DiscoError, DiscoInfo>(InvalidResponseDiscoError());
+
+    // Error handling
+    if (stanza.attributes['type'] == 'error') {
+      final result =
+          Result<StanzaError, DiscoInfo>(StanzaError.fromXMLNode(stanza));
       await _exitDiscoInfoCriticalSection(cacheKey, result, shouldCache);
       return result;
     }
 
-    if (stanza.attributes['type'] == 'error') {
-      //final error = stanza.firstTag('error');
-      final result = Result<DiscoError, DiscoInfo>(ErrorResponseDiscoError());
+    final query = stanza.firstTag('query');
+    if (query == null) {
+      final result = Result<DiscoError, DiscoInfo>(InvalidResponseDiscoError());
       await _exitDiscoInfoCriticalSection(cacheKey, result, shouldCache);
       return result;
     }
@@ -322,10 +324,10 @@ class DiscoManager extends XmppManagerBase {
   }
 
   /// Sends a disco items query to the (full) jid [entity], optionally with node=[node].
-  Future<Result<DiscoError, List<DiscoItem>>> discoItemsQuery(
+  Future<Result<StanzaError, List<DiscoItem>>> discoItemsQuery(
     JID entity, {
     String? node,
-    bool shouldEncrypt = true,
+    bool shouldEncrypt = false,
   }) async {
     final key = DiscoCacheKey(entity, node);
     final future = await _discoItemsTracker.waitFor(key);
@@ -340,19 +342,18 @@ class DiscoManager extends XmppManagerBase {
       ),
     ))!;
 
-    final query = stanza.firstTag('query');
-    if (query == null) {
+    // Error handling
+    if (stanza.attributes['type'] == 'error') {
       final result =
-          Result<DiscoError, List<DiscoItem>>(InvalidResponseDiscoError());
+          Result<StanzaError, List<DiscoItem>>(StanzaError.fromXMLNode(stanza));
       await _discoItemsTracker.resolve(key, result);
       return result;
     }
 
-    if (stanza.attributes['type'] == 'error') {
-      //final error = stanza.firstTag('error');
-      //print("Disco Items error: " + error.toXml());
+    final query = stanza.firstTag('query');
+    if (query == null) {
       final result =
-          Result<DiscoError, List<DiscoItem>>(ErrorResponseDiscoError());
+          Result<DiscoError, List<DiscoItem>>(InvalidResponseDiscoError());
       await _discoItemsTracker.resolve(key, result);
       return result;
     }
@@ -419,7 +420,7 @@ class DiscoManager extends XmppManagerBase {
   /// [entity] supports the disco feature [feature]. If not, returns false.
   Future<bool> supportsFeature(JID entity, String feature) async {
     final info = await discoInfoQuery(entity);
-    if (info.isType<DiscoError>()) return false;
+    if (info.isType<StanzaError>()) return false;
 
     return info.get<DiscoInfo>().features.contains(feature);
   }

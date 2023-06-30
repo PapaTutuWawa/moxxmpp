@@ -18,16 +18,14 @@ void main() {
       final connection = XmppConnection(
         TestingSleepReconnectionPolicy(10),
         AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
         TCPSocketWrapper(),
-      );
+      )..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('testuser@no-sasl.badxmpp.eu'),
+          password: 'abc123',
+        );
       await connection.registerFeatureNegotiators([
         StartTlsNegotiator(),
-      ]);
-      await connection.registerManagers([
-        DiscoManager([]),
-        RosterManager(TestingRosterStateManager('', [])),
-        MessageManager(),
-        PresenceManager(),
       ]);
       connection.asBroadcastStream().listen((event) {
         if (event is ConnectionStateChangedEvent) {
@@ -36,14 +34,6 @@ void main() {
           }
         }
       });
-
-      connection.setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('testuser@no-sasl.badxmpp.eu'),
-          password: 'abc123',
-          useDirectTLS: true,
-        ),
-      );
 
       final result = await connection.connect(
         shouldReconnect: false,
@@ -68,16 +58,14 @@ void main() {
       final connection = XmppConnection(
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
         TCPSocketWrapper(),
-      );
+      )..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('testuser@no-sasl.badxmpp.eu'),
+          password: 'abc123',
+        );
       await connection.registerFeatureNegotiators([
         StartTlsNegotiator(),
-      ]);
-      await connection.registerManagers([
-        DiscoManager([]),
-        RosterManager(TestingRosterStateManager('', [])),
-        MessageManager(),
-        PresenceManager(),
       ]);
       connection.asBroadcastStream().listen((event) {
         if (event is ConnectionStateChangedEvent) {
@@ -86,14 +74,6 @@ void main() {
           }
         }
       });
-
-      connection.setConnectionSettings(
-        ConnectionSettings(
-          jid: JID.fromString('testuser@no-sasl.badxmpp.eu'),
-          password: 'abc123',
-          useDirectTLS: true,
-        ),
-      );
 
       final result = await connection.connect(
         shouldReconnect: false,

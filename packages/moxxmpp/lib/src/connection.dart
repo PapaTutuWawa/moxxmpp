@@ -25,11 +25,9 @@ import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
-import 'package:moxxmpp/src/xeps/xep_0198/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
 import 'package:synchronized/synchronized.dart';
@@ -479,6 +477,7 @@ class XmppConnection {
         newStanza,
         TypedMap(),
         encrypted: details.encrypted,
+        shouldEncrypt: details.shouldEncrypt,
         forceEncryption: details.forceEncryption,
       ),
     );
@@ -533,15 +532,14 @@ class XmppConnection {
 
     // Run post-send handlers
     _log.fine('Running post stanza handlers..');
-    final extensions = TypedMap<StanzaHandlerExtension>()
-      ..set(StreamManagementData(details.excludeFromStreamManagement));
     await _runOutgoingPostStanzaHandlers(
       newStanza,
       initial: StanzaHandlerData(
         false,
         false,
         newStanza,
-        extensions,
+        details.postSendExtensions ?? TypedMap<StanzaHandlerExtension>(),
+        encrypted: data.encrypted,
       ),
     );
     _log.fine('Done');
@@ -736,6 +734,13 @@ class XmppConnection {
         : '';
     _log.finest('<== $prefix${incomingPreHandlers.stanza.toXml()}');
 
+    if (incomingPreHandlers.skip) {
+      _log.fine(
+        'Not processing stanza (${incomingPreHandlers.stanza.tag}, ${incomingPreHandlers.stanza.id}) due to skip=true.',
+      );
+      return;
+    }
+
     final awaited = await _stanzaAwaiter.onData(
       incomingPreHandlers.stanza,
       connectionSettings.jid.toBare(),
@@ -753,6 +758,7 @@ class XmppConnection {
         incomingPreHandlers.stanza,
         incomingPreHandlers.extensions,
         encrypted: incomingPreHandlers.encrypted,
+        encryptionError: incomingPreHandlers.encryptionError,
         cancelReason: incomingPreHandlers.cancelReason,
       ),
     );

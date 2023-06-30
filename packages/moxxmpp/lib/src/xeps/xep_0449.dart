@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
@@ -9,7 +10,6 @@ import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/rfcs/rfc_4790.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/types/result.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
