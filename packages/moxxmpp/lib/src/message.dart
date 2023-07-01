@@ -103,14 +103,15 @@ class MessageManager extends XmppManagerBase {
   /// data for building the message.
   Future<void> sendMessage(
     JID to,
-    TypedMap<StanzaHandlerExtension> extensions,
-  ) async {
+    TypedMap<StanzaHandlerExtension> extensions, {
+    String type = 'chat',
+  }) async {
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.message(
           to: to.toString(),
           id: extensions.get<MessageIdData>()?.id,
-          type: 'chat',
+          type: type,
           children: _messageSendingCallbacks
               .map((c) => c(extensions))
               .flattened
