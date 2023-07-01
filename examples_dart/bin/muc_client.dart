@@ -15,7 +15,7 @@ void main(List<String> args) async {
   });
 
   final parser = ArgumentParser()
-    ..parser.addOption('to', help: 'The JID to send messages to')
+    ..parser.addOption('muc', help: 'The MUC to send messages to')
     ..parser.addOption('nick', help: 'The nickname with which to join the MUC');
   final options = parser.handleArguments(args);
   if (options == null) {
@@ -23,21 +23,14 @@ void main(List<String> args) async {
   }
 
   // Connect
-  final jid = parser.jid;
-  final to = JID.fromString(options['to']! as String).toBare();
+  final muc = JID.fromString(options['muc']! as String).toBare();
   final nick = options['nick']! as String;
-  print(parser.connectionSettings);
   final connection = XmppConnection(
     TestingReconnectionPolicy(),
     AlwaysConnectedConnectivityManager(),
     ClientToServerNegotiator(),
     ExampleTCPSocketWrapper(parser.srvRecord),
   )..connectionSettings = parser.connectionSettings;
-
-  print(parser.connectionSettings.host);
-  print(parser.connectionSettings.jid);
-  print(parser.connectionSettings.password);
-  print(parser.connectionSettings.port);
 
   // Register the managers and negotiators
   await connection.registerManagers([
@@ -65,14 +58,14 @@ void main(List<String> args) async {
   Logger.root.info('Connected.');
 
   // Join room
-  await connection.getManagerById<MUCManager>(mucManager)!.joinRoom(to, nick);
+  await connection.getManagerById<MUCManager>(mucManager)!.joinRoom(muc, nick);
 
   final repl = Repl(prompt: '> ');
   await for (final line in repl.runAsync()) {
     await connection
         .getManagerById<MessageManager>(messageManager)!
         .sendMessage(
-            to,
+            muc,
             TypedMap<StanzaHandlerExtension>.fromList([
               MessageBodyData(line),
             ]),
@@ -80,7 +73,7 @@ void main(List<String> args) async {
   }
 
   // Leave room
-  await connection.getManagerById<MUCManager>(mucManager)!.leaveRoom(to);
+  await connection.getManagerById<MUCManager>(mucManager)!.leaveRoom(muc);
 
   // Disconnect
   await connection.disconnect();
