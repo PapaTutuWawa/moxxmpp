@@ -205,7 +205,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
       from,
       node: capabilityNode,
     );
-    if (discoRequest.isType<DiscoError>()) {
+    if (discoRequest.isType<StanzaError>()) {
       return state;
     }
     final discoInfo = discoRequest.get<DiscoInfo>();
