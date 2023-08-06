@@ -64,6 +64,7 @@ export 'package:moxxmpp/src/xeps/xep_0198/nonzas.dart';
 export 'package:moxxmpp/src/xeps/xep_0198/state.dart';
 export 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 export 'package:moxxmpp/src/xeps/xep_0203.dart';
+export 'package:moxxmpp/src/xeps/xep_0264.dart';
 export 'package:moxxmpp/src/xeps/xep_0280.dart';
 export 'package:moxxmpp/src/xeps/xep_0297.dart';
 export 'package:moxxmpp/src/xeps/xep_0300.dart';
