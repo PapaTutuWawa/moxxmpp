@@ -12,12 +12,6 @@
       config = {
         android_sdk.accept_license = true;
         allowUnfree = true;
-        
-        # Fix to allow building the NDK package
-        # TODO: Remove once https://github.com/tadfisher/android-nixpkgs/issues/62 is resolved
-        permittedInsecurePackages = [
-          "python-2.7.18.6"
-        ];
       };
     };
     # Everything to make Flutter happy
@@ -34,13 +28,6 @@
       platforms-android-30
       platforms-android-31
       platforms-android-33
-
-      # For flutter_zxing
-      cmake-3-18-1
-      #ndk-21-4-7075529
-      (ndk-21-4-7075529.overrideAttrs (old: {
-         buildInputs = old.buildInputs ++ [ pkgs.python27 ];
-      }))
     ]);
     lib = pkgs.lib;
     pinnedJDK = pkgs.jdk17;

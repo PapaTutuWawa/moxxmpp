@@ -5,7 +5,7 @@ import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
+import 'package:moxxmpp/src/xeps/xep_0264.dart';
 
 class StatelessMediaSharingData implements StanzaHandlerExtension {
   const StatelessMediaSharingData({
@@ -20,7 +20,7 @@ class StatelessMediaSharingData implements StanzaHandlerExtension {
   final int size;
   final String description;
   final Map<String, String> hashes; // algo -> hash value
-  final List<Thumbnail> thumbnails;
+  final List<JingleContentThumbnail> thumbnails;
 
   final String url;
 }
@@ -48,16 +48,11 @@ StatelessMediaSharingData parseSIMSElement(XMLNode node) {
     break;
   }
 
-  final thumbnails = List<Thumbnail>.empty(growable: true);
-  for (final child in file.children) {
-    // TODO(Unknown): Handle other thumbnails
-    if (child.tag == 'file-thumbnail' &&
-        child.attributes['xmlns'] == fileThumbnailsXmlns) {
-      final thumb = parseFileThumbnailElement(child);
-      if (thumb != null) {
-        thumbnails.add(thumb);
-      }
-    }
+  // Thumbnails
+  final thumbnails = List<JingleContentThumbnail>.empty(growable: true);
+  for (final i
+      in file.findTags('thumbnail', xmlns: jingleContentThumbnailXmlns)) {
+    thumbnails.add(JingleContentThumbnail.fromXML(i));
   }
 
   return StatelessMediaSharingData(

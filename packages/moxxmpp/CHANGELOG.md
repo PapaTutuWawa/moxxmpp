@@ -18,6 +18,7 @@
 - **BREAKING**: `ChatState.toString()` is now `ChatState.toName()`
 - **BREAKING**: Overriding `BaseOmemoManager` is no longer required. `OmemoManager` now takes callback methods instead.
 - Removed `ErrorResponseDiscoError` from the possible XEP-0030 errors.
+- **BREAKING**: Removed "Extensible File Thumbnails" (The `Thumbnail` type)
 
 ## 0.3.1
 
