@@ -55,8 +55,6 @@ class JID {
 
   /// Converts the JID into a bare JID.
   JID toBare() {
-    if (isBare()) return this;
-
     return JID(local, domain, '');
   }
 

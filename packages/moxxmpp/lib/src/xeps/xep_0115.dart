@@ -15,7 +15,6 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/util/list.dart';
 import 'package:moxxmpp/src/xeps/xep_0004.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/cache.dart';
-import 'package:moxxmpp/src/xeps/xep_0030/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0300.dart';

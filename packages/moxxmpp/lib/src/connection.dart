@@ -312,7 +312,7 @@ class XmppConnection {
 
   /// Called when a stream ending error has occurred
   Future<void> handleError(XmppError error) async {
-    _log.severe('handleError called with ${error.toString()}');
+    _log.severe('handleError called with $error');
 
     // Whenever we encounter an error that would trigger a reconnection attempt while
     // the connection result is being awaited, don't attempt a reconnection but instead
