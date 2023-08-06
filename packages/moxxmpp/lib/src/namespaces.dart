@@ -69,6 +69,9 @@ const delayedDeliveryXmlns = 'urn:xmpp:delay';
 // XEP-0234
 const jingleFileTransferXmlns = 'urn:xmpp:jingle:apps:file-transfer:5';
 
+// XEP-0264
+const jingleContentThumbnailXmlns = 'urn:xmpp:thumbs:1';
+
 // XEP-0280
 const carbonsXmlns = 'urn:xmpp:carbons:2';
 

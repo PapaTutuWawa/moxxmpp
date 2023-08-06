@@ -39,7 +39,6 @@ export 'package:moxxmpp/src/socket.dart';
 export 'package:moxxmpp/src/stanza.dart';
 export 'package:moxxmpp/src/stringxml.dart';
 export 'package:moxxmpp/src/util/typed_map.dart';
-export 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
 export 'package:moxxmpp/src/xeps/staging/fast.dart';
 export 'package:moxxmpp/src/xeps/staging/file_upload_notification.dart';
 export 'package:moxxmpp/src/xeps/xep_0004.dart';

@@ -1,6 +1,6 @@
 import 'package:moxxmpp/src/namespaces.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/xeps/staging/extensible_file_thumbnails.dart';
+import 'package:moxxmpp/src/xeps/xep_0264.dart';
 import 'package:moxxmpp/src/xeps/xep_0300.dart';
 
 class FileMetadataData {
@@ -39,12 +39,10 @@ class FileMetadataData {
     }
 
     // Thumbnails
-    final thumbnails = List<Thumbnail>.empty(growable: true);
-    for (final i in node.findTags('file-thumbnail')) {
-      final thumbnail = parseFileThumbnailElement(i);
-      if (thumbnail != null) {
-        thumbnails.add(thumbnail);
-      }
+    final thumbnails = List<JingleContentThumbnail>.empty(growable: true);
+    for (final i
+        in node.findTags('thumbnail', xmlns: jingleContentThumbnailXmlns)) {
+      thumbnails.add(JingleContentThumbnail.fromXML(i));
     }
 
     // Length and height
@@ -75,7 +73,7 @@ class FileMetadataData {
   final String? mediaType;
   final int? width;
   final int? height;
-  final List<Thumbnail> thumbnails;
+  final List<JingleContentThumbnail> thumbnails;
   final String? desc;
   final Map<HashFunction, String> hashes;
   final int? length;
@@ -119,7 +117,7 @@ class FileMetadataData {
 
     for (final thumbnail in thumbnails) {
       node.addChild(
-        constructFileThumbnailElement(thumbnail),
+        thumbnail.toXML(),
       );
     }
 
