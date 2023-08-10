@@ -13,7 +13,6 @@
     <os>macOS</os>
     <os>Android</os>
     <os>iOS</os>
-    <programming-language>Dart</programming-language>
     <maintainer>
       <foaf:Person>
         <foaf:name>Alexander "Polynomdivision"</foaf:name>
