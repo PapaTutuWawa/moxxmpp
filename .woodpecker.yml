@@ -40,4 +40,3 @@ pipeline:
     when:
       status:
         - failure
-      event: [push, tag]
