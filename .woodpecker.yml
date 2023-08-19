@@ -1,3 +1,6 @@
+when:
+  branch: master
+
 pipeline:
   # Check moxxmpp
   moxxmpp-lint:
@@ -26,3 +29,15 @@ pipeline:
   #     - cd packages/moxxmpp
   #     - dart pub get
   #     - dart test
+  notify:
+    image: git.polynom.me/papatutuwawa/woodpecker-xmpp
+    settings:
+      xmpp_tls: 1
+      xmpp_is_muc: 1
+      xmpp_recipient: moxxy-build@muc.moxxy.org
+      xmpp_alias: 2Bot
+    secrets: [ xmpp_jid, xmpp_password, xmpp_server ]
+    when:
+      status:
+        - failure
+      event: [push, tag]

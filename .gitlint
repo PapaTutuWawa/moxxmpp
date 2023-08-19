@@ -7,7 +7,7 @@ line-length=72
 [title-trailing-punctuation]
 [title-hard-tab]
 [title-match-regex]
-regex=^((feat|fix|chore|refactor|docs|release|test)\((meta|tests|style|docs|xep|core|example|all|flake)+(,(meta|tests|style|docs|xep|core|example|all|flake))*\)|release): [A-Z0-9].*$
+regex=^((feat|fix|chore|refactor|docs|release|test)\((meta|tests|style|docs|xep|core|example|all|flake|ci)+(,(meta|tests|style|docs|xep|core|example|all|flake|ci))*\)|release): [A-Z0-9].*$
 
 
 [body-trailing-whitespace]
