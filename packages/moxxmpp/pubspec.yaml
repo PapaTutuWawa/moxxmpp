@@ -30,10 +30,3 @@ dev_dependencies:
   build_runner: ^2.1.11
   test: ^1.16.0
   very_good_analysis: ^3.0.1
-
-# TODO: Remove once we release 0.5.1
-dependency_overrides:
-  omemo_dart:
-    git:
-      url: https://github.com/PapaTutuWawa/omemo_dart.git
-      rev: 49c7e114e6cf80dcde55fbbd218bba3182045862
