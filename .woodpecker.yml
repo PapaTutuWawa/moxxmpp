@@ -7,12 +7,15 @@ pipeline:
     image: dart:2.18.1
     commands:
       - cd packages/moxxmpp
-      - dart pub get
+      # Proxy requests to pub.dev using pubcached
+      - PUB_HOSTED_URL=http://172.17.0.1:8000 dart pub get
       - dart analyze --fatal-infos --fatal-warnings
+
   moxxmpp-test:
     image: dart:2.18.1
     commands:
-      - cd packages/moxxmpp
+      # Proxy requests to pub.dev using pubcached
+      - PUB_HOSTED_URL=http://172.17.0.1:8000 dart pub get
       - dart pub get
       - dart test
 
@@ -21,14 +24,17 @@ pipeline:
     image: dart:2.18.1
     commands:
       - cd packages/moxxmpp_socket_tcp
-      - dart pub get
+      # Proxy requests to pub.dev using pubcached
+      - PUB_HOSTED_URL=http://172.17.0.1:8000 dart pub get
       - dart analyze --fatal-infos --fatal-warnings
+
   # moxxmpp-test:
   #   image: dart:2.18.1
   #   commands:
   #     - cd packages/moxxmpp
   #     - dart pub get
   #     - dart test
+
   notify:
     image: git.polynom.me/papatutuwawa/woodpecker-xmpp
     settings:
