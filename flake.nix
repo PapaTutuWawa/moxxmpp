@@ -108,5 +108,18 @@
       # an used parameter.
       GRADLE_OPTS = "-Dorg.gradle.project.android.aapt2FromMavenOverride=${sdk}/share/android-sdk/build-tools/34.0.0/aapt2";
     };
+
+    apps = {
+      regenerateNixPackage = let
+        script = pkgs.writeShellScript "regenerate-nix-package.sh" ''
+          set -e
+          ${pythonEnv}/bin/python ./scripts/pubspec2lock.py ./packages/moxxmpp/pubspec.lock ./nix/moxxmpp.lock
+          ${pythonEnv}/bin/python ./scripts/lock2nix.py ./nix/moxxmpp.lock ./nix/pubcache.moxxmpp.nix moxxmpp
+        '';
+      in {
+        type = "app";
+        program = "${script}";
+      };
+    };
   });
 }
