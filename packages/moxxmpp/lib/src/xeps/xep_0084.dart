@@ -147,10 +147,11 @@ class UserAvatarManager extends XmppManagerBase {
       return Result(UnknownAvatarError());
     }
 
-    final metadata = results.first.payload
-        .firstTag('metadata', xmlns: userAvatarMetadataXmlns)!;
     return Result(
-      metadata.findTags('info').map(UserAvatarMetadata.fromXML).toList(),
+      results.first.payload
+          .findTags('info')
+          .map(UserAvatarMetadata.fromXML)
+          .toList(),
     );
   }
 
