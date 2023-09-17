@@ -5,10 +5,7 @@ import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
-import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
-import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
-import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0060/xep_0060.dart';
 
@@ -43,11 +40,7 @@ class UserAvatarMetadata {
   );
 
   factory UserAvatarMetadata.fromXML(XMLNode node) {
-    assert(
-      node.tag == 'metadata' &&
-          node.attributes['xmlns'] == userAvatarMetadataXmlns,
-      '<metadata /> element required',
-    );
+    assert(node.tag == 'info', 'node must be an <info /> element');
 
     final width = node.attributes['width'] as String?;
     final height = node.attributes['height'] as String?;
@@ -121,20 +114,43 @@ class UserAvatarManager extends XmppManagerBase {
 
   /// Requests the avatar from [jid]. Returns the avatar data if the request was
   /// successful. Null otherwise
-  Future<Result<AvatarError, UserAvatarData>> getUserAvatar(JID jid) async {
+  Future<Result<AvatarError, UserAvatarData>> getUserAvatarData(
+    JID jid,
+    String id,
+  ) async {
     final pubsub = _getPubSubManager();
-    final resultsRaw = await pubsub.getItems(jid, userAvatarDataXmlns);
+    final resultRaw = await pubsub.getItem(jid, userAvatarDataXmlns, id);
+    if (resultRaw.isType<PubSubError>()) return Result(UnknownAvatarError());
+
+    final result = resultRaw.get<PubSubItem>();
+    return Result(
+      UserAvatarData(
+        result.payload.innerText(),
+        id,
+      ),
+    );
+  }
+
+  /// Attempts to fetch the latest item from the User Avatar metadata node. Returns the list of
+  /// metadata contained within it. The list may be empty.
+  ///
+  /// If an error occured, returns an [AvatarError].
+  Future<Result<AvatarError, List<UserAvatarMetadata>>> getLatestMetadata(
+    JID jid,
+  ) async {
+    final resultsRaw = await _getPubSubManager()
+        .getItems(jid, userAvatarMetadataXmlns, maxItems: 1);
     if (resultsRaw.isType<PubSubError>()) return Result(UnknownAvatarError());
 
     final results = resultsRaw.get<List<PubSubItem>>();
-    if (results.isEmpty) return Result(UnknownAvatarError());
+    if (results.isEmpty) {
+      return Result(UnknownAvatarError());
+    }
 
-    final item = results[0];
+    final metadata = results.first.payload
+        .firstTag('metadata', xmlns: userAvatarMetadataXmlns)!;
     return Result(
-      UserAvatarData(
-        item.payload.innerText(),
-        item.id,
-      ),
+      metadata.findTags('info').map(UserAvatarMetadata.fromXML).toList(),
     );
   }
 
@@ -215,22 +231,5 @@ class UserAvatarManager extends XmppManagerBase {
     await _getPubSubManager().subscribe(jid, userAvatarMetadataXmlns);
 
     return const Result(true);
-  }
-
-  /// Returns the PubSub Id of an avatar after doing a disco#items query.
-  /// Note that this assumes that there is only one (1) item published on
-  /// the node.
-  Future<Result<AvatarError, String>> getAvatarId(JID jid) async {
-    final disco = getAttributes().getManagerById(discoManager)! as DiscoManager;
-    final response = await disco.discoItemsQuery(
-      jid,
-      node: userAvatarDataXmlns,
-    );
-    if (response.isType<StanzaError>()) return Result(UnknownAvatarError());
-
-    final items = response.get<List<DiscoItem>>();
-    if (items.isEmpty) return Result(UnknownAvatarError());
-
-    return Result(items.first.name);
   }
 }

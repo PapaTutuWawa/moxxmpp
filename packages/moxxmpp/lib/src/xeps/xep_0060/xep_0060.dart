@@ -401,8 +401,9 @@ class PubSubManager extends XmppManagerBase {
 
   Future<Result<PubSubError, List<PubSubItem>>> getItems(
     JID jid,
-    String node,
-  ) async {
+    String node, {
+    int? maxItems,
+  }) async {
     final result = (await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.iq(
@@ -415,7 +416,10 @@ class PubSubManager extends XmppManagerBase {
               children: [
                 XMLNode(
                   tag: 'items',
-                  attributes: <String, String>{'node': node},
+                  attributes: {
+                    'node': node,
+                    if (maxItems != null) 'max_items': maxItems.toString(),
+                  },
                 ),
               ],
             )
@@ -446,7 +450,7 @@ class PubSubManager extends XmppManagerBase {
   }
 
   Future<Result<PubSubError, PubSubItem>> getItem(
-    String jid,
+    JID jid,
     String node,
     String id,
   ) async {
@@ -454,7 +458,7 @@ class PubSubManager extends XmppManagerBase {
       StanzaDetails(
         Stanza.iq(
           type: 'get',
-          to: jid,
+          to: jid.toString(),
           children: [
             XMLNode.xmlns(
               tag: 'pubsub',

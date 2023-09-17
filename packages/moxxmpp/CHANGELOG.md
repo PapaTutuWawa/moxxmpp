@@ -18,7 +18,10 @@
 - **BREAKING**: `ChatState.toString()` is now `ChatState.toName()`
 - **BREAKING**: Overriding `BaseOmemoManager` is no longer required. `OmemoManager` now takes callback methods instead.
 - Removed `ErrorResponseDiscoError` from the possible XEP-0030 errors.
-- **BREAKING**: Removed "Extensible File Thumbnails" (The `Thumbnail` type)
+- **BREAKING**: Removed "Extensible File Thumbnails" (The `Thumbnail` type).
+- *BREAKING*: Rename `UserAvatarManager`'s `getUserAvatar` to `getUserAvatarData`. It now also requires the id of the avatar to fetch
+- *BREAKING*: `UserAvatarManager`'s `getAvatarId` with `getLatestMetadata`.
+- The `PubSubManager` now supports PubSub's `max_items` in `getItems`.
 
 ## 0.3.1
 

@@ -580,7 +580,7 @@ class OmemoManager extends XmppManagerBase {
     int deviceId,
   ) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
-    final bareJid = jid.toBare().toString();
+    final bareJid = jid.toBare();
     final item = await pm.getItem(bareJid, omemoBundlesXmlns, '$deviceId');
     if (item.isType<PubSubError>()) return Result(UnknownOmemoError());
 

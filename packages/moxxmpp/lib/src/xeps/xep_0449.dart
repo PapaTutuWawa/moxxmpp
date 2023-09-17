@@ -344,7 +344,7 @@ class StickersManager extends XmppManagerBase {
   ) async {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
     final stickerPackDataRaw = await pm.getItem(
-      jid.toBare().toString(),
+      jid.toBare(),
       stickersXmlns,
       id,
     );
