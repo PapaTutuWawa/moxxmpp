@@ -34,10 +34,25 @@ class RoomInformation {
 }
 
 class RoomState {
-  RoomState({
-    required this.roomJid,
-    this.nick,
-  });
+  RoomState({required this.roomJid, this.nick, required this.joined});
+
+  /// The JID of the room.
   final JID roomJid;
+
+  /// The nick we're joined with.
   String? nick;
+
+  /// Flag whether we're joined and can process messages
+  bool joined;
+
+  RoomState copyWith({
+    bool? joined,
+    String? nick,
+  }) {
+    return RoomState(
+      roomJid: roomJid,
+      joined: joined ?? this.joined,
+      nick: nick ?? this.nick,
+    );
+  }
 }

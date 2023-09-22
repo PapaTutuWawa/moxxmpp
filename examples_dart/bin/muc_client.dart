@@ -58,7 +58,11 @@ void main(List<String> args) async {
   Logger.root.info('Connected.');
 
   // Join room
-  await connection.getManagerById<MUCManager>(mucManager)!.joinRoom(muc, nick);
+  await connection.getManagerById<MUCManager>(mucManager)!.joinRoom(
+    muc,
+    nick,
+    maxHistoryStanzas: 0,
+  );
 
   final repl = Repl(prompt: '> ');
   await for (final line in repl.runAsync()) {
