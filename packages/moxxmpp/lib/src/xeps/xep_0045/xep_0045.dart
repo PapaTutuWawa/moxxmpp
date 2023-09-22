@@ -1,4 +1,5 @@
 import 'package:moxlib/moxlib.dart';
+import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/managers/base.dart';
 import 'package:moxxmpp/src/managers/data.dart';
@@ -44,6 +45,33 @@ class MUCManager extends XmppManagerBase {
           callback: _onMessageSent,
         ),
       ];
+
+  @override
+  Future<void> onXmppEvent(XmppEvent event) async {
+    if (event is! StreamNegotiationsDoneEvent) {
+      return;
+    }
+
+    // Only attempt rejoining if we did not resume the stream.
+    if (event.resumed) {
+      return;
+    }
+
+    await _cacheLock.synchronized(() async {
+      // Mark all groupchats as not joined.
+      for (final jid in _mucRoomCache.keys) {
+        _mucRoomCache[jid]!.joined = false;
+
+        // Re-join all MUCs.
+        final state = _mucRoomCache[jid]!;
+        await _sendMucJoin(
+          jid,
+          state.nick!,
+          0,
+        );
+      }
+    });
+  }
 
   /// Queries the information of a Multi-User Chat room.
   ///
@@ -94,6 +122,15 @@ class MUCManager extends XmppManagerBase {
       },
     );
 
+    await _sendMucJoin(roomJid, nick, maxHistoryStanzas);
+    return const Result(true);
+  }
+
+  Future<void> _sendMucJoin(
+    JID roomJid,
+    String nick,
+    int? maxHistoryStanzas,
+  ) async {
     await getAttributes().sendStanza(
       StanzaDetails(
         Stanza.presence(
@@ -116,7 +153,6 @@ class MUCManager extends XmppManagerBase {
         ),
       ),
     );
-    return const Result(true);
   }
 
   /// Leaves a Multi-User Chat room.
