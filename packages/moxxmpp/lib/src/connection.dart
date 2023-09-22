@@ -475,7 +475,7 @@ class XmppConnection {
         false,
         false,
         newStanza,
-        TypedMap(),
+        details.extensions ?? TypedMap(),
         encrypted: details.encrypted,
         shouldEncrypt: details.shouldEncrypt,
         forceEncryption: details.forceEncryption,

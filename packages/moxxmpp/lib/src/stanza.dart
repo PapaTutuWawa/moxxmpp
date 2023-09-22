@@ -7,6 +7,7 @@ import 'package:moxxmpp/src/util/typed_map.dart';
 class StanzaDetails {
   const StanzaDetails(
     this.stanza, {
+    this.extensions,
     this.addId = true,
     this.awaitable = true,
     this.shouldEncrypt = true,
@@ -18,6 +19,9 @@ class StanzaDetails {
 
   /// The stanza to send.
   final Stanza stanza;
+
+  /// The extension data used for constructing the stanza.
+  final TypedMap<StanzaHandlerExtension>? extensions;
 
   /// Flag indicating whether a stanza id should be added before sending.
   final bool addId;

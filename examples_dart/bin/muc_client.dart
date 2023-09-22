@@ -38,6 +38,7 @@ void main(List<String> args) async {
     DiscoManager([]),
     PubSubManager(),
     MessageManager(),
+    StableIdManager(),
     MUCManager(),
   ]);
   await connection.registerFeatureNegotiators([
@@ -57,12 +58,28 @@ void main(List<String> args) async {
   }
   Logger.root.info('Connected.');
 
+  // Print received messages.
+  connection
+      .asBroadcastStream()
+      .where((event) => event is MessageEvent)
+      .listen((event) {
+    event as MessageEvent;
+
+    // Ignore messages with no <body />
+    final body = event.get<MessageBodyData>()?.body;
+    if (body == null) {
+      return;
+    }
+
+    print('=====> [${event.from}] $body');
+  });
+
   // Join room
   await connection.getManagerById<MUCManager>(mucManager)!.joinRoom(
-    muc,
-    nick,
-    maxHistoryStanzas: 0,
-  );
+        muc,
+        nick,
+        maxHistoryStanzas: 0,
+      );
 
   final repl = Repl(prompt: '> ');
   await for (final line in repl.runAsync()) {
@@ -72,6 +89,11 @@ void main(List<String> args) async {
             muc,
             TypedMap<StanzaHandlerExtension>.fromList([
               MessageBodyData(line),
+              StableIdData(
+                // NOTE: Don't do this. Use a UUID.
+                DateTime.now().millisecondsSinceEpoch.toString(),
+                null,
+              ),
             ]),
             type: 'groupchat');
   }

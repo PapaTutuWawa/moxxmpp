@@ -127,7 +127,13 @@ class StableIdManager extends XmppManagerBase {
     TypedMap<StanzaHandlerExtension> extensions,
   ) {
     final data = extensions.get<StableIdData>();
-    return data != null ? data.toXML() : [];
+    if (data?.originId != null) {
+      return [
+        data!.toOriginIdElement(),
+      ];
+    }
+
+    return [];
   }
 
   @override

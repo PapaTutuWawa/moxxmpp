@@ -2,10 +2,10 @@ abstract class OmemoError {}
 
 class UnknownOmemoError extends OmemoError {}
 
-class InvalidAffixElementsException with Exception {}
+class InvalidAffixElementsException implements Exception {}
 
 class OmemoNotSupportedForContactException extends OmemoError {}
 
-class EncryptionFailedException with Exception {}
+class EncryptionFailedException implements Exception {}
 
-class InvalidEnvelopePayloadException with Exception {}
+class InvalidEnvelopePayloadException implements Exception {}

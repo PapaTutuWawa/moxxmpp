@@ -33,8 +33,13 @@ class RoomInformation {
   final String name;
 }
 
+/// The used message-id and an optional origin-id.
+typedef PendingMessage = (String, String?);
+
 class RoomState {
-  RoomState({required this.roomJid, this.nick, required this.joined});
+  RoomState({required this.roomJid, this.nick, required this.joined}) {
+    pendingMessages = List<PendingMessage>.empty(growable: true);
+  }
 
   /// The JID of the room.
   final JID roomJid;
@@ -45,14 +50,5 @@ class RoomState {
   /// Flag whether we're joined and can process messages
   bool joined;
 
-  RoomState copyWith({
-    bool? joined,
-    String? nick,
-  }) {
-    return RoomState(
-      roomJid: roomJid,
-      joined: joined ?? this.joined,
-      nick: nick ?? this.nick,
-    );
-  }
+  late final List<PendingMessage> pendingMessages;
 }

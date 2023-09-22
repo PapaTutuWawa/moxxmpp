@@ -11,6 +11,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
+import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:synchronized/extension.dart';
 import 'package:synchronized/synchronized.dart';
 
@@ -33,7 +34,15 @@ class MUCManager extends XmppManagerBase {
           callback: _onMessage,
           // Before the message handler
           priority: -99,
-        )
+        ),
+      ];
+
+  @override
+  List<StanzaHandler> getOutgoingPreStanzaHandlers() => [
+        StanzaHandler(
+          stanzaTag: 'message',
+          callback: _onMessageSent,
+        ),
       ];
 
   /// Queries the information of a Multi-User Chat room.
@@ -138,11 +147,33 @@ class MUCManager extends XmppManagerBase {
     return const Result(true);
   }
 
+  Future<StanzaHandlerData> _onMessageSent(
+    Stanza message,
+    StanzaHandlerData state,
+  ) async {
+    if (message.to == null) {
+      return state;
+    }
+    final toJid = JID.fromString(message.to!);
+
+    return _cacheLock.synchronized(() {
+      if (!_mucRoomCache.containsKey(toJid)) {
+        return state;
+      }
+
+      _mucRoomCache[toJid]!.pendingMessages.add(
+        (message.id!, state.extensions.get<StableIdData>()?.originId),
+      );
+      return state;
+    });
+  }
+
   Future<StanzaHandlerData> _onMessage(
     Stanza message,
     StanzaHandlerData state,
   ) async {
-    final roomJid = JID.fromString(message.from!).toBare();
+    final fromJid = JID.fromString(message.from!);
+    final roomJid = fromJid.toBare();
     return _mucRoomCache.synchronized(() {
       final roomState = _mucRoomCache[roomJid];
       if (roomState == null) {
@@ -153,7 +184,7 @@ class MUCManager extends XmppManagerBase {
         // The room subject marks the end of the join flow.
         if (!roomState.joined) {
           // Mark the room as joined.
-          _mucRoomCache[roomJid] = roomState.copyWith(joined: true);
+          _mucRoomCache[roomJid]!.joined = true;
           logger.finest('$roomJid is now joined');
         }
 
@@ -168,7 +199,23 @@ class MUCManager extends XmppManagerBase {
       } else {
         if (!roomState.joined) {
           // Ignore the discussion history.
-          // TODO: Implement a copyWith method
+          return StanzaHandlerData(
+            true,
+            false,
+            message,
+            state.extensions,
+          );
+        }
+
+        // Check if this is the message reflection.
+        final pending =
+            (message.id!, state.extensions.get<StableIdData>()?.originId);
+        if (fromJid.resource == roomState.nick &&
+            roomState.pendingMessages.contains(pending)) {
+          // Silently drop the message.
+          roomState.pendingMessages.remove(pending);
+
+          // TODO(Unknown): Maybe send an event stating that we received the reflection.
           return StanzaHandlerData(
             true,
             false,

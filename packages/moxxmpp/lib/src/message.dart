@@ -117,6 +117,7 @@ class MessageManager extends XmppManagerBase {
               .flattened
               .toList(),
         ),
+        extensions: extensions,
         awaitable: false,
       ),
     );

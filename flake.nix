@@ -68,7 +68,7 @@
       };
     in pkgs.mkShell {
       buildInputs = with pkgs; [
-        flutter37 pinnedJDK sdk dart # Dart
+        flutter pinnedJDK sdk dart # Dart
 	      gitlint # Code hygiene
 	      ripgrep # General utilities 
 
