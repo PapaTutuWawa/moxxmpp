@@ -16,6 +16,9 @@ import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:synchronized/extension.dart';
 import 'package:synchronized/synchronized.dart';
 
+/// (Room JID, nickname)
+typedef MUCRoomJoin = (JID, String);
+
 class MUCManager extends XmppManagerBase {
   MUCManager() : super(mucManager);
 
@@ -27,6 +30,10 @@ class MUCManager extends XmppManagerBase {
 
   /// Cache lock
   final Lock _cacheLock = Lock();
+
+  /// Flag indicating whether we joined the rooms added to the room list with
+  /// [prepareRoomList].
+  bool _joinedPreparedRooms = true;
 
   @override
   List<StanzaHandler> getIncomingStanzaHandlers() => [
@@ -52,8 +59,9 @@ class MUCManager extends XmppManagerBase {
       return;
     }
 
-    // Only attempt rejoining if we did not resume the stream.
-    if (event.resumed) {
+    // Only attempt rejoining if we did not resume the stream and all
+    // prepared rooms are already joined.
+    if (event.resumed && _joinedPreparedRooms) {
       return;
     }
 
@@ -68,6 +76,28 @@ class MUCManager extends XmppManagerBase {
           jid,
           state.nick!,
           0,
+        );
+      }
+      _joinedPreparedRooms = true;
+    });
+  }
+
+  /// Prepares the internal room list to ensure that the rooms
+  /// [rooms] are joined once we are connected.
+  Future<void> prepareRoomList(List<MUCRoomJoin> rooms) async {
+    assert(
+      rooms.isNotEmpty,
+      'The room list should not be empty',
+    );
+
+    await _cacheLock.synchronized(() {
+      _joinedPreparedRooms = false;
+      for (final room in rooms) {
+        final (roomJid, nick) = room;
+        _mucRoomCache[roomJid] = RoomState(
+          roomJid: roomJid,
+          nick: nick,
+          joined: false,
         );
       }
     });
