@@ -38,26 +38,20 @@ class PubSubPublishOptions {
           varAttr: 'FORM_TYPE',
           type: 'hidden',
         ),
-        ...accessModel != null
-            ? [
-                DataFormField(
-                  options: [],
-                  isRequired: false,
-                  values: [accessModel!],
-                  varAttr: 'pubsub#access_model',
-                )
-              ]
-            : [],
-        ...maxItems != null
-            ? [
-                DataFormField(
-                  options: [],
-                  isRequired: false,
-                  values: [maxItems!],
-                  varAttr: 'pubsub#max_items',
-                ),
-              ]
-            : [],
+        if (accessModel != null)
+          DataFormField(
+            options: [],
+            isRequired: false,
+            values: [accessModel!],
+            varAttr: 'pubsub#access_model',
+          ),
+        if (maxItems != null)
+          DataFormField(
+            options: [],
+            isRequired: false,
+            values: [maxItems!],
+            varAttr: 'pubsub#max_items',
+          ),
       ],
     ).toXml();
   }
@@ -87,7 +81,7 @@ class PubSubManager extends XmppManagerBase {
           tagName: 'event',
           tagXmlns: pubsubEventXmlns,
           callback: _onPubsubMessage,
-        )
+        ),
       ];
 
   @override
@@ -314,11 +308,11 @@ class PubSubManager extends XmppManagerBase {
                   children: [
                     XMLNode(
                       tag: 'item',
-                      attributes: id != null
-                          ? <String, String>{'id': id}
-                          : <String, String>{},
+                      attributes: {
+                        if (id != null) 'id': id,
+                      },
                       children: [payload],
-                    )
+                    ),
                   ],
                 ),
                 if (pubOptions != null)
@@ -327,7 +321,7 @@ class PubSubManager extends XmppManagerBase {
                     children: [pubOptions.toXml()],
                   ),
               ],
-            )
+            ),
           ],
         ),
         shouldEncrypt: false,
@@ -422,7 +416,7 @@ class PubSubManager extends XmppManagerBase {
                   },
                 ),
               ],
-            )
+            ),
           ],
         ),
         shouldEncrypt: false,

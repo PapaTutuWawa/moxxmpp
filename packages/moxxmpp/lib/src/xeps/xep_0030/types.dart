@@ -19,13 +19,11 @@ class Identity {
   XMLNode toXMLNode() {
     return XMLNode(
       tag: 'identity',
-      attributes: <String, dynamic>{
+      attributes: {
         'category': category,
         'type': type,
         'name': name,
-        ...lang == null
-            ? <String, dynamic>{}
-            : <String, dynamic>{'xml:lang': lang}
+        if (lang != null) 'xml:lang': lang,
       },
     );
   }

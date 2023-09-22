@@ -122,7 +122,7 @@ class RosterManager extends XmppManagerBase {
           tagName: 'query',
           tagXmlns: rosterXmlns,
           callback: _onRosterPush,
-        )
+        ),
       ];
 
   @override
@@ -277,7 +277,7 @@ class RosterManager extends XmppManagerBase {
               attributes: {
                 'ver': await _stateManager.getRosterVersion() ?? '',
               },
-            )
+            ),
           ],
         ),
       ),
@@ -319,14 +319,12 @@ class RosterManager extends XmppManagerBase {
                   tag: 'item',
                   attributes: <String, String>{
                     'jid': jid,
-                    ...title == jid.split('@')[0]
-                        ? <String, String>{}
-                        : <String, String>{'name': title}
+                    if (title == jid.split('@')[0]) 'name': title,
                   },
                   children: (groups ?? [])
                       .map((group) => XMLNode(tag: 'group', text: group))
                       .toList(),
-                )
+                ),
               ],
             ),
           ],
@@ -357,13 +355,13 @@ class RosterManager extends XmppManagerBase {
               children: [
                 XMLNode(
                   tag: 'item',
-                  attributes: <String, String>{
+                  attributes: {
                     'jid': jid,
-                    'subscription': 'remove'
+                    'subscription': 'remove',
                   },
-                )
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),

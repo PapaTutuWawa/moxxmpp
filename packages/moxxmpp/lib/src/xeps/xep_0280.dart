@@ -49,7 +49,7 @@ class CarbonsManager extends XmppManagerBase {
           tagXmlns: carbonsXmlns,
           callback: _onMessageSent,
           priority: -98,
-        )
+        ),
       ];
 
   @override
@@ -124,7 +124,7 @@ class CarbonsManager extends XmppManagerBase {
             XMLNode.xmlns(
               tag: 'enable',
               xmlns: carbonsXmlns,
-            )
+            ),
           ],
         ),
       ),
@@ -154,7 +154,7 @@ class CarbonsManager extends XmppManagerBase {
             XMLNode.xmlns(
               tag: 'disable',
               xmlns: carbonsXmlns,
-            )
+            ),
           ],
         ),
       ),

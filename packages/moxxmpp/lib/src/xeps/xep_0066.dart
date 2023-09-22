@@ -45,7 +45,7 @@ class OOBManager extends XmppManagerBase {
           callback: _onMessage,
           // Before the message manager
           priority: -99,
-        )
+        ),
       ];
 
   @override

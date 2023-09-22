@@ -66,7 +66,7 @@ class MessageManager extends XmppManagerBase {
           stanzaTag: 'message',
           callback: _onMessage,
           priority: messageHandlerPriority,
-        )
+        ),
       ];
 
   @override

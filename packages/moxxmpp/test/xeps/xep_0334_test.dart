@@ -115,17 +115,19 @@ void main() {
   test('Test sending a message processing hint', () async {
     final manager = MessageManager();
     final holder = TestingManagerHolder(
-      stubSocket: StubTCPSocket([
-        StanzaExpectation(
-          '''
+      stubSocket: StubTCPSocket(
+        [
+          StanzaExpectation(
+            '''
 <message to="user@example.org" type="chat">
   <no-copy xmlns="urn:xmpp:hints"/>
   <no-store xmlns="urn:xmpp:hints"/>
 </message>
 ''',
-          '',
-        )
-      ]),
+            '',
+          ),
+        ],
+      ),
     );
 
     await holder.register([

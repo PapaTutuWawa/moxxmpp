@@ -140,7 +140,7 @@ class StreamManagementManager extends XmppManagerBase {
           nonzaTag: 'a',
           nonzaXmlns: smXmlns,
           callback: _handleAckResponse,
-        )
+        ),
       ];
 
   @override
@@ -148,14 +148,14 @@ class StreamManagementManager extends XmppManagerBase {
         StanzaHandler(
           callback: _onServerStanzaReceived,
           priority: 9999,
-        )
+        ),
       ];
 
   @override
   List<StanzaHandler> getOutgoingPostStanzaHandlers() => [
         StanzaHandler(
           callback: _onClientStanzaSent,
-        )
+        ),
       ];
 
   @override

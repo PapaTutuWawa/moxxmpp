@@ -14,9 +14,9 @@ final scramSha1StreamFeatures = XMLNode(
         XMLNode(
           tag: 'mechanism',
           text: 'SCRAM-SHA-1',
-        )
+        ),
       ],
-    )
+    ),
   ],
 );
 final scramSha256StreamFeatures = XMLNode(
@@ -29,9 +29,9 @@ final scramSha256StreamFeatures = XMLNode(
         XMLNode(
           tag: 'mechanism',
           text: 'SCRAM-SHA-256',
-        )
+        ),
       ],
-    )
+    ),
   ],
 );
 

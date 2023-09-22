@@ -13,8 +13,10 @@ Stanza buildDiscoInfoQueryStanza(JID entity, String? node) {
       XMLNode.xmlns(
         tag: 'query',
         xmlns: discoInfoXmlns,
-        attributes: node != null ? {'node': node} : {},
-      )
+        attributes: {
+          if (node != null) 'node': node,
+        },
+      ),
     ],
   );
 }
@@ -27,8 +29,10 @@ Stanza buildDiscoItemsQueryStanza(JID entity, {String? node}) {
       XMLNode.xmlns(
         tag: 'query',
         xmlns: discoItemsXmlns,
-        attributes: node != null ? {'node': node} : {},
-      )
+        attributes: {
+          if (node != null) 'node': node,
+        },
+      ),
     ],
   );
 }

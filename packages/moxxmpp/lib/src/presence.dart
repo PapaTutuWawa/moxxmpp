@@ -66,7 +66,7 @@ class PresenceManager extends XmppManagerBase {
           stanzaTag: 'presence',
           callback: _onPresence,
           priority: presenceHandlerPriority,
-        )
+        ),
       ];
 
   @override

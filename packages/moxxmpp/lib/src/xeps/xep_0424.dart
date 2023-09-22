@@ -31,7 +31,7 @@ class MessageRetractionManager extends XmppManagerBase {
           callback: _onMessage,
           // Before the MessageManager
           priority: -99,
-        )
+        ),
       ];
 
   @override

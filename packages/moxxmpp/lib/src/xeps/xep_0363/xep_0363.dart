@@ -161,9 +161,9 @@ class HttpFileUploadManager extends XmppManagerBase {
               attributes: {
                 'filename': filename,
                 'size': filesize.toString(),
-                ...contentType != null ? {'content-type': contentType} : {}
+                if (contentType != null) 'content-type': contentType,
               },
-            )
+            ),
           ],
         ),
       ),

@@ -10,14 +10,14 @@ class DataFormOption {
   XMLNode toXml() {
     return XMLNode(
       tag: 'option',
-      attributes: label != null
-          ? <String, dynamic>{'label': label}
-          : <String, dynamic>{},
+      attributes: {
+        if (label != null) 'label': label,
+      },
       children: [
         XMLNode(
           tag: 'value',
           text: value,
-        )
+        ),
       ],
     );
   }
@@ -45,19 +45,22 @@ class DataFormField {
     return XMLNode(
       tag: 'field',
       attributes: <String, dynamic>{
-        ...varAttr != null
-            ? <String, dynamic>{'var': varAttr}
-            : <String, dynamic>{},
-        ...type != null ? <String, dynamic>{'type': type} : <String, dynamic>{},
-        ...label != null
-            ? <String, dynamic>{'label': label}
-            : <String, dynamic>{}
+        if (varAttr != null) 'var': varAttr,
+        if (type != null) 'type': type,
+        if (label != null) 'label': label,
       },
       children: [
-        ...description != null ? [XMLNode(tag: 'desc', text: description)] : [],
-        ...isRequired ? [XMLNode(tag: 'required')] : [],
+        if (description != null)
+          XMLNode(
+            tag: 'desc',
+            text: description,
+          ),
+        if (isRequired)
+          XMLNode(
+            tag: 'required',
+          ),
         ...values.map((value) => XMLNode(tag: 'value', text: value)),
-        ...options.map((option) => option.toXml())
+        ...options.map((option) => option.toXml()),
       ],
     );
   }

@@ -6,7 +6,7 @@ void main() {
     test('invariance', () {
       final headers = {
         'authorization': 'Basic Base64String==',
-        'cookie': 'foo=bar; user=romeo'
+        'cookie': 'foo=bar; user=romeo',
       };
       expect(
         prepareHeaders(headers),
@@ -16,7 +16,7 @@ void main() {
     test('invariance through uppercase', () {
       final headers = {
         'Authorization': 'Basic Base64String==',
-        'Cookie': 'foo=bar; user=romeo'
+        'Cookie': 'foo=bar; user=romeo',
       };
       expect(
         prepareHeaders(headers),
@@ -27,7 +27,7 @@ void main() {
       final headers = {
         'Authorization': 'Basic Base64String==',
         'Cookie': 'foo=bar; user=romeo',
-        'X-Tracking': 'Base64String=='
+        'X-Tracking': 'Base64String==',
       };
       expect(prepareHeaders(headers), {
         'Authorization': 'Basic Base64String==',

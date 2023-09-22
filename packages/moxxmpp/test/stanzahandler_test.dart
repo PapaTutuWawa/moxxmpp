@@ -171,7 +171,7 @@ void main() {
         ),
         tagName: '3',
         priority: 50,
-      )
+      ),
     ]..sort(stanzaHandlerSortComparator);
 
     expect(handlerList[0].tagName, '1');

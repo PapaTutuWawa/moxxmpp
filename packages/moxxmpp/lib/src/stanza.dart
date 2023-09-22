@@ -248,15 +248,14 @@ XMLNode buildErrorElement(String type, String condition, {String? text}) {
       XMLNode.xmlns(
         tag: condition,
         xmlns: fullStanzaXmlns,
-        children: text != null
-            ? [
-                XMLNode.xmlns(
-                  tag: 'text',
-                  xmlns: fullStanzaXmlns,
-                  text: text,
-                )
-              ]
-            : [],
+        children: [
+          if (text != null)
+            XMLNode.xmlns(
+              tag: 'text',
+              xmlns: fullStanzaXmlns,
+              text: text,
+            ),
+        ],
       ),
     ],
   );

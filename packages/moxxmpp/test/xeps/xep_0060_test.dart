@@ -158,7 +158,7 @@ void main() {
 </iq>''',
           ignoreId: true,
           adjustId: true,
-        )
+        ),
       ],
     );
 

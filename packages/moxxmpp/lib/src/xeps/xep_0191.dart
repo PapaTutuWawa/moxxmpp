@@ -27,7 +27,7 @@ class BlockingManager extends XmppManagerBase {
           tagName: 'block',
           tagXmlns: blockingXmlns,
           callback: _blockPush,
-        )
+        ),
       ];
 
   @override
@@ -107,10 +107,12 @@ class BlockingManager extends XmppManagerBase {
               children: items.map((item) {
                 return XMLNode(
                   tag: 'item',
-                  attributes: <String, String>{'jid': item},
+                  attributes: {
+                    'jid': item,
+                  },
                 );
               }).toList(),
-            )
+            ),
           ],
         ),
       ),
@@ -128,7 +130,7 @@ class BlockingManager extends XmppManagerBase {
             XMLNode.xmlns(
               tag: 'unblock',
               xmlns: blockingXmlns,
-            )
+            ),
           ],
         ),
       ),
@@ -152,11 +154,13 @@ class BlockingManager extends XmppManagerBase {
                   .map(
                     (item) => XMLNode(
                       tag: 'item',
-                      attributes: <String, String>{'jid': item},
+                      attributes: {
+                        'jid': item,
+                      },
                     ),
                   )
                   .toList(),
-            )
+            ),
           ],
         ),
       ),
@@ -174,7 +178,7 @@ class BlockingManager extends XmppManagerBase {
             XMLNode.xmlns(
               tag: 'blocklist',
               xmlns: blockingXmlns,
-            )
+            ),
           ],
         ),
       ),

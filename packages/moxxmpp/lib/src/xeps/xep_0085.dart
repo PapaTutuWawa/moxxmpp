@@ -69,7 +69,7 @@ class ChatStateManager extends XmppManagerBase {
           callback: _onChatStateReceived,
           // Before the message handler
           priority: -99,
-        )
+        ),
       ];
 
   @override

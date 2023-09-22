@@ -69,7 +69,7 @@ class StubbedDiscoManager extends DiscoManager {
                   isRequired: false,
                   varAttr: 'FORM_TYPE',
                   type: 'hidden',
-                )
+                ),
               ],
               reported: [],
               items: [],
@@ -153,14 +153,14 @@ void main() {
         'http://jabber.org/protocol/caps',
         'http://jabber.org/protocol/disco#info',
         'http://jabber.org/protocol/disco#items',
-        'http://jabber.org/protocol/muc'
+        'http://jabber.org/protocol/muc',
       ],
       const [
         Identity(
           category: 'client',
           type: 'pc',
           name: 'Exodus 0.9.1',
-        )
+        ),
       ],
       const [],
       null,
@@ -179,7 +179,7 @@ void main() {
         'http://jabber.org/protocol/caps',
         'http://jabber.org/protocol/disco#info',
         'http://jabber.org/protocol/disco#items',
-        'http://jabber.org/protocol/muc'
+        'http://jabber.org/protocol/muc',
       ],
       const [
         Identity(
@@ -295,14 +295,14 @@ void main() {
         'urn:xmpp:message-correct:0',
         'urn:xmpp:ping',
         'urn:xmpp:receipts',
-        'urn:xmpp:time'
+        'urn:xmpp:time',
       ],
       const [
         Identity(
           category: 'client',
           type: 'phone',
           name: 'Conversations',
-        )
+        ),
       ],
       const [],
       null,

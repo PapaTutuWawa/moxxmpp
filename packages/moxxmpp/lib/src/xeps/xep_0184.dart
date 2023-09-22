@@ -66,7 +66,7 @@ class MessageDeliveryReceiptManager extends XmppManagerBase {
           callback: _onDeliveryRequestReceived,
           // Before the message handler
           priority: -99,
-        )
+        ),
       ];
 
   @override

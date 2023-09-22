@@ -133,7 +133,7 @@ class SFSManager extends XmppManagerBase {
           callback: _onMessage,
           // Before the message handler
           priority: -98,
-        )
+        ),
       ];
 
   @override

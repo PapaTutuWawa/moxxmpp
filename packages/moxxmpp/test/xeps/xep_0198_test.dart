@@ -433,10 +433,11 @@ void main() {
     });
 
     test('Test a failed stream resumption', () async {
-      final fakeSocket = StubTCPSocket([
-        StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
-          '''
+      final fakeSocket = StubTCPSocket(
+        [
+          StringExpectation(
+            "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+            '''
 <stream:stream
     xmlns="jabber:client"
     version="1.0"
@@ -448,14 +449,14 @@ void main() {
       <mechanism>PLAIN</mechanism>
     </mechanisms>
   </stream:features>''',
-        ),
-        StringExpectation(
-          "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHBvbHlub21kaXZpc2lvbgBhYWFh</auth>",
-          '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
-        ),
-        StringExpectation(
-          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
-          '''
+          ),
+          StringExpectation(
+            "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHBvbHlub21kaXZpc2lvbgBhYWFh</auth>",
+            '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
+          ),
+          StringExpectation(
+            "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+            '''
 <stream:stream
     xmlns="jabber:client"
     version="1.0"
@@ -473,21 +474,22 @@ void main() {
     <sm xmlns="urn:xmpp:sm:3"/>
   </stream:features>
 ''',
-        ),
-        StringExpectation(
-          "<resume xmlns='urn:xmpp:sm:3' previd='id-1' h='10' />",
-          "<failed xmlns='urn:xmpp:sm:3' h='another-sequence-number'><item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></failed>",
-        ),
-        StanzaExpectation(
-          '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
-          '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
-          ignoreId: true,
-        ),
-        StringExpectation(
-          "<enable xmlns='urn:xmpp:sm:3' resume='true' />",
-          '<enabled xmlns="urn:xmpp:sm:3" id="id-2" resume="true" />',
-        )
-      ]);
+          ),
+          StringExpectation(
+            "<resume xmlns='urn:xmpp:sm:3' previd='id-1' h='10' />",
+            "<failed xmlns='urn:xmpp:sm:3' h='another-sequence-number'><item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></failed>",
+          ),
+          StanzaExpectation(
+            '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+            '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+            ignoreId: true,
+          ),
+          StringExpectation(
+            "<enable xmlns='urn:xmpp:sm:3' resume='true' />",
+            '<enabled xmlns="urn:xmpp:sm:3" id="id-2" resume="true" />',
+          ),
+        ],
+      );
 
       final conn = XmppConnection(
         TestingReconnectionPolicy(),

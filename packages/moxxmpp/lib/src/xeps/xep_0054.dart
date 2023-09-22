@@ -38,7 +38,7 @@ class VCardManager extends XmppManagerBase {
           tagName: 'x',
           tagXmlns: vCardTempUpdate,
           callback: _onPresence,
-        )
+        ),
       ];
 
   @override
@@ -108,7 +108,7 @@ class VCardManager extends XmppManagerBase {
             XMLNode.xmlns(
               tag: 'vCard',
               xmlns: vCardTempXmlns,
-            )
+            ),
           ],
         ),
         encrypted: true,
