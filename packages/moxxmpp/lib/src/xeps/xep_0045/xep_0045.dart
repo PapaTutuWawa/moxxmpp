@@ -65,6 +65,7 @@ class MUCManager extends XmppManagerBase {
       return;
     }
 
+    final mucJoins = List<MUCRoomJoin>.empty(growable: true);
     await _cacheLock.synchronized(() async {
       // Mark all groupchats as not joined.
       for (final jid in _mucRoomCache.keys) {
@@ -72,14 +73,19 @@ class MUCManager extends XmppManagerBase {
 
         // Re-join all MUCs.
         final state = _mucRoomCache[jid]!;
-        await _sendMucJoin(
-          jid,
-          state.nick!,
-          0,
-        );
+        mucJoins.add((jid, state.nick!));
       }
-      _joinedPreparedRooms = true;
     });
+
+    for (final join in mucJoins) {
+      final (jid, nick) = join;
+      await _sendMucJoin(
+        jid,
+        nick,
+        0,
+      );
+    }
+    _joinedPreparedRooms = true;
   }
 
   /// Prepares the internal room list to ensure that the rooms
