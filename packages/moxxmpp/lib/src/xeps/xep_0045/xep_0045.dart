@@ -181,6 +181,7 @@ class MUCManager extends XmppManagerBase {
             ),
           ],
         ),
+        awaitable: false,
       ),
     );
   }
