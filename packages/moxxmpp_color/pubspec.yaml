@@ -1,7 +1,8 @@
 name: moxxmpp_color
 description: Implementation of XEP-0392
 version: 0.1.0
-homepage:
+homepage: https://codeberg.org/moxxy/moxxmpp
+publish_to: https://git.polynom.me/api/packages/Moxxy/pub
 
 environment:
   sdk: '>=3.1.0 <4.0.0'
