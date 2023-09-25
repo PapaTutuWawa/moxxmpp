@@ -207,7 +207,7 @@ class MUCManager extends XmppManagerBase {
       return nick;
     });
     if (nick == null) {
-      return Result(RoomNotJoinedError);
+      return Result(RoomNotJoinedError());
     }
     await getAttributes().sendStanza(
       StanzaDetails(
@@ -215,6 +215,7 @@ class MUCManager extends XmppManagerBase {
           to: roomJid.withResource(nick).toString(),
           type: 'unavailable',
         ),
+        awaitable: false,
       ),
     );
     return const Result(true);
