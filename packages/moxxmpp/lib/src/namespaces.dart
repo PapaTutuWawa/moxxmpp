@@ -13,6 +13,7 @@ const subscriptionPreApprovalXmlns = 'urn:xmpp:features:pre-approval';
 
 // XEP-0004
 const dataFormsXmlns = 'jabber:x:data';
+const formVarFormType = 'FORM_TYPE';
 
 // XEP-0030
 const discoInfoXmlns = 'http://jabber.org/protocol/disco#info';
@@ -23,6 +24,7 @@ const extendedAddressingXmlns = 'http://jabber.org/protocol/address';
 
 // XEP-0045
 const mucXmlns = 'http://jabber.org/protocol/muc';
+const roomInfoFormType = 'http://jabber.org/protocol/muc#roominfo';
 
 // XEP-0054
 const vCardTempXmlns = 'vcard-temp';

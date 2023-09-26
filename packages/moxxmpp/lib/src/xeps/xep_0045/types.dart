@@ -1,4 +1,7 @@
+import 'package:collection/collection.dart';
 import 'package:moxxmpp/src/jid.dart';
+import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/xeps/xep_0004.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 
 class RoomInformation {
@@ -7,6 +10,7 @@ class RoomInformation {
     required this.jid,
     required this.features,
     required this.name,
+    this.roomInfo,
   });
 
   /// Constructs a [RoomInformation] object from a [DiscoInfo] object.
@@ -21,6 +25,11 @@ class RoomInformation {
         name: discoInfo.identities
             .firstWhere((i) => i.category == 'conference')
             .name!,
+        roomInfo: discoInfo.extendedInfo.firstWhereOrNull((form) {
+          final field = form.getFieldByVar(formVarFormType);
+          return field?.type == 'hidden' &&
+              field?.values.first == roomInfoFormType;
+        }),
       );
 
   /// The JID of the Multi-User Chat (MUC) room.
@@ -31,6 +40,9 @@ class RoomInformation {
 
   /// The name or title of the Multi-User Chat (MUC) room.
   final String name;
+
+  /// The data form containing room information.
+  final DataForm? roomInfo;
 }
 
 /// The used message-id and an optional origin-id.
