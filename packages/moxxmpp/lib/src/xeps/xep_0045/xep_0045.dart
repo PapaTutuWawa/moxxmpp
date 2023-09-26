@@ -282,6 +282,9 @@ class MUCManager extends XmppManagerBase {
         }
 
         // Check if this is the message reflection.
+        if (message.id == null) {
+          return state;
+        }
         final pending =
             (message.id!, state.extensions.get<StableIdData>()?.originId);
         if (fromJid.resource == roomState.nick &&
