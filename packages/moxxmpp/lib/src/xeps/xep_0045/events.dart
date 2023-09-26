@@ -24,6 +24,7 @@ class MemberJoinedEvent extends XmppEvent {
   final RoomMember member;
 }
 
+/// Triggered when an entity changes their presence in the MUC.
 class MemberChangedEvent extends XmppEvent {
   MemberChangedEvent(this.roomJid, this.member);
 
@@ -32,4 +33,15 @@ class MemberChangedEvent extends XmppEvent {
 
   /// The new member.
   final RoomMember member;
+}
+
+/// Triggered when an entity leaves the MUC.
+class MemberLeftEvent extends XmppEvent {
+  MemberLeftEvent(this.roomJid, this.nick);
+
+  /// The JID of the room.
+  final JID roomJid;
+
+  /// The nick of the user who left.
+  final String nick;
 }

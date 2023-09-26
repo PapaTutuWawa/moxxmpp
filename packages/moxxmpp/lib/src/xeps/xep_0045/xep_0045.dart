@@ -326,6 +326,12 @@ class MUCManager extends XmppManagerBase {
           'Should not receive unavailable with role="none" while joining',
         );
         room.members.remove(from.resource);
+        getAttributes().sendEvent(
+          MemberLeftEvent(
+            bareFrom,
+            from.resource,
+          ),
+        );
       } else {
         final member = RoomMember(
           from.resource,
