@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:moxlib/moxlib.dart';
 import 'package:moxxmpp/src/events.dart';
 import 'package:moxxmpp/src/jid.dart';
@@ -6,11 +7,13 @@ import 'package:moxxmpp/src/managers/data.dart';
 import 'package:moxxmpp/src/managers/handlers.dart';
 import 'package:moxxmpp/src/managers/namespaces.dart';
 import 'package:moxxmpp/src/namespaces.dart';
+import 'package:moxxmpp/src/presence.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
+import 'package:moxxmpp/src/xeps/xep_0045/events.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:synchronized/extension.dart';
@@ -25,8 +28,11 @@ class MUCManager extends XmppManagerBase {
   @override
   Future<bool> isSupported() async => true;
 
-  /// Map full JID to RoomState
+  /// Map a room's JID to its RoomState
   final Map<JID, RoomState> _mucRoomCache = {};
+
+  /// Mapp a room's JID to a completer waiting for the completion of the join process.
+  final Map<JID, Completer<Result<bool, MUCError>>> _mucRoomJoinCompleter = {};
 
   /// Cache lock
   final Lock _cacheLock = Lock();
@@ -42,6 +48,14 @@ class MUCManager extends XmppManagerBase {
           callback: _onMessage,
           // Before the message handler
           priority: -99,
+        ),
+        StanzaHandler(
+          stanzaTag: 'presence',
+          callback: _onPresence,
+          tagName: 'x',
+          tagXmlns: mucUserXmlns,
+          // Before the PresenceManager
+          priority: PresenceManager.presenceHandlerPriority + 1,
         ),
       ];
 
@@ -70,6 +84,7 @@ class MUCManager extends XmppManagerBase {
       // Mark all groupchats as not joined.
       for (final jid in _mucRoomCache.keys) {
         _mucRoomCache[jid]!.joined = false;
+        _mucRoomJoinCompleter[jid] = Completer();
 
         // Re-join all MUCs.
         final state = _mucRoomCache[jid]!;
@@ -149,18 +164,23 @@ class MUCManager extends XmppManagerBase {
       return Result(NoNicknameSpecified());
     }
 
-    await _cacheLock.synchronized(
+    final completer =
+        await _cacheLock.synchronized<Completer<Result<bool, MUCError>>>(
       () {
         _mucRoomCache[roomJid] = RoomState(
           roomJid: roomJid,
           nick: nick,
           joined: false,
         );
+
+        final completer = Completer<Result<bool, MUCError>>();
+        _mucRoomJoinCompleter[roomJid] = completer;
+        return completer;
       },
     );
 
     await _sendMucJoin(roomJid, nick, maxHistoryStanzas);
-    return const Result(true);
+    return completer.future;
   }
 
   Future<void> _sendMucJoin(
@@ -222,6 +242,129 @@ class MUCManager extends XmppManagerBase {
     return const Result(true);
   }
 
+  Future<RoomState?> getRoomState(JID roomJid) async {
+    return _cacheLock.synchronized(() => _mucRoomCache[roomJid]);
+  }
+
+  Future<StanzaHandlerData> _onPresence(
+    Stanza presence,
+    StanzaHandlerData state,
+  ) async {
+    if (presence.from == null) {
+      return state;
+    }
+
+    final from = JID.fromString(presence.from!);
+    final bareFrom = from.toBare();
+    return _cacheLock.synchronized(() {
+      final room = _mucRoomCache[bareFrom];
+      if (room == null) {
+        return state;
+      }
+
+      if (from.resource.isEmpty) {
+        // TODO(Unknown): Handle presence from the room itself.
+        return state;
+      }
+
+      if (presence.type == 'error') {
+        final errorTag = presence.firstTag('error')!;
+        final error = errorTag.firstTagByXmlns(fullStanzaXmlns)!;
+        Result<bool, MUCError> result;
+        if (error.tag == 'forbidden') {
+          result = Result(JoinForbiddenError());
+        } else {
+          result = Result(MUCUnspecificError());
+        }
+
+        _mucRoomCache.remove(bareFrom);
+        _mucRoomJoinCompleter[bareFrom]!.complete(result);
+        _mucRoomJoinCompleter.remove(bareFrom);
+        return StanzaHandlerData(
+          true,
+          false,
+          presence,
+          state.extensions,
+        );
+      }
+
+      final x = presence.firstTag('x', xmlns: mucUserXmlns)!;
+      final item = x.firstTag('item')!;
+      final statuses = x
+          .findTags('status')
+          .map((s) => s.attributes['code']! as String)
+          .toList();
+      final role = Role.fromString(
+        item.attributes['role']! as String,
+      );
+
+      if (statuses.contains('110')) {
+        if (room.nick != from.resource) {
+          // Notify us of the changed nick.
+          getAttributes().sendEvent(
+            NickChangedByMUCEvent(
+              bareFrom,
+              from.resource,
+            ),
+          );
+        }
+
+        // Set the nick to make sure we're in sync with the MUC.
+        room.nick = from.resource;
+        return StanzaHandlerData(
+          true,
+          false,
+          presence,
+          state.extensions,
+        );
+      }
+
+      if (presence.attributes['type'] == 'unavailable' && role == Role.none) {
+        // Cannot happen while joining, so we assume we are joined
+        assert(
+          room.joined,
+          'Should not receive unavailable with role="none" while joining',
+        );
+        room.members.remove(from.resource);
+      } else {
+        final member = RoomMember(
+          from.resource,
+          Affiliation.fromString(
+            item.attributes['affiliation']! as String,
+          ),
+          role,
+        );
+        logger.finest('Got presence from ${from.resource} in $bareFrom');
+        if (room.joined) {
+          if (room.members.containsKey(from.resource)) {
+            getAttributes().sendEvent(
+              MemberJoinedEvent(
+                bareFrom,
+                member,
+              ),
+            );
+          } else {
+            getAttributes().sendEvent(
+              MemberChangedEvent(
+                bareFrom,
+                member,
+              ),
+            );
+          }
+        }
+
+        room.members[from.resource] = member;
+      }
+
+      return StanzaHandlerData(
+        true,
+        false,
+        presence,
+        state.extensions,
+      );
+    });
+  }
+
   Future<StanzaHandlerData> _onMessageSent(
     Stanza message,
     StanzaHandlerData state,
@@ -260,6 +403,10 @@ class MUCManager extends XmppManagerBase {
         if (!roomState.joined) {
           // Mark the room as joined.
           _mucRoomCache[roomJid]!.joined = true;
+          _mucRoomJoinCompleter[roomJid]!.complete(
+            const Result(true),
+          );
+          _mucRoomJoinCompleter.remove(roomJid);
           logger.finest('$roomJid is now joined');
         }
 

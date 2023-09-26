@@ -17,3 +17,9 @@ class NoNicknameSpecified extends MUCError {}
 /// them to be a member of a room, but they are not currently joined to
 /// that room.
 class RoomNotJoinedError extends MUCError {}
+
+/// Indicates that the MUC forbids us from joining, i.e. when we're banned.
+class JoinForbiddenError extends MUCError {}
+
+/// Indicates that an unspecific error occurred while joining.
+class MUCUnspecificError extends MUCError {}

@@ -24,6 +24,7 @@ const extendedAddressingXmlns = 'http://jabber.org/protocol/address';
 
 // XEP-0045
 const mucXmlns = 'http://jabber.org/protocol/muc';
+const mucUserXmlns = 'http://jabber.org/protocol/muc#user';
 const roomInfoFormType = 'http://jabber.org/protocol/muc#roominfo';
 
 // XEP-0054
