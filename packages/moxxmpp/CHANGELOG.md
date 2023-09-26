@@ -22,6 +22,7 @@
 - *BREAKING*: Rename `UserAvatarManager`'s `getUserAvatar` to `getUserAvatarData`. It now also requires the id of the avatar to fetch
 - *BREAKING*: `UserAvatarManager`'s `getAvatarId` with `getLatestMetadata`.
 - The `PubSubManager` now supports PubSub's `max_items` in `getItems`.
+- *BREAKING*: `vCardManager`'s `VCardAvatarUpdatedEvent` no longer automatically requests the newest VCard avatar.
 
 ## 0.3.1
 

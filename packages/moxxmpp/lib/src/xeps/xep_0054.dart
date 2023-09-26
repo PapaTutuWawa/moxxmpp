@@ -56,26 +56,13 @@ class VCardManager extends XmppManagerBase {
     final x = presence.firstTag('x', xmlns: vCardTempUpdate)!;
     final hash = x.firstTag('photo')!.innerText();
 
-    final from = JID.fromString(presence.from!).toBare();
-    final lastHash = _lastHash[from];
-    if (lastHash != hash) {
-      _lastHash[from.toString()] = hash;
-      final vcardResult = await requestVCard(from);
-
-      if (vcardResult.isType<VCard>()) {
-        final binval = vcardResult.get<VCard>().photo?.binval;
-        if (binval != null) {
-          getAttributes().sendEvent(
-            VCardAvatarUpdatedEvent(from, binval, hash),
-          );
-        } else {
-          logger.warning('No avatar data found');
-        }
-      } else {
-        logger.warning('Failed to retrieve vCard for $from');
-      }
-    }
-
+    // TODO(Unknown): Use the presence manager interface.
+    getAttributes().sendEvent(
+      VCardAvatarUpdatedEvent(
+        JID.fromString(presence.from!),
+        hash,
+      ),
+    );
     return state..done = true;
   }
 

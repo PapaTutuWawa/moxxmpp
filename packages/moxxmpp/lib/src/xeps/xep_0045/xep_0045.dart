@@ -129,7 +129,8 @@ class MUCManager extends XmppManagerBase {
       );
       return Result(roomInformation);
     } catch (e) {
-      return Result(InvalidDiscoInfoResponse);
+      logger.warning('Invalid disco information: $e');
+      return Result(InvalidDiscoInfoResponse());
     }
   }
 

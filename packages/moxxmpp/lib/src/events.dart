@@ -184,15 +184,11 @@ class UserAvatarUpdatedEvent extends XmppEvent {
 class VCardAvatarUpdatedEvent extends XmppEvent {
   VCardAvatarUpdatedEvent(
     this.jid,
-    this.base64,
     this.hash,
   );
 
   /// The JID of the entity that updated their avatar.
   final JID jid;
-
-  /// The base64-encoded avatar data.
-  final String base64;
 
   /// The SHA-1 hash of the avatar.
   final String hash;
