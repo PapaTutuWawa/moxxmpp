@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/xeps/xep_0004.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 
 class InvalidAffiliationException implements Exception {}
+
 class InvalidRoleException implements Exception {}
 
 enum Affiliation {

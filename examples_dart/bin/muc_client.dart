@@ -75,11 +75,16 @@ void main(List<String> args) async {
   });
 
   // Join room
-  await connection.getManagerById<MUCManager>(mucManager)!.joinRoom(
-        muc,
-        nick,
-        maxHistoryStanzas: 0,
-      );
+  final mm = connection.getManagerById<MUCManager>(mucManager)!;
+  await mm.joinRoom(
+    muc,
+    nick,
+    maxHistoryStanzas: 0,
+  );
+  final state = (await mm.getRoomState(muc))!;
+
+  print('=====> ${state.members.length} users in room');
+  print('=====> ${state.members.values.map((m) => m.nick).join(", ")}');
 
   final repl = Repl(prompt: '> ');
   await for (final line in repl.runAsync()) {
