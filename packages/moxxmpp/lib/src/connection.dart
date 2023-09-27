@@ -49,6 +49,19 @@ enum XmppConnectionState {
   error
 }
 
+/// (The actual stanza handler, Name of the owning manager).
+typedef _StanzaHandlerWrapper = (StanzaHandler, String);
+
+/// Wrapper around [stanzaHandlerSortComparator] for [_StanzaHandlerWrapper].
+int _stanzaHandlerWrapperSortComparator(
+  _StanzaHandlerWrapper a,
+  _StanzaHandlerWrapper b,
+) {
+  final (ha, _) = a;
+  final (hb, _) = b;
+  return stanzaHandlerSortComparator(ha, hb);
+}
+
 /// This class is a connection to the server.
 class XmppConnection {
   XmppConnection(
@@ -112,13 +125,13 @@ class XmppConnection {
   final StanzaAwaiter _stanzaAwaiter = StanzaAwaiter();
 
   /// Sorted list of handlers that we call or incoming and outgoing stanzas
-  final List<StanzaHandler> _incomingStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _incomingStanzaHandlers =
       List.empty(growable: true);
-  final List<StanzaHandler> _incomingPreStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _incomingPreStanzaHandlers =
       List.empty(growable: true);
-  final List<StanzaHandler> _outgoingPreStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _outgoingPreStanzaHandlers =
       List.empty(growable: true);
-  final List<StanzaHandler> _outgoingPostStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _outgoingPostStanzaHandlers =
       List.empty(growable: true);
   final StreamController<XmppEvent> _eventStreamController =
       StreamController.broadcast();
@@ -198,18 +211,25 @@ class XmppConnection {
 
       _xmppManagers[manager.id] = manager;
 
-      _incomingStanzaHandlers.addAll(manager.getIncomingStanzaHandlers());
-      _incomingPreStanzaHandlers.addAll(manager.getIncomingPreStanzaHandlers());
-      _outgoingPreStanzaHandlers.addAll(manager.getOutgoingPreStanzaHandlers());
-      _outgoingPostStanzaHandlers
-          .addAll(manager.getOutgoingPostStanzaHandlers());
+      _incomingStanzaHandlers.addAll(
+        manager.getIncomingStanzaHandlers().map((h) => (h, manager.name)),
+      );
+      _incomingPreStanzaHandlers.addAll(
+        manager.getIncomingPreStanzaHandlers().map((h) => (h, manager.name)),
+      );
+      _outgoingPreStanzaHandlers.addAll(
+        manager.getOutgoingPreStanzaHandlers().map((h) => (h, manager.name)),
+      );
+      _outgoingPostStanzaHandlers.addAll(
+        manager.getOutgoingPostStanzaHandlers().map((h) => (h, manager.name)),
+      );
     }
 
     // Sort them
-    _incomingStanzaHandlers.sort(stanzaHandlerSortComparator);
-    _incomingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
-    _outgoingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
-    _outgoingPostStanzaHandlers.sort(stanzaHandlerSortComparator);
+    _incomingStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
+    _incomingPreStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
+    _outgoingPreStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
+    _outgoingPostStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
 
     // Run the post register callbacks
     for (final manager in _xmppManagers.values) {
@@ -650,15 +670,21 @@ class XmppConnection {
   /// call its callback and end the processing if the callback returned true; continue
   /// if it returned false.
   Future<StanzaHandlerData> _runStanzaHandlers(
-    List<StanzaHandler> handlers,
+    List<_StanzaHandlerWrapper> handlers,
     Stanza stanza, {
     StanzaHandlerData? initial,
   }) async {
     var state = initial ?? StanzaHandlerData(false, false, stanza, TypedMap());
-    for (final handler in handlers) {
+    for (final handlerRaw in handlers) {
+      final (handler, managerName) = handlerRaw;
       if (handler.matches(state.stanza)) {
         state = await handler.callback(state.stanza, state);
-        if (state.done || state.cancel) return state;
+        if (state.done || state.cancel) {
+          _log.finest(
+            'Processing ended early for ${stanza.tag} by $managerName',
+          );
+          return state;
+        }
       }
     }
 
