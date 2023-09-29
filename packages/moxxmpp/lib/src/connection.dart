@@ -595,8 +595,6 @@ class XmppConnection {
       await _reconnectionPolicy.setShouldReconnect(true);
     }
 
-    _incomingStanzaQueue.negotiationsDone = true;
-
     // Tell consumers of the event stream that we're done with stream feature
     // negotiations
     await _sendEvent(
@@ -851,9 +849,7 @@ class XmppConnection {
         await _negotiationsHandler.negotiate(event);
         break;
       case RoutingState.handleStanzas:
-        _log.finest('Handling ${node.tag} (${node.attributes["id"]})');
         await _handleStanza(node);
-        _log.finest('Handling ${node.tag} (${node.attributes["id"]}) done');
         break;
       case RoutingState.preConnection:
       case RoutingState.error:
@@ -918,7 +914,6 @@ class XmppConnection {
     // Kill a possibly existing connection
     _socket.close();
 
-    _incomingStanzaQueue.negotiationsDone = false;
     await _reconnectionPolicy.reset();
     _enableReconnectOnSuccess = enableReconnectOnSuccess;
     if (shouldReconnect) {

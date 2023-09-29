@@ -25,9 +25,6 @@ class IncomingStanzaQueue {
   /// Lock guarding both [_queue] and [_isRunning].
   final Lock _lock = Lock();
 
-  // TODO: Remove once we can await stanzas (or can we).
-  bool negotiationsDone = false;
-
   /// Logger.
   final Logger _log = Logger('IncomingStanzaQueue');
 
