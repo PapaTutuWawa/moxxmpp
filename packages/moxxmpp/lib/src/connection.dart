@@ -25,12 +25,12 @@ import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/incoming_queue.dart';
 import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
-import 'package:synchronized/synchronized.dart';
 import 'package:uuid/uuid.dart';
 
 /// The states the XmppConnection can be in
@@ -90,9 +90,12 @@ class XmppConnection {
       },
     );
 
+    _incomingStanzaQueue = IncomingStanzaQueue(handleXmlStream);
     _socketStream = _socket.getDataStream();
     // TODO(Unknown): Handle on done
-    _socketStream.transform(_streamParser).forEach(handleXmlStream);
+    _socketStream
+        .transform(_streamParser)
+        .forEach(_incomingStanzaQueue.addStanza);
     _socket.getEventStream().listen(handleSocketEvent);
 
     _stanzaQueue = AsyncStanzaQueue(
@@ -170,10 +173,6 @@ class XmppConnection {
   T? getNegotiatorById<T extends XmppFeatureNegotiatorBase>(String id) =>
       _negotiationsHandler.getNegotiatorById<T>(id);
 
-  /// Prevent data from being passed to _currentNegotiator.negotiator while the negotiator
-  /// is still running.
-  final Lock _negotiationLock = Lock();
-
   /// The logger for the class
   final Logger _log = Logger('XmppConnection');
 
@@ -181,6 +180,8 @@ class XmppConnection {
   bool _enableReconnectOnSuccess = false;
 
   bool get isAuthenticated => _isAuthenticated;
+
+  late final IncomingStanzaQueue _incomingStanzaQueue;
 
   late final AsyncStanzaQueue _stanzaQueue;
 
@@ -591,6 +592,8 @@ class XmppConnection {
       await _reconnectionPolicy.setShouldReconnect(true);
     }
 
+    _incomingStanzaQueue.negotiationsDone = true;
+
     // Tell consumers of the event stream that we're done with stream feature
     // negotiations
     await _sendEvent(
@@ -828,17 +831,17 @@ class XmppConnection {
         // causing (a) the negotiator to become confused and (b) the stanzas/nonzas to be
         // missed. This causes the data to wait while the negotiator is running and thus
         // prevent this issue.
-        await _negotiationLock.synchronized(() async {
-          if (_routingState != RoutingState.negotiating) {
-            unawaited(handleXmlStream(event));
-            return;
-          }
+        if (_routingState != RoutingState.negotiating) {
+          unawaited(handleXmlStream(event));
+          return;
+        }
 
-          await _negotiationsHandler.negotiate(event);
-        });
+        await _negotiationsHandler.negotiate(event);
         break;
       case RoutingState.handleStanzas:
+        _log.finest('Handling ${node.tag} (${node.attributes["id"]})');
         await _handleStanza(node);
+        _log.finest('Handling ${node.tag} (${node.attributes["id"]}) done');
         break;
       case RoutingState.preConnection:
       case RoutingState.error:
@@ -903,6 +906,7 @@ class XmppConnection {
     // Kill a possibly existing connection
     _socket.close();
 
+    _incomingStanzaQueue.negotiationsDone = false;
     await _reconnectionPolicy.reset();
     _enableReconnectOnSuccess = enableReconnectOnSuccess;
     if (shouldReconnect) {

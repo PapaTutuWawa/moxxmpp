@@ -251,19 +251,23 @@ class MUCManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     if (presence.from == null) {
+      logger.finest('Ignoring presence as it has no from attribute');
       return state;
     }
 
     final from = JID.fromString(presence.from!);
     final bareFrom = from.toBare();
     return _cacheLock.synchronized(() {
+      logger.finest('Lock aquired for presence from ${presence.from}');
       final room = _mucRoomCache[bareFrom];
       if (room == null) {
+        logger.finest('Ignoring presence as it does not belong to a room');
         return state;
       }
 
       if (from.resource.isEmpty) {
         // TODO(Unknown): Handle presence from the room itself.
+        logger.finest('Ignoring presence as it has no resource');
         return state;
       }
 
@@ -311,6 +315,7 @@ class MUCManager extends XmppManagerBase {
 
         // Set the nick to make sure we're in sync with the MUC.
         room.nick = from.resource;
+        logger.finest('Self-presence handled');
         return StanzaHandlerData(
           true,
           false,
@@ -360,8 +365,10 @@ class MUCManager extends XmppManagerBase {
         }
 
         room.members[from.resource] = member;
+        logger.finest('${from.resource} added to the member list');
       }
 
+      logger.finest('Ran through');
       return StanzaHandlerData(
         true,
         false,
@@ -398,7 +405,8 @@ class MUCManager extends XmppManagerBase {
   ) async {
     final fromJid = JID.fromString(message.from!);
     final roomJid = fromJid.toBare();
-    return _mucRoomCache.synchronized(() {
+    return _cacheLock.synchronized(() {
+      logger.finest('Lock aquired for message from ${message.from}');
       final roomState = _mucRoomCache[roomJid];
       if (roomState == null) {
         return state;

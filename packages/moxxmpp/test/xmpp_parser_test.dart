@@ -11,14 +11,16 @@ void main() {
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(parser).forEach((event) {
-        if (event is! XMPPStreamElement) return;
-        final node = event.node;
+      controller.stream.transform(parser).forEach((events) {
+        for (final event in events) {
+          if (event is! XMPPStreamElement) continue;
+          final node = event.node;
 
-        if (node.tag == 'childa') {
-          childa = true;
-        } else if (node.tag == 'childb') {
-          childb = true;
+          if (node.tag == 'childa') {
+            childa = true;
+          } else if (node.tag == 'childb') {
+            childb = true;
+          }
         }
       }),
     );
@@ -36,14 +38,16 @@ void main() {
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(parser).forEach((event) {
-        if (event is! XMPPStreamElement) return;
-        final node = event.node;
+      controller.stream.transform(parser).forEach((events) {
+        for (final event in events) {
+          if (event is! XMPPStreamElement) continue;
+          final node = event.node;
 
-        if (node.tag == 'childa') {
-          childa = true;
-        } else if (node.tag == 'childb') {
-          childb = true;
+          if (node.tag == 'childa') {
+            childa = true;
+          } else if (node.tag == 'childb') {
+            childb = true;
+          }
         }
       }),
     );
@@ -64,14 +68,16 @@ void main() {
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(parser).forEach((event) {
-        if (event is! XMPPStreamElement) return;
-        final node = event.node;
+      controller.stream.transform(parser).forEach((events) {
+        for (final event in events) {
+          if (event is! XMPPStreamElement) continue;
+          final node = event.node;
 
-        if (node.tag == 'childa') {
-          childa = true;
-        } else if (node.tag == 'childb') {
-          childb = true;
+          if (node.tag == 'childa') {
+            childa = true;
+          } else if (node.tag == 'childb') {
+            childb = true;
+          }
         }
       }),
     );
@@ -93,13 +99,15 @@ void main() {
     final controller = StreamController<String>();
 
     unawaited(
-      controller.stream.transform(parser).forEach((node) {
-        if (node is XMPPStreamElement) {
-          if (node.node.tag == 'childa') {
-            childa = true;
+      controller.stream.transform(parser).forEach((events) {
+        for (final event in events) {
+          if (event is XMPPStreamElement) {
+            if (event.node.tag == 'childa') {
+              childa = true;
+            }
+          } else if (event is XMPPStreamHeader) {
+            attrs = event.attributes;
           }
-        } else if (node is XMPPStreamHeader) {
-          attrs = node.attributes;
         }
       }),
     );
@@ -118,11 +126,13 @@ void main() {
     var gotFeatures = false;
     unawaited(
       controller.stream.transform(parser).forEach(
-        (event) {
-          if (event is! XMPPStreamElement) return;
+        (events) {
+          for (final event in events) {
+            if (event is! XMPPStreamElement) continue;
 
-          if (event.node.tag == 'stream:features') {
-            gotFeatures = true;
+            if (event.node.tag == 'stream:features') {
+              gotFeatures = true;
+            }
           }
         },
       ),
@@ -156,5 +166,28 @@ void main() {
     // Let it marinate
     await Future<void>.delayed(const Duration(seconds: 1));
     expect(gotFeatures, true);
+  });
+
+  test('Test the order of concatenated stanzas', () async {
+    // NOTE: This seems weird, but it turns out that not keeping this order leads to
+    //       MUC joins (on Moxxy) not catching every bit of presence before marking the
+    //       MUC as joined.
+    final parser = XMPPStreamParser();
+    final controller = StreamController<String>();
+    var called = false;
+
+    unawaited(
+      controller.stream.transform(parser).forEach((events) {
+        expect(events.isNotEmpty, true);
+        expect((events[0] as XMPPStreamElement).node.tag, 'childa');
+        expect((events[1] as XMPPStreamElement).node.tag, 'childb');
+        expect((events[2] as XMPPStreamElement).node.tag, 'childc');
+        called = true;
+      }),
+    );
+    controller.add('<childa /><childb /><childc />');
+
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(called, true);
   });
 }
