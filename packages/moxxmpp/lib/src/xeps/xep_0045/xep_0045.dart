@@ -300,20 +300,32 @@ class MUCManager extends XmppManagerBase {
       final role = Role.fromString(
         item.attributes['role']! as String,
       );
+      final affiliation = Affiliation.fromString(
+        item.attributes['affiliation']! as String,
+      );
 
       if (statuses.contains('110')) {
-        if (room.nick != from.resource) {
-          // Notify us of the changed nick.
-          getAttributes().sendEvent(
-            NickChangedByMUCEvent(
-              bareFrom,
-              from.resource,
-            ),
-          );
+        if (room.joined) {
+          if (room.nick != from.resource ||
+              room.affiliation != affiliation ||
+              room.role != role) {
+            // Notify us of the changed data.
+            getAttributes().sendEvent(
+              OwnDataChangedEvent(
+                bareFrom,
+                from.resource,
+                affiliation,
+                role,
+              ),
+            );
+          }
         }
 
-        // Set the nick to make sure we're in sync with the MUC.
-        room.nick = from.resource;
+        // Set the data to make sure we're in sync with the MUC.
+        room
+          ..nick = from.resource
+          ..affiliation = affiliation
+          ..role = role;
         logger.finest('Self-presence handled');
         return StanzaHandlerData(
           true,
