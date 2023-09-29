@@ -681,10 +681,13 @@ class XmppConnection {
     for (final handlerRaw in handlers) {
       final (handler, managerName) = handlerRaw;
       if (handler.matches(state.stanza)) {
+        _log.finest(
+          'Running handler for ${stanza.tag} (${stanza.attributes["id"]}) of $managerName',
+        );
         state = await handler.callback(state.stanza, state);
         if (state.done || state.cancel) {
           _log.finest(
-            'Processing ended early for ${stanza.tag} by $managerName',
+            'Processing ended early for ${stanza.tag} (${stanza.attributes["id"]}) by $managerName',
           );
           return state;
         }
