@@ -1,3 +1,8 @@
+## 0.4.0
+
+- Keep version in sync with moxxmpp
+- *BREAKING*: `TCPSocketWrapper` now takes a boolean parameter that enables logging of all incoming and outgoing data.
+
 ## 0.3.1
 
 - Keep version in sync with moxxmpp
