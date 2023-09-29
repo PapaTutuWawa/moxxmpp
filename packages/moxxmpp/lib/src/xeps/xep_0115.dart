@@ -173,8 +173,13 @@ class EntityCapabilitiesManager extends XmppManagerBase {
     });
   }
 
-  Future<void> _performQuery(Stanza presence, String ver,
-      String hashFunctionName, String capabilityNode, JID from) async {
+  Future<void> _performQuery(
+    Stanza presence,
+    String ver,
+    String hashFunctionName,
+    String capabilityNode,
+    JID from,
+  ) async {
     final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
     final discoRequest = await dm.discoInfoQuery(
       from,

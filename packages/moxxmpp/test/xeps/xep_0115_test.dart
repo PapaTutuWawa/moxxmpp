@@ -343,6 +343,7 @@ void main() {
         stanza,
         StanzaHandlerData(false, false, stanza, TypedMap()),
       );
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       expect(
         await manager.getCachedDiscoInfoFromJid(aliceJid) != null,
@@ -513,6 +514,7 @@ void main() {
         stanza,
         StanzaHandlerData(false, false, stanza, TypedMap()),
       );
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       final cachedItem = await manager.getCachedDiscoInfoFromJid(aliceJid);
       expect(
@@ -549,6 +551,7 @@ void main() {
         stanza,
         StanzaHandlerData(false, false, stanza, TypedMap()),
       );
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       final cachedItem = await manager.getCachedDiscoInfoFromJid(aliceJid);
       expect(

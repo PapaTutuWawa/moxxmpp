@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:meta/meta.dart';
-import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:synchronized/synchronized.dart';
 
@@ -11,7 +10,7 @@ class _StanzaSurrogateKey {
 
   /// The JID the original stanza was sent to. We expect the result to come from the
   /// same JID.
-  final String sentTo;
+  final String? sentTo;
 
   /// The ID of the original stanza. We expect the result to have the same ID.
   final String id;
@@ -52,7 +51,7 @@ class StanzaAwaiter {
   /// [tag] is the stanza's tag name.
   ///
   /// Returns a future that might resolve to the response to the stanza.
-  Future<Future<XMLNode>> addPending(String to, String id, String tag) async {
+  Future<Future<XMLNode>> addPending(String? to, String id, String tag) async {
     final completer = await _lock.synchronized(() {
       final completer = Completer<XMLNode>();
       _pending[_StanzaSurrogateKey(to, id, tag)] = completer;
@@ -62,20 +61,15 @@ class StanzaAwaiter {
     return completer.future;
   }
 
-  /// Checks if the stanza [stanza] is being awaited. [bareJid] is the bare JID of
-  /// the connection.
+  /// Checks if the stanza [stanza] is being awaited.
   /// If [stanza] is awaited, resolves the future and returns true. If not, returns
   /// false.
-  Future<bool> onData(XMLNode stanza, JID bareJid) async {
-    assert(bareJid.isBare(), 'bareJid must be bare');
-
+  Future<bool> onData(XMLNode stanza) async {
     final id = stanza.attributes['id'] as String?;
     if (id == null) return false;
 
     final key = _StanzaSurrogateKey(
-      // Section 8.1.2.1 § 3 of RFC 6120 says that an empty "from" indicates that the
-      // attribute is implicitly from our own bare JID.
-      stanza.attributes['from'] as String? ?? bareJid.toString(),
+      stanza.attributes['from'] as String?,
       id,
       stanza.tag,
     );
@@ -90,5 +84,20 @@ class StanzaAwaiter {
 
       return false;
     });
+  }
+
+  /// Checks if [stanza] represents a stanza that is awaited. Returns true, if [stanza]
+  /// is awaited. False, if not.
+  Future<bool> isAwaited(XMLNode stanza) async {
+    final id = stanza.attributes['id'] as String?;
+    if (id == null) return false;
+
+    final key = _StanzaSurrogateKey(
+      stanza.attributes['from'] as String?,
+      id,
+      stanza.tag,
+    );
+
+    return _lock.synchronized(() => _pending.containsKey(key));
   }
 }

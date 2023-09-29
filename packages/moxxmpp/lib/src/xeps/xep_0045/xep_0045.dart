@@ -16,7 +16,6 @@ import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/events.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
-import 'package:synchronized/extension.dart';
 import 'package:synchronized/synchronized.dart';
 
 /// (Room JID, nickname)

@@ -102,6 +102,8 @@ class RemoteServerTimeoutError extends StanzaError {
 /// An unknown error.
 class UnknownStanzaError extends StanzaError {}
 
+const _stanzaNotDefined = Object();
+
 class Stanza extends XMLNode {
   // ignore: use_super_parameters
   Stanza({
@@ -216,7 +218,7 @@ class Stanza extends XMLNode {
 
   Stanza copyWith({
     String? id,
-    String? from,
+    Object? from = _stanzaNotDefined,
     String? to,
     String? type,
     List<XMLNode>? children,
@@ -225,7 +227,7 @@ class Stanza extends XMLNode {
     return Stanza(
       tag: tag,
       to: to ?? this.to,
-      from: from ?? this.from,
+      from: from != _stanzaNotDefined ? from as String? : this.from,
       id: id ?? this.id,
       type: type ?? this.type,
       children: children ?? this.children,
