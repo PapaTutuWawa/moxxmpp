@@ -77,7 +77,13 @@ class StreamManagementManager extends XmppManagerBase {
 
   @override
   Future<void> onData() async {
-    logger.finest('Got data!');
+    // The ack timer does not matter if we are currently in the middle of receiving
+    // data.
+    await _ackLock.synchronized(() {
+      if (_pendingAcks > 0) {
+        _resetAckTimer();
+      }
+    });
   }
 
   /// Called when a stanza has been acked to decide whether we should trigger a
@@ -230,6 +236,12 @@ class StreamManagementManager extends XmppManagerBase {
     _ackTimer = null;
   }
 
+  /// Resets the ack timer.
+  void _resetAckTimer() {
+    _stopAckTimer();
+    _startAckTimer();
+  }
+
   @visibleForTesting
   Future<void> handleAckTimeout() async {
     _stopAckTimer();
@@ -320,8 +332,7 @@ class StreamManagementManager extends XmppManagerBase {
 
           // Reset the timer
           if (_pendingAcks > 0) {
-            _stopAckTimer();
-            _startAckTimer();
+            _resetAckTimer();
           }
         }
 
