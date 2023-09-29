@@ -685,7 +685,13 @@ class XmppConnection {
         _log.finest(
           'Running handler for ${stanza.tag} (${stanza.attributes["id"]}) of $managerName',
         );
-        state = await handler.callback(state.stanza, state);
+        try {
+          state = await handler.callback(state.stanza, state);
+        } catch (ex) {
+          _log.severe(
+            'Handler from $managerName for ${stanza.tag} (${stanza.attributes["id"]}) failed with "$ex"',
+          );
+        }
         if (state.done || state.cancel) {
           _log.finest(
             'Processing ended early for ${stanza.tag} (${stanza.attributes["id"]}) by $managerName',
