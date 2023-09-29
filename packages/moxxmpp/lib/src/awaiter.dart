@@ -3,7 +3,11 @@ import 'package:moxxmpp/src/stringxml.dart';
 import 'package:synchronized/synchronized.dart';
 
 /// (JID we sent a stanza to, the id of the sent stanza, the tag of the sent stanza).
+// ignore: avoid_private_typedef_functions
 typedef _StanzaCompositeKey = (String?, String, String);
+
+/// Callback function that returns the bare JID of the connection as a String.
+typedef GetBareJidCallback = String Function();
 
 /// This class handles the await semantics for stanzas. Stanzas are given a "unique"
 /// key equal to the tuple (to, id, tag) with which their response is identified.
@@ -14,6 +18,10 @@ typedef _StanzaCompositeKey = (String?, String, String);
 ///
 /// This class also handles some "edge cases" of RFC 6120, like an empty "from" attribute.
 class StanzaAwaiter {
+  StanzaAwaiter(this._bareJidCallback);
+
+  final GetBareJidCallback _bareJidCallback;
+
   /// The pending stanzas, identified by their surrogate key.
   final Map<_StanzaCompositeKey, Completer<XMLNode>> _pending = {};
 
@@ -27,9 +35,12 @@ class StanzaAwaiter {
   ///
   /// Returns a future that might resolve to the response to the stanza.
   Future<Future<XMLNode>> addPending(String? to, String id, String tag) async {
+    // Check if we want to send a stanza to our bare JID and replace it with null.
+    final processedTo = to != null && to == _bareJidCallback() ? null : to;
+
     final completer = await _lock.synchronized(() {
       final completer = Completer<XMLNode>();
-      _pending[(to, id, tag)] = completer;
+      _pending[(processedTo, id, tag)] = completer;
       return completer;
     });
 
@@ -43,8 +54,13 @@ class StanzaAwaiter {
     final id = stanza.attributes['id'] as String?;
     if (id == null) return false;
 
+    // Check if we want to send a stanza to our bare JID and replace it with null.
+    final from = stanza.attributes['from'] as String?;
+    final processedFrom =
+        from != null && from == _bareJidCallback() ? null : from;
+
     final key = (
-      stanza.attributes['from'] as String?,
+      processedFrom,
       id,
       stanza.tag,
     );

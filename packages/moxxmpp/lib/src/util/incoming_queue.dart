@@ -92,7 +92,6 @@ class IncomingStanzaQueue {
     }
 
     object as XMPPStreamElement;
-    // TODO: Check the from attribute to ensure that it is matched correctly.
     return _stanzaAwaiter.isAwaited(object.node);
   }
 }

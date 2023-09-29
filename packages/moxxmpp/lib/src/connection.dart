@@ -90,6 +90,9 @@ class XmppConnection {
       },
     );
 
+    _stanzaAwaiter = StanzaAwaiter(
+      () => connectionSettings.jid.toBare().toString(),
+    );
     _incomingStanzaQueue = IncomingStanzaQueue(handleXmlStream, _stanzaAwaiter);
     _socketStream = _socket.getDataStream();
     // TODO(Unknown): Handle on done
@@ -125,7 +128,7 @@ class XmppConnection {
   final ConnectivityManager _connectivityManager;
 
   /// A helper for handling await semantics with stanzas
-  final StanzaAwaiter _stanzaAwaiter = StanzaAwaiter();
+  late final StanzaAwaiter _stanzaAwaiter;
 
   /// Sorted list of handlers that we call or incoming and outgoing stanzas
   final List<_StanzaHandlerWrapper> _incomingStanzaHandlers =
@@ -531,15 +534,12 @@ class XmppConnection {
     _log.finest('==> $prefix${newStanza.toXml()}');
 
     if (details.awaitable) {
-      final isOwnJid =
-          data.stanza.to == connectionSettings.jid.toBare().toString();
-
       await _stanzaAwaiter
           .addPending(
         // A stanza with no to attribute is for direct processing by the server. As such,
         // we can correlate it by just *assuming* we have that attribute
         // (RFC 6120 Section 8.1.1.1)
-        isOwnJid ? null : data.stanza.to,
+        data.stanza.to,
         data.stanza.id!,
         data.stanza.tag,
       )
@@ -774,15 +774,8 @@ class XmppConnection {
       return;
     }
 
-    // In case the stanza came from our own bare Jid, remove it so that the stanza
-    // awaiter works correctly.
-    final isOwnJid = incomingPreHandlers.stanza.from ==
-        connectionSettings.jid.toBare().toString();
-    final ownJidStanza = isOwnJid
-        ? incomingPreHandlers.stanza.copyWith(from: null)
-        : incomingPreHandlers.stanza;
     final awaited = await _stanzaAwaiter.onData(
-      ownJidStanza,
+      incomingPreHandlers.stanza,
     );
     if (awaited) {
       return;
