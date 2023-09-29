@@ -75,6 +75,11 @@ class StreamManagementManager extends XmppManagerBase {
     return acks;
   }
 
+  @override
+  Future<void> onData() async {
+    logger.finest('Got data!');
+  }
+
   /// Called when a stanza has been acked to decide whether we should trigger a
   /// StanzaAckedEvent.
   ///

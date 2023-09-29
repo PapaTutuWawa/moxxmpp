@@ -71,7 +71,11 @@ class XmppConnection {
     this._socket, {
     this.connectingTimeout = const Duration(minutes: 2),
   })  : _reconnectionPolicy = reconnectionPolicy,
-        _connectivityManager = connectivityManager {
+        _connectivityManager = connectivityManager,
+        assert(
+          _socket.getDataStream().isBroadcast,
+          "The socket's data stream must be a broadcast stream",
+        ) {
     // Allow the reconnection policy to perform reconnections by itself
     _reconnectionPolicy.register(
       _attemptReconnection,
@@ -95,10 +99,10 @@ class XmppConnection {
     );
     _incomingStanzaQueue = IncomingStanzaQueue(handleXmlStream, _stanzaAwaiter);
     _socketStream = _socket.getDataStream();
-    // TODO(Unknown): Handle on done
     _socketStream
         .transform(_streamParser)
         .forEach(_incomingStanzaQueue.addStanza);
+    _socketStream.listen(_handleOnDataCallbacks);
     _socket.getEventStream().listen(handleSocketEvent);
 
     _stanzaQueue = AsyncStanzaQueue(
@@ -312,6 +316,13 @@ class XmppConnection {
   /// Returns the registered [CSIManager], if one is registered.
   CSIManager? getCSIManager() {
     return getManagerById(csiManager);
+  }
+
+  /// Called whenever we receive data on the socket.
+  Future<void> _handleOnDataCallbacks(String _) async {
+    for (final manager in _xmppManagers.values) {
+      unawaited(manager.onData());
+    }
   }
 
   /// Attempts to reconnect to the server by following an exponential backoff.
