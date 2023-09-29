@@ -1,34 +1,9 @@
 import 'dart:async';
-import 'package:meta/meta.dart';
 import 'package:moxxmpp/src/stringxml.dart';
 import 'package:synchronized/synchronized.dart';
 
-/// A surrogate key for awaiting stanzas.
-@immutable
-class _StanzaSurrogateKey {
-  const _StanzaSurrogateKey(this.sentTo, this.id, this.tag);
-
-  /// The JID the original stanza was sent to. We expect the result to come from the
-  /// same JID.
-  final String? sentTo;
-
-  /// The ID of the original stanza. We expect the result to have the same ID.
-  final String id;
-
-  /// The tag name of the stanza.
-  final String tag;
-
-  @override
-  int get hashCode => sentTo.hashCode ^ id.hashCode ^ tag.hashCode;
-
-  @override
-  bool operator ==(Object other) {
-    return other is _StanzaSurrogateKey &&
-        other.sentTo == sentTo &&
-        other.id == id &&
-        other.tag == tag;
-  }
-}
+/// (JID we sent a stanza to, the id of the sent stanza, the tag of the sent stanza).
+typedef _StanzaCompositeKey = (String?, String, String);
 
 /// This class handles the await semantics for stanzas. Stanzas are given a "unique"
 /// key equal to the tuple (to, id, tag) with which their response is identified.
@@ -40,7 +15,7 @@ class _StanzaSurrogateKey {
 /// This class also handles some "edge cases" of RFC 6120, like an empty "from" attribute.
 class StanzaAwaiter {
   /// The pending stanzas, identified by their surrogate key.
-  final Map<_StanzaSurrogateKey, Completer<XMLNode>> _pending = {};
+  final Map<_StanzaCompositeKey, Completer<XMLNode>> _pending = {};
 
   /// The critical section for accessing [StanzaAwaiter._pending].
   final Lock _lock = Lock();
@@ -54,7 +29,7 @@ class StanzaAwaiter {
   Future<Future<XMLNode>> addPending(String? to, String id, String tag) async {
     final completer = await _lock.synchronized(() {
       final completer = Completer<XMLNode>();
-      _pending[_StanzaSurrogateKey(to, id, tag)] = completer;
+      _pending[(to, id, tag)] = completer;
       return completer;
     });
 
@@ -68,7 +43,7 @@ class StanzaAwaiter {
     final id = stanza.attributes['id'] as String?;
     if (id == null) return false;
 
-    final key = _StanzaSurrogateKey(
+    final key = (
       stanza.attributes['from'] as String?,
       id,
       stanza.tag,
@@ -92,7 +67,7 @@ class StanzaAwaiter {
     final id = stanza.attributes['id'] as String?;
     if (id == null) return false;
 
-    final key = _StanzaSurrogateKey(
+    final key = (
       stanza.attributes['from'] as String?,
       id,
       stanza.tag,

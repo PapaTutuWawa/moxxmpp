@@ -5,6 +5,8 @@ import 'package:moxxmpp/src/awaiter.dart';
 import 'package:moxxmpp/src/parser.dart';
 import 'package:synchronized/synchronized.dart';
 
+/// A queue for incoming [XMPPStreamObject]s to ensure "in order"
+/// processing (except for stanzas that are awaited).
 class IncomingStanzaQueue {
   IncomingStanzaQueue(this._callback, this._stanzaAwaiter);
 
@@ -90,6 +92,7 @@ class IncomingStanzaQueue {
     }
 
     object as XMPPStreamElement;
+    // TODO: Check the from attribute to ensure that it is matched correctly.
     return _stanzaAwaiter.isAwaited(object.node);
   }
 }
