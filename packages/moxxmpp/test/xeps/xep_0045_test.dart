@@ -658,7 +658,7 @@ void main() {
         2,
       );
 
-      // Now a new user joins the room.
+      // Now a user leaves the room.
       MemberLeftEvent? event;
       conn.asBroadcastStream().listen((e) {
         if (e is MemberLeftEvent) {
@@ -687,6 +687,188 @@ void main() {
           .getManagerById<MUCManager>(mucManager)!
           .getRoomState(roomJid))!;
       expect(roomAfterLeave.members.length, 1);
+    },
+  );
+
+  test(
+    'Test a user changing their nick name',
+    () async {
+      final fakeSocket = StubTCPSocket([
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+    </mechanisms>
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+  </stream:features>''',
+        ),
+        StringExpectation(
+          "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>AHBvbHlub21kaXZpc2lvbgBhYWFh</auth>",
+          '<success xmlns="urn:ietf:params:xml:ns:xmpp-sasl" />',
+        ),
+        StringExpectation(
+          "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='test.server' from='polynomdivision@test.server' xml:lang='en'>",
+          '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="test.server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+    <session xmlns="urn:ietf:params:xml:ns:xmpp-session">
+      <optional/>
+    </session>
+    <csi xmlns="urn:xmpp:csi:0"/>
+    <sm xmlns="urn:xmpp:sm:3"/>
+  </stream:features>
+''',
+        ),
+        StanzaExpectation(
+          '<iq xmlns="jabber:client" type="set" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>',
+          '<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+          ignoreId: true,
+        ),
+        StanzaExpectation(
+          '<presence to="channel@muc.example.org/test" xmlns="jabber:client"><x xmlns="http://jabber.org/protocol/muc"><history maxstanzas="0"/></x></presence>',
+          '',
+          ignoreId: true,
+        ),
+      ]);
+      final conn = XmppConnection(
+        TestingSleepReconnectionPolicy(1),
+        AlwaysConnectedConnectivityManager(),
+        ClientToServerNegotiator(),
+        fakeSocket,
+      )
+        ..connectionSettings = ConnectionSettings(
+          jid: JID.fromString('polynomdivision@test.server'),
+          password: 'aaaa',
+        )
+        ..setResource('test-resource', triggerEvent: false);
+      await conn.registerManagers([
+        DiscoManager([]),
+        MUCManager(),
+      ]);
+
+      await conn.registerFeatureNegotiators([
+        SaslPlainNegotiator(),
+        ResourceBindingNegotiator(),
+      ]);
+
+      await conn.connect(
+        waitUntilLogin: true,
+        shouldReconnect: false,
+      );
+
+      // Join a groupchat
+      final roomJid = JID.fromString('channel@muc.example.org');
+      final joinResult = conn.getManagerById<MUCManager>(mucManager)!.joinRoom(
+            roomJid,
+            'test',
+            maxHistoryStanzas: 0,
+          );
+      await Future<void>.delayed(const Duration(seconds: 1));
+
+      fakeSocket
+        ..injectRawXml(
+          '''
+        <presence
+           from='channel@muc.example.org/firstwitch'
+           id='3DCB0401-D7CF-4E31-BE05-EDF8D057BFBD'>
+          <x xmlns='http://jabber.org/protocol/muc#user'>
+            <item affiliation='owner' role='moderator'/>
+          </x>
+        </presence>
+        ''',
+        )
+        ..injectRawXml(
+          '''
+        <presence
+           from='channel@muc.example.org/secondwitch'
+           id='C2CD9EE3-8421-431E-854A-A2AD0CE2E23D'>
+          <x xmlns='http://jabber.org/protocol/muc#user'>
+            <item affiliation='admin' role='moderator'/>
+          </x>
+        </presence>
+        ''',
+        )
+        ..injectRawXml(
+          '''
+        <presence
+           from='channel@muc.example.org/test'
+           id='C2CD9EE3-8421-431E-854A-A2AD0CE2E23E'>
+          <x xmlns='http://jabber.org/protocol/muc#user'>
+            <item affiliation='member' role='none'/>
+            <status code='110' />
+          </x>
+        </presence>
+        ''',
+        )
+        ..injectRawXml(
+          '''
+        <message from="channel@muc.example.org" type="groupchat" xmlns="jabber:client">
+          <subject/>
+        </message>
+        ''',
+        );
+
+      await joinResult;
+      final room = (await conn
+          .getManagerById<MUCManager>(mucManager)!
+          .getRoomState(roomJid))!;
+      expect(room.joined, true);
+      expect(
+        room.members.length,
+        2,
+      );
+
+      // Now a new user changes their nick.
+      MemberChangedNickEvent? event;
+      conn.asBroadcastStream().listen((e) {
+        if (e is MemberChangedNickEvent) {
+          event = e;
+        }
+      });
+
+      fakeSocket.injectRawXml(
+        '''
+        <presence
+           from='channel@muc.example.org/firstwitch'
+           id='3DCB0401-D7CF-4E31-BE05-EDF8D057BFBD'
+           type='unavailable'>
+          <x xmlns='http://jabber.org/protocol/muc#user'>
+            <item affiliation='owner' role='moderator' nick='papatutuwawa'/>
+            <status code='303'/>
+          </x>
+        </presence>
+        ''',
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(event != null, true);
+      expect(event!.oldNick, 'firstwitch');
+      expect(event!.newNick, 'papatutuwawa');
+
+      final roomAfterChange = (await conn
+          .getManagerById<MUCManager>(mucManager)!
+          .getRoomState(roomJid))!;
+      expect(roomAfterChange.members.length, 2);
+      expect(roomAfterChange.members['firstwitch'], null);
+      expect(roomAfterChange.members['papatutuwawa'] != null, true);
     },
   );
 }

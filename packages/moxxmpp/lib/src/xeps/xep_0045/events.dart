@@ -56,3 +56,17 @@ class MemberLeftEvent extends XmppEvent {
   /// The nick of the user who left.
   final String nick;
 }
+
+/// Triggered when an entity changes their nick.
+class MemberChangedNickEvent extends XmppEvent {
+  MemberChangedNickEvent(this.roomJid, this.oldNick, this.newNick);
+
+  /// The JID of the room.
+  final JID roomJid;
+
+  /// The original nick.
+  final String oldNick;
+
+  /// The new nick.
+  final String newNick;
+}

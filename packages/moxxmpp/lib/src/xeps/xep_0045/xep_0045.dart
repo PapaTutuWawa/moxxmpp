@@ -14,6 +14,7 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/events.dart';
+import 'package:moxxmpp/src/xeps/xep_0045/status_codes.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
 import 'package:synchronized/synchronized.dart';
@@ -304,7 +305,7 @@ class MUCManager extends XmppManagerBase {
         item.attributes['affiliation']! as String,
       );
 
-      if (statuses.contains('110')) {
+      if (statuses.contains(selfPresenceStatus)) {
         if (room.joined) {
           if (room.nick != from.resource ||
               room.affiliation != affiliation ||
@@ -335,19 +336,49 @@ class MUCManager extends XmppManagerBase {
         );
       }
 
-      if (presence.attributes['type'] == 'unavailable' && role == Role.none) {
-        // Cannot happen while joining, so we assume we are joined
-        assert(
-          room.joined,
-          'Should not receive unavailable with role="none" while joining',
-        );
-        room.members.remove(from.resource);
-        getAttributes().sendEvent(
-          MemberLeftEvent(
-            bareFrom,
-            from.resource,
-          ),
-        );
+      if (presence.attributes['type'] == 'unavailable') {
+        if (role == Role.none) {
+          // Cannot happen while joining, so we assume we are joined
+          assert(
+            room.joined,
+            'Should not receive unavailable with role="none" while joining',
+          );
+          room.members.remove(from.resource);
+          getAttributes().sendEvent(
+            MemberLeftEvent(
+              bareFrom,
+              from.resource,
+            ),
+          );
+        } else if (statuses.contains(nicknameChangedStatus)) {
+          assert(
+            room.joined,
+            'Should not receive nick change while joining',
+          );
+          final newNick = item.attributes['nick']! as String;
+          final member = RoomMember(
+            newNick,
+            Affiliation.fromString(
+              item.attributes['affiliation']! as String,
+            ),
+            role,
+          );
+
+          // Remove the old member.
+          room.members.remove(from.resource);
+
+          // Add the "new" member".
+          room.members[newNick] = member;
+
+          // Trigger an event.
+          getAttributes().sendEvent(
+            MemberChangedNickEvent(
+              bareFrom,
+              from.resource,
+              newNick,
+            ),
+          );
+        }
       } else {
         final member = RoomMember(
           from.resource,
