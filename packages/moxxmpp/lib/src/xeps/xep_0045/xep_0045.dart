@@ -360,14 +360,14 @@ class MUCManager extends XmppManagerBase {
         if (room.joined) {
           if (room.members.containsKey(from.resource)) {
             getAttributes().sendEvent(
-              MemberJoinedEvent(
+              MemberChangedEvent(
                 bareFrom,
                 member,
               ),
             );
           } else {
             getAttributes().sendEvent(
-              MemberChangedEvent(
+              MemberJoinedEvent(
                 bareFrom,
                 member,
               ),
