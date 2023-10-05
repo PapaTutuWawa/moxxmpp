@@ -1,4 +1,0 @@
-# melos_managed_dependency_overrides: moxxmpp
-dependency_overrides:
-  moxxmpp:
-    path: ../moxxmpp
