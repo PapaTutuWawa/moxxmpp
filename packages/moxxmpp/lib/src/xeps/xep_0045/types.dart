@@ -5,6 +5,7 @@ import 'package:moxxmpp/src/xeps/xep_0004.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 
 class InvalidAffiliationException implements Exception {}
+
 class InvalidRoleException implements Exception {}
 
 enum Affiliation {
@@ -148,6 +149,13 @@ class RoomState {
   /// Flag whether we're joined and can process messages
   bool joined;
 
+  /// Our own affiliation inside the MUC.
+  Affiliation? affiliation;
+
+  /// Our own role inside the MUC.
+  Role? role;
+
+  /// The list of messages that we sent and are waiting for their echo.
   late final List<PendingMessage> pendingMessages;
 
   /// "List" of entities inside the MUC.

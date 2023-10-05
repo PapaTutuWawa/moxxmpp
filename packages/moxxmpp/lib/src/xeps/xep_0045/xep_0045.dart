@@ -14,9 +14,9 @@ import 'package:moxxmpp/src/xeps/xep_0030/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/errors.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/events.dart';
+import 'package:moxxmpp/src/xeps/xep_0045/status_codes.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 import 'package:moxxmpp/src/xeps/xep_0359.dart';
-import 'package:synchronized/extension.dart';
 import 'package:synchronized/synchronized.dart';
 
 /// (Room JID, nickname)
@@ -251,19 +251,23 @@ class MUCManager extends XmppManagerBase {
     StanzaHandlerData state,
   ) async {
     if (presence.from == null) {
+      logger.finest('Ignoring presence as it has no from attribute');
       return state;
     }
 
     final from = JID.fromString(presence.from!);
     final bareFrom = from.toBare();
     return _cacheLock.synchronized(() {
+      logger.finest('Lock aquired for presence from ${presence.from}');
       final room = _mucRoomCache[bareFrom];
       if (room == null) {
+        logger.finest('Ignoring presence as it does not belong to a room');
         return state;
       }
 
       if (from.resource.isEmpty) {
         // TODO(Unknown): Handle presence from the room itself.
+        logger.finest('Ignoring presence as it has no resource');
         return state;
       }
 
@@ -297,20 +301,33 @@ class MUCManager extends XmppManagerBase {
       final role = Role.fromString(
         item.attributes['role']! as String,
       );
+      final affiliation = Affiliation.fromString(
+        item.attributes['affiliation']! as String,
+      );
 
-      if (statuses.contains('110')) {
-        if (room.nick != from.resource) {
-          // Notify us of the changed nick.
-          getAttributes().sendEvent(
-            NickChangedByMUCEvent(
-              bareFrom,
-              from.resource,
-            ),
-          );
+      if (statuses.contains(selfPresenceStatus)) {
+        if (room.joined) {
+          if (room.nick != from.resource ||
+              room.affiliation != affiliation ||
+              room.role != role) {
+            // Notify us of the changed data.
+            getAttributes().sendEvent(
+              OwnDataChangedEvent(
+                bareFrom,
+                from.resource,
+                affiliation,
+                role,
+              ),
+            );
+          }
         }
 
-        // Set the nick to make sure we're in sync with the MUC.
-        room.nick = from.resource;
+        // Set the data to make sure we're in sync with the MUC.
+        room
+          ..nick = from.resource
+          ..affiliation = affiliation
+          ..role = role;
+        logger.finest('Self-presence handled');
         return StanzaHandlerData(
           true,
           false,
@@ -319,19 +336,49 @@ class MUCManager extends XmppManagerBase {
         );
       }
 
-      if (presence.attributes['type'] == 'unavailable' && role == Role.none) {
-        // Cannot happen while joining, so we assume we are joined
-        assert(
-          room.joined,
-          'Should not receive unavailable with role="none" while joining',
-        );
-        room.members.remove(from.resource);
-        getAttributes().sendEvent(
-          MemberLeftEvent(
-            bareFrom,
-            from.resource,
-          ),
-        );
+      if (presence.attributes['type'] == 'unavailable') {
+        if (role == Role.none) {
+          // Cannot happen while joining, so we assume we are joined
+          assert(
+            room.joined,
+            'Should not receive unavailable with role="none" while joining',
+          );
+          room.members.remove(from.resource);
+          getAttributes().sendEvent(
+            MemberLeftEvent(
+              bareFrom,
+              from.resource,
+            ),
+          );
+        } else if (statuses.contains(nicknameChangedStatus)) {
+          assert(
+            room.joined,
+            'Should not receive nick change while joining',
+          );
+          final newNick = item.attributes['nick']! as String;
+          final member = RoomMember(
+            newNick,
+            Affiliation.fromString(
+              item.attributes['affiliation']! as String,
+            ),
+            role,
+          );
+
+          // Remove the old member.
+          room.members.remove(from.resource);
+
+          // Add the "new" member".
+          room.members[newNick] = member;
+
+          // Trigger an event.
+          getAttributes().sendEvent(
+            MemberChangedNickEvent(
+              bareFrom,
+              from.resource,
+              newNick,
+            ),
+          );
+        }
       } else {
         final member = RoomMember(
           from.resource,
@@ -344,14 +391,14 @@ class MUCManager extends XmppManagerBase {
         if (room.joined) {
           if (room.members.containsKey(from.resource)) {
             getAttributes().sendEvent(
-              MemberJoinedEvent(
+              MemberChangedEvent(
                 bareFrom,
                 member,
               ),
             );
           } else {
             getAttributes().sendEvent(
-              MemberChangedEvent(
+              MemberJoinedEvent(
                 bareFrom,
                 member,
               ),
@@ -360,8 +407,10 @@ class MUCManager extends XmppManagerBase {
         }
 
         room.members[from.resource] = member;
+        logger.finest('${from.resource} added to the member list');
       }
 
+      logger.finest('Ran through');
       return StanzaHandlerData(
         true,
         false,
@@ -398,7 +447,8 @@ class MUCManager extends XmppManagerBase {
   ) async {
     final fromJid = JID.fromString(message.from!);
     final roomJid = fromJid.toBare();
-    return _mucRoomCache.synchronized(() {
+    return _cacheLock.synchronized(() {
+      logger.finest('Lock aquired for message from ${message.from}');
       final roomState = _mucRoomCache[roomJid];
       if (roomState == null) {
         return state;

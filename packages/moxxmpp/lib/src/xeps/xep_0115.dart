@@ -173,39 +173,20 @@ class EntityCapabilitiesManager extends XmppManagerBase {
     });
   }
 
-  @visibleForTesting
-  Future<StanzaHandlerData> onPresence(
-    Stanza stanza,
-    StanzaHandlerData state,
+  Future<void> _performQuery(
+    Stanza presence,
+    String ver,
+    String hashFunctionName,
+    String capabilityNode,
+    JID from,
   ) async {
-    if (stanza.from == null) {
-      return state;
-    }
-
-    final from = JID.fromString(stanza.from!);
-    final c = stanza.firstTag('c', xmlns: capsXmlns)!;
-
-    final hashFunctionName = c.attributes['hash'] as String?;
-    final capabilityNode = c.attributes['node'] as String?;
-    final ver = c.attributes['ver'] as String?;
-    if (hashFunctionName == null || capabilityNode == null || ver == null) {
-      return state;
-    }
-
-    // Check if we know of the hash
-    final isCached =
-        await _cacheLock.synchronized(() => _capHashCache.containsKey(ver));
-    if (isCached) {
-      return state;
-    }
-
     final dm = getAttributes().getManagerById<DiscoManager>(discoManager)!;
     final discoRequest = await dm.discoInfoQuery(
       from,
       node: capabilityNode,
     );
     if (discoRequest.isType<StanzaError>()) {
-      return state;
+      return;
     }
     final discoInfo = discoRequest.get<DiscoInfo>();
 
@@ -220,7 +201,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
           discoInfo,
         ),
       );
-      return state;
+      return;
     }
 
     // Validate the disco#info result according to XEP-0115 § 5.4
@@ -234,7 +215,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
         logger.warning(
           'Malformed disco#info response: More than one equal identity',
         );
-        return state;
+        return;
       }
     }
 
@@ -245,7 +226,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
         logger.warning(
           'Malformed disco#info response: More than one equal feature',
         );
-        return state;
+        return;
       }
     }
 
@@ -273,7 +254,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
           logger.warning(
             'Malformed disco#info response: Extended Info FORM_TYPE contains more than one value(s) of different value.',
           );
-          return state;
+          return;
         }
       }
 
@@ -288,7 +269,7 @@ class EntityCapabilitiesManager extends XmppManagerBase {
         logger.warning(
           'Malformed disco#info response: More than one Extended Disco Info forms with the same FORM_TYPE value',
         );
-        return state;
+        return;
       }
 
       // Check if the field type is hidden
@@ -325,7 +306,43 @@ class EntityCapabilitiesManager extends XmppManagerBase {
         'Capability hash mismatch from $from: Received "$ver", expected "$computedCapabilityHash".',
       );
     }
+  }
 
+  @visibleForTesting
+  Future<StanzaHandlerData> onPresence(
+    Stanza stanza,
+    StanzaHandlerData state,
+  ) async {
+    if (stanza.from == null) {
+      return state;
+    }
+
+    final from = JID.fromString(stanza.from!);
+    final c = stanza.firstTag('c', xmlns: capsXmlns)!;
+
+    final hashFunctionName = c.attributes['hash'] as String?;
+    final capabilityNode = c.attributes['node'] as String?;
+    final ver = c.attributes['ver'] as String?;
+    if (hashFunctionName == null || capabilityNode == null || ver == null) {
+      return state;
+    }
+
+    // Check if we know of the hash
+    final isCached =
+        await _cacheLock.synchronized(() => _capHashCache.containsKey(ver));
+    if (isCached) {
+      return state;
+    }
+
+    unawaited(
+      _performQuery(
+        stanza,
+        ver,
+        hashFunctionName,
+        capabilityNode,
+        from,
+      ),
+    );
     return state;
   }
 

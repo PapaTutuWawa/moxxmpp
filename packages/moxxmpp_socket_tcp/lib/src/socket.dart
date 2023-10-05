@@ -10,6 +10,11 @@ import 'package:moxxmpp_socket_tcp/src/rfc_2782.dart';
 
 /// TCP socket implementation for XmppConnection
 class TCPSocketWrapper extends BaseSocketWrapper {
+  TCPSocketWrapper(this._logIncomingOutgoing);
+
+  /// Flag controlling whether incoming/outgoing data is logged or not.
+  final bool _logIncomingOutgoing;
+
   /// The underlying Socket/SecureSocket instance.
   Socket? _socket;
 
@@ -212,7 +217,9 @@ class TCPSocketWrapper extends BaseSocketWrapper {
     _socketSubscription = _socket!.listen(
       (List<int> event) {
         final data = utf8.decode(event);
-        _log.finest('<== $data');
+        if (_logIncomingOutgoing) {
+          _log.finest('<== $data');
+        }
         _dataStream.add(data);
       },
       onError: (Object error) {
@@ -297,7 +304,9 @@ class TCPSocketWrapper extends BaseSocketWrapper {
       return;
     }
 
-    _log.finest('==> $data');
+    if (_logIncomingOutgoing) {
+      _log.finest('==> $data');
+    }
 
     try {
       _socket!.write(data);

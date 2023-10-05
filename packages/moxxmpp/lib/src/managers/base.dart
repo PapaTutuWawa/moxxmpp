@@ -80,6 +80,9 @@ abstract class XmppManagerBase {
   /// handler's priority, the earlier it is run.
   List<NonzaHandler> getNonzaHandlers() => [];
 
+  /// Whenever the socket receives data, this method is called, if it is non-null.
+  Future<void> onData() async {}
+
   /// Return a list of features that should be included in a disco response.
   List<String> getDiscoFeatures() => [];
 

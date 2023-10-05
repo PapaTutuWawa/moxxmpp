@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 Future<void> _runTest(String domain) async {
   var gotTLSException = false;
-  final socket = TCPSocketWrapper();
+  final socket = TCPSocketWrapper(true);
   final log = Logger('TestLogger');
   socket.getEventStream().listen((event) {
     if (event is XmppSocketTLSFailedEvent) {

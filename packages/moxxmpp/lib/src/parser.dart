@@ -57,9 +57,10 @@ class _ChunkedConversionBuffer<S, T> {
 }
 
 /// A buffer to put between a socket's input and a full XML stream.
-class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
-  final StreamController<XMPPStreamObject> _streamController =
-      StreamController<XMPPStreamObject>();
+class XMPPStreamParser
+    extends StreamTransformerBase<String, List<XMPPStreamObject>> {
+  final StreamController<List<XMPPStreamObject>> _streamController =
+      StreamController<List<XMPPStreamObject>>();
 
   /// Turns a String into a list of [XmlEvent]s in a chunked fashion.
   _ChunkedConversionBuffer<String, XmlEvent> _eventBuffer =
@@ -117,13 +118,14 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
   }
 
   @override
-  Stream<XMPPStreamObject> bind(Stream<String> stream) {
+  Stream<List<XMPPStreamObject>> bind(Stream<String> stream) {
     // We do not want to use xml's toXmlEvents and toSubtreeEvents methods as they
     // create streams we cannot close. We need to be able to destroy and recreate an
     // XML parser whenever we start a new connection.
     stream.listen((input) {
       final events = _eventBuffer.convert(input);
       final streamHeaderEvents = _streamHeaderSelector.convert(events);
+      final objects = List<XMPPStreamObject>.empty(growable: true);
 
       // Process the stream header separately.
       for (final event in streamHeaderEvents) {
@@ -135,7 +137,7 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
           continue;
         }
 
-        _streamController.add(
+        objects.add(
           XMPPStreamHeader(
             Map<String, String>.fromEntries(
               event.attributes.map((attr) {
@@ -151,13 +153,15 @@ class XMPPStreamParser extends StreamTransformerBase<String, XMPPStreamObject> {
       final children = _childBuffer.convert(childEvents);
       for (final node in children) {
         if (node.nodeType == XmlNodeType.ELEMENT) {
-          _streamController.add(
+          objects.add(
             XMPPStreamElement(
               XMLNode.fromXmlElement(node as XmlElement),
             ),
           );
         }
       }
+
+      _streamController.add(objects);
     });
 
     return _streamController.stream;

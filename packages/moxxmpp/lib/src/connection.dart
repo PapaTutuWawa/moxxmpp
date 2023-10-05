@@ -25,12 +25,12 @@ import 'package:moxxmpp/src/settings.dart';
 import 'package:moxxmpp/src/socket.dart';
 import 'package:moxxmpp/src/stanza.dart';
 import 'package:moxxmpp/src/stringxml.dart';
+import 'package:moxxmpp/src/util/incoming_queue.dart';
 import 'package:moxxmpp/src/util/queue.dart';
 import 'package:moxxmpp/src/util/typed_map.dart';
 import 'package:moxxmpp/src/xeps/xep_0030/xep_0030.dart';
 import 'package:moxxmpp/src/xeps/xep_0198/xep_0198.dart';
 import 'package:moxxmpp/src/xeps/xep_0352.dart';
-import 'package:synchronized/synchronized.dart';
 import 'package:uuid/uuid.dart';
 
 /// The states the XmppConnection can be in
@@ -49,6 +49,19 @@ enum XmppConnectionState {
   error
 }
 
+/// (The actual stanza handler, Name of the owning manager).
+typedef _StanzaHandlerWrapper = (StanzaHandler, String);
+
+/// Wrapper around [stanzaHandlerSortComparator] for [_StanzaHandlerWrapper].
+int _stanzaHandlerWrapperSortComparator(
+  _StanzaHandlerWrapper a,
+  _StanzaHandlerWrapper b,
+) {
+  final (ha, _) = a;
+  final (hb, _) = b;
+  return stanzaHandlerSortComparator(ha, hb);
+}
+
 /// This class is a connection to the server.
 class XmppConnection {
   XmppConnection(
@@ -58,7 +71,11 @@ class XmppConnection {
     this._socket, {
     this.connectingTimeout = const Duration(minutes: 2),
   })  : _reconnectionPolicy = reconnectionPolicy,
-        _connectivityManager = connectivityManager {
+        _connectivityManager = connectivityManager,
+        assert(
+          _socket.getDataStream().isBroadcast,
+          "The socket's data stream must be a broadcast stream",
+        ) {
     // Allow the reconnection policy to perform reconnections by itself
     _reconnectionPolicy.register(
       _attemptReconnection,
@@ -77,9 +94,15 @@ class XmppConnection {
       },
     );
 
+    _stanzaAwaiter = StanzaAwaiter(
+      () => connectionSettings.jid.toBare().toString(),
+    );
+    _incomingStanzaQueue = IncomingStanzaQueue(handleXmlStream, _stanzaAwaiter);
     _socketStream = _socket.getDataStream();
-    // TODO(Unknown): Handle on done
-    _socketStream.transform(_streamParser).forEach(handleXmlStream);
+    _socketStream
+        .transform(_streamParser)
+        .forEach(_incomingStanzaQueue.addStanza);
+    _socketStream.listen(_handleOnDataCallbacks);
     _socket.getEventStream().listen(handleSocketEvent);
 
     _stanzaQueue = AsyncStanzaQueue(
@@ -109,16 +132,16 @@ class XmppConnection {
   final ConnectivityManager _connectivityManager;
 
   /// A helper for handling await semantics with stanzas
-  final StanzaAwaiter _stanzaAwaiter = StanzaAwaiter();
+  late final StanzaAwaiter _stanzaAwaiter;
 
   /// Sorted list of handlers that we call or incoming and outgoing stanzas
-  final List<StanzaHandler> _incomingStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _incomingStanzaHandlers =
       List.empty(growable: true);
-  final List<StanzaHandler> _incomingPreStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _incomingPreStanzaHandlers =
       List.empty(growable: true);
-  final List<StanzaHandler> _outgoingPreStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _outgoingPreStanzaHandlers =
       List.empty(growable: true);
-  final List<StanzaHandler> _outgoingPostStanzaHandlers =
+  final List<_StanzaHandlerWrapper> _outgoingPostStanzaHandlers =
       List.empty(growable: true);
   final StreamController<XmppEvent> _eventStreamController =
       StreamController.broadcast();
@@ -157,10 +180,6 @@ class XmppConnection {
   T? getNegotiatorById<T extends XmppFeatureNegotiatorBase>(String id) =>
       _negotiationsHandler.getNegotiatorById<T>(id);
 
-  /// Prevent data from being passed to _currentNegotiator.negotiator while the negotiator
-  /// is still running.
-  final Lock _negotiationLock = Lock();
-
   /// The logger for the class
   final Logger _log = Logger('XmppConnection');
 
@@ -168,6 +187,8 @@ class XmppConnection {
   bool _enableReconnectOnSuccess = false;
 
   bool get isAuthenticated => _isAuthenticated;
+
+  late final IncomingStanzaQueue _incomingStanzaQueue;
 
   late final AsyncStanzaQueue _stanzaQueue;
 
@@ -198,18 +219,25 @@ class XmppConnection {
 
       _xmppManagers[manager.id] = manager;
 
-      _incomingStanzaHandlers.addAll(manager.getIncomingStanzaHandlers());
-      _incomingPreStanzaHandlers.addAll(manager.getIncomingPreStanzaHandlers());
-      _outgoingPreStanzaHandlers.addAll(manager.getOutgoingPreStanzaHandlers());
-      _outgoingPostStanzaHandlers
-          .addAll(manager.getOutgoingPostStanzaHandlers());
+      _incomingStanzaHandlers.addAll(
+        manager.getIncomingStanzaHandlers().map((h) => (h, manager.name)),
+      );
+      _incomingPreStanzaHandlers.addAll(
+        manager.getIncomingPreStanzaHandlers().map((h) => (h, manager.name)),
+      );
+      _outgoingPreStanzaHandlers.addAll(
+        manager.getOutgoingPreStanzaHandlers().map((h) => (h, manager.name)),
+      );
+      _outgoingPostStanzaHandlers.addAll(
+        manager.getOutgoingPostStanzaHandlers().map((h) => (h, manager.name)),
+      );
     }
 
     // Sort them
-    _incomingStanzaHandlers.sort(stanzaHandlerSortComparator);
-    _incomingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
-    _outgoingPreStanzaHandlers.sort(stanzaHandlerSortComparator);
-    _outgoingPostStanzaHandlers.sort(stanzaHandlerSortComparator);
+    _incomingStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
+    _incomingPreStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
+    _outgoingPreStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
+    _outgoingPostStanzaHandlers.sort(_stanzaHandlerWrapperSortComparator);
 
     // Run the post register callbacks
     for (final manager in _xmppManagers.values) {
@@ -288,6 +316,13 @@ class XmppConnection {
   /// Returns the registered [CSIManager], if one is registered.
   CSIManager? getCSIManager() {
     return getManagerById(csiManager);
+  }
+
+  /// Called whenever we receive data on the socket.
+  Future<void> _handleOnDataCallbacks(String _) async {
+    for (final manager in _xmppManagers.values) {
+      unawaited(manager.onData());
+    }
   }
 
   /// Attempts to reconnect to the server by following an exponential backoff.
@@ -515,7 +550,7 @@ class XmppConnection {
         // A stanza with no to attribute is for direct processing by the server. As such,
         // we can correlate it by just *assuming* we have that attribute
         // (RFC 6120 Section 8.1.1.1)
-        data.stanza.to ?? connectionSettings.jid.toBare().toString(),
+        data.stanza.to,
         data.stanza.id!,
         data.stanza.tag,
       )
@@ -650,15 +685,30 @@ class XmppConnection {
   /// call its callback and end the processing if the callback returned true; continue
   /// if it returned false.
   Future<StanzaHandlerData> _runStanzaHandlers(
-    List<StanzaHandler> handlers,
+    List<_StanzaHandlerWrapper> handlers,
     Stanza stanza, {
     StanzaHandlerData? initial,
   }) async {
     var state = initial ?? StanzaHandlerData(false, false, stanza, TypedMap());
-    for (final handler in handlers) {
+    for (final handlerRaw in handlers) {
+      final (handler, managerName) = handlerRaw;
       if (handler.matches(state.stanza)) {
-        state = await handler.callback(state.stanza, state);
-        if (state.done || state.cancel) return state;
+        _log.finest(
+          'Running handler for ${stanza.tag} (${stanza.attributes["id"]}) of $managerName',
+        );
+        try {
+          state = await handler.callback(state.stanza, state);
+        } catch (ex) {
+          _log.severe(
+            'Handler from $managerName for ${stanza.tag} (${stanza.attributes["id"]}) failed with "$ex"',
+          );
+        }
+        if (state.done || state.cancel) {
+          _log.finest(
+            'Processing ended early for ${stanza.tag} (${stanza.attributes["id"]}) by $managerName',
+          );
+          return state;
+        }
       }
     }
 
@@ -743,7 +793,6 @@ class XmppConnection {
 
     final awaited = await _stanzaAwaiter.onData(
       incomingPreHandlers.stanza,
-      connectionSettings.jid.toBare(),
     );
     if (awaited) {
       return;
@@ -802,14 +851,12 @@ class XmppConnection {
         // causing (a) the negotiator to become confused and (b) the stanzas/nonzas to be
         // missed. This causes the data to wait while the negotiator is running and thus
         // prevent this issue.
-        await _negotiationLock.synchronized(() async {
-          if (_routingState != RoutingState.negotiating) {
-            unawaited(handleXmlStream(event));
-            return;
-          }
+        if (_routingState != RoutingState.negotiating) {
+          unawaited(handleXmlStream(event));
+          return;
+        }
 
-          await _negotiationsHandler.negotiate(event);
-        });
+        await _negotiationsHandler.negotiate(event);
         break;
       case RoutingState.handleStanzas:
         await _handleStanza(node);

@@ -23,6 +23,9 @@
 - *BREAKING*: `UserAvatarManager`'s `getAvatarId` with `getLatestMetadata`.
 - The `PubSubManager` now supports PubSub's `max_items` in `getItems`.
 - *BREAKING*: `vCardManager`'s `VCardAvatarUpdatedEvent` no longer automatically requests the newest VCard avatar.
+- *BREAKING*: `XmppConnection` now tries to ensure that incoming data is processed in-order. The only exception are awaited stanzas as they are allowed to bypass the queue.
+- *BREAKING*: If a stanza handler causes an exception, the handler is simply skipped while processing.
+- Add better logging around what stanza handler is running and if they end processing early.
 
 ## 0.3.1
 

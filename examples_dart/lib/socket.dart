@@ -3,7 +3,7 @@ import 'package:moxxmpp_socket_tcp/moxxmpp_socket_tcp.dart';
 /// A simple socket for examples that allows injection of SRV records (since
 /// we cannot use moxdns here).
 class ExampleTCPSocketWrapper extends TCPSocketWrapper {
-  ExampleTCPSocketWrapper(this.srvRecord);
+  ExampleTCPSocketWrapper(this.srvRecord, bool logData) : super(logData);
 
   /// A potential SRV record to inject for testing.
   final MoxSrvRecord? srvRecord;

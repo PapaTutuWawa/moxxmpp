@@ -56,14 +56,13 @@ class VCardManager extends XmppManagerBase {
     final x = presence.firstTag('x', xmlns: vCardTempUpdate)!;
     final hash = x.firstTag('photo')!.innerText();
 
-    // TODO(Unknown): Use the presence manager interface.
     getAttributes().sendEvent(
       VCardAvatarUpdatedEvent(
         JID.fromString(presence.from!),
         hash,
       ),
     );
-    return state..done = true;
+    return state;
   }
 
   VCardPhoto? _parseVCardPhoto(XMLNode? node) {

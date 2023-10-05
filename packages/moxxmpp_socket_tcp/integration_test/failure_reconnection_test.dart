@@ -19,7 +19,7 @@ void main() {
         TestingSleepReconnectionPolicy(10),
         AlwaysConnectedConnectivityManager(),
         ClientToServerNegotiator(),
-        TCPSocketWrapper(),
+        TCPSocketWrapper(true),
       )..connectionSettings = ConnectionSettings(
           jid: JID.fromString('testuser@no-sasl.badxmpp.eu'),
           password: 'abc123',
@@ -59,7 +59,7 @@ void main() {
         TestingReconnectionPolicy(),
         AlwaysConnectedConnectivityManager(),
         ClientToServerNegotiator(),
-        TCPSocketWrapper(),
+        TCPSocketWrapper(true),
       )..connectionSettings = ConnectionSettings(
           jid: JID.fromString('testuser@no-sasl.badxmpp.eu'),
           password: 'abc123',

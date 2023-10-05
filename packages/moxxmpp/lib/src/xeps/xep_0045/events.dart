@@ -3,14 +3,25 @@ import 'package:moxxmpp/src/jid.dart';
 import 'package:moxxmpp/src/xeps/xep_0045/types.dart';
 
 /// Triggered when the MUC changes our nickname.
-class NickChangedByMUCEvent extends XmppEvent {
-  NickChangedByMUCEvent(this.roomJid, this.nick);
+class OwnDataChangedEvent extends XmppEvent {
+  OwnDataChangedEvent(
+    this.roomJid,
+    this.nick,
+    this.affiliation,
+    this.role,
+  );
 
   /// The JID of the room.
   final JID roomJid;
 
-  /// The new nickname.
+  /// Our nickname.
   final String nick;
+
+  /// Our affiliation.
+  final Affiliation affiliation;
+
+  /// Our role.
+  final Role role;
 }
 
 /// Triggered when an entity joins the MUC.
@@ -44,4 +55,18 @@ class MemberLeftEvent extends XmppEvent {
 
   /// The nick of the user who left.
   final String nick;
+}
+
+/// Triggered when an entity changes their nick.
+class MemberChangedNickEvent extends XmppEvent {
+  MemberChangedNickEvent(this.roomJid, this.oldNick, this.newNick);
+
+  /// The JID of the room.
+  final JID roomJid;
+
+  /// The original nick.
+  final String oldNick;
+
+  /// The new nick.
+  final String newNick;
 }
