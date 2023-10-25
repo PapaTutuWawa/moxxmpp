@@ -89,6 +89,7 @@ List<ExpectationBase> buildAuthenticatedPlay(ConnectionSettings settings) {
     <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
       <required/>
     </bind>
+    <ver xmlns='urn:xmpp:features:rosterver'/>
   </stream:features>
 ''',
     ),
