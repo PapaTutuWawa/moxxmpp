@@ -107,40 +107,41 @@ class MessageRepliesManager extends XmppManagerBase {
     TypedMap<StanzaHandlerExtension> extensions,
   ) {
     final data = extensions.get<ReplyData>();
-    return data != null
-        ? [
-            XMLNode.xmlns(
-              tag: 'reply',
-              xmlns: replyXmlns,
-              attributes: {
-                // The to attribute is optional
-                if (data.jid != null) 'to': data.jid!.toString(),
+    if (data == null) {
+      return [];
+    }
+    return [
+      XMLNode.xmlns(
+        tag: 'reply',
+        xmlns: replyXmlns,
+        attributes: {
+          // The to attribute is optional
+          if (data.jid != null) 'to': data.jid!.toString(),
 
-                'id': data.id,
+          'id': data.id,
+        },
+      ),
+      if (data.body != null)
+        XMLNode(
+          tag: 'body',
+          text: data.body,
+        ),
+      if (data.body != null)
+        XMLNode.xmlns(
+          tag: 'fallback',
+          xmlns: fallbackIndicationXmlns,
+          attributes: {'for': replyXmlns},
+          children: [
+            XMLNode(
+              tag: 'body',
+              attributes: {
+                'start': data.start!.toString(),
+                'end': data.end!.toString(),
               },
             ),
-            if (data.body != null)
-              XMLNode(
-                tag: 'body',
-                text: data.body,
-              ),
-            if (data.body != null)
-              XMLNode.xmlns(
-                tag: 'fallback',
-                xmlns: fallbackXmlns,
-                attributes: {'for': replyXmlns},
-                children: [
-                  XMLNode(
-                    tag: 'body',
-                    attributes: {
-                      'start': data.start!.toString(),
-                      'end': data.end!.toString(),
-                    },
-                  ),
-                ],
-              ),
-          ]
-        : [];
+          ],
+        ),
+    ];
   }
 
   Future<StanzaHandlerData> _onMessage(
@@ -154,7 +155,8 @@ class MessageRepliesManager extends XmppManagerBase {
     int? end;
 
     // TODO(Unknown): Maybe extend firstTag to also look for attributes
-    final fallback = stanza.firstTag('fallback', xmlns: fallbackXmlns);
+    final fallback =
+        stanza.firstTag('fallback', xmlns: fallbackIndicationXmlns);
     if (fallback != null) {
       final body = fallback.firstTag('body')!;
       start = int.parse(body.attributes['start']! as String);

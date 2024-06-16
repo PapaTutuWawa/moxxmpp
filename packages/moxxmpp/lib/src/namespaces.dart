@@ -166,7 +166,6 @@ const stickersXmlns = 'urn:xmpp:stickers:0';
 
 // XEP-0461
 const replyXmlns = 'urn:xmpp:reply:0';
-const fallbackXmlns = 'urn:xmpp:feature-fallback:0';
 
 // ???
 const urlDataXmlns = 'http://jabber.org/protocol/url-data';

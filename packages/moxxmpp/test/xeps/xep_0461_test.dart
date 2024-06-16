@@ -253,7 +253,7 @@ void main() {
 <message id="aaaaaaaaa" from="user@example.org" to="polynomdivision@test.server/abc123" type="chat">
   <body>> Anna wrote:\n> We should bake a cake\nGreat idea!</body>
   <reply to='anna@example.com/laptop' id='message-id1' xmlns='urn:xmpp:reply:0' />
-  <fallback xmlns='urn:xmpp:feature-fallback:0' for='urn:xmpp:reply:0'>
+  <fallback xmlns='urn:xmpp:fallback:0' for='urn:xmpp:reply:0'>
     <body start="0" end="38" />
   </fallback>
 </message>
