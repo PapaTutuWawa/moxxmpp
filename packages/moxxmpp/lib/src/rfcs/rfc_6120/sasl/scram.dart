@@ -246,6 +246,9 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
   bool _checkSignature(String base64Signature) {
     final signature =
         parseKeyValue(utf8.decode(base64.decode(base64Signature)));
+    _log.finest(
+      'Expecting signature: "$_serverSignature", got: "${signature["v"]}"',
+    );
     return signature['v']! == _serverSignature;
   }
 

@@ -216,6 +216,89 @@ void main() {
     expect(result.isType<XmppError>(), false);
   });
 
+  test('Test SCRAM-SHA-1 SASL2 negotiation with a valid signature', () async {
+    final fakeSocket = StubTCPSocket([
+      StringExpectation(
+        "<stream:stream xmlns='jabber:client' version='1.0' xmlns:stream='http://etherx.jabber.org/streams' to='server' from='user@server' xml:lang='en'>",
+        '''
+<stream:stream
+    xmlns="jabber:client"
+    version="1.0"
+    xmlns:stream="http://etherx.jabber.org/streams"
+    from="server"
+    xml:lang="en">
+  <stream:features xmlns="http://etherx.jabber.org/streams">
+    <mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl">
+      <mechanism>PLAIN</mechanism>
+      <mechanism>SCRAM-SHA-1</mechanism>
+    </mechanisms>
+    <authentication xmlns='urn:xmpp:sasl:2'>
+      <mechanism>PLAIN</mechanism>
+      <mechanism>SCRAM-SHA-1</mechanism>
+    </authentication>
+    <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+      <required/>
+    </bind>
+  </stream:features>''',
+      ),
+      StanzaExpectation(
+        "<authenticate xmlns='urn:xmpp:sasl:2' mechanism='SCRAM-SHA-1'><user-agent id='d4565fa7-4d72-4749-b3d3-740edbf87770'><software>moxxmpp</software><device>PapaTutuWawa's awesome device</device></user-agent><initial-response>biwsbj11c2VyLHI9ZnlrbytkMmxiYkZnT05Sdjlxa3hkYXdM</initial-response></authenticate>",
+        '''
+<challenge xmlns='urn:xmpp:sasl:2'>cj1meWtvK2QybGJiRmdPTlJ2OXFreGRhd0wzcmZjTkhZSlkxWlZ2V1ZzN2oscz1RU1hDUitRNnNlazhiZjkyLGk9NDA5Ng==</challenge>
+        ''',
+      ),
+      StanzaExpectation(
+        '<response xmlns="urn:xmpp:sasl:2">Yz1iaXdzLHI9ZnlrbytkMmxiYkZnT05Sdjlxa3hkYXdMM3JmY05IWUpZMVpWdldWczdqLHA9djBYOHYzQnoyVDBDSkdiSlF5RjBYK0hJNFRzPQ==</response>',
+        '<success xmlns="urn:xmpp:sasl:2"><additional-data>dj1ybUY5cHFWOFM3c3VBb1pXamE0ZEpSa0ZzS1E9</additional-data><authorization-identifier>user@server</authorization-identifier></success>',
+      ),
+      StanzaExpectation(
+        "<iq xmlns='jabber:client' type='set' id='aaaa'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind' /></iq>",
+        '''
+'<iq xmlns="jabber:client" type="result" id="a"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><jid>polynomdivision@test.server/MU29eEZn</jid></bind></iq>',
+        ''',
+        adjustId: true,
+        ignoreId: true,
+      ),
+    ]);
+    final conn = XmppConnection(
+      TestingReconnectionPolicy(),
+      AlwaysConnectedConnectivityManager(),
+      ClientToServerNegotiator(),
+      fakeSocket,
+    )..connectionSettings = ConnectionSettings(
+        jid: JID.fromString('user@server'),
+        password: 'pencil',
+      );
+    await conn.registerManagers([
+      PresenceManager(),
+      RosterManager(TestingRosterStateManager('', [])),
+      DiscoManager([]),
+    ]);
+    await conn.registerFeatureNegotiators([
+      SaslPlainNegotiator(),
+      SaslScramNegotiator(
+        10,
+        'n=user,r=fyko+d2lbbFgONRv9qkxdawL',
+        'fyko+d2lbbFgONRv9qkxdawL',
+        ScramHashType.sha1,
+      ),
+      ResourceBindingNegotiator(),
+      Sasl2Negotiator()
+        ..userAgent = const UserAgent(
+          id: 'd4565fa7-4d72-4749-b3d3-740edbf87770',
+          software: 'moxxmpp',
+          device: "PapaTutuWawa's awesome device",
+        ),
+    ]);
+
+    final result = await conn.connect(
+      waitUntilLogin: true,
+      shouldReconnect: false,
+      enableReconnectOnSuccess: false,
+    );
+    expect(result.isType<NegotiatorError>(), false);
+  });
+
   test('Test SCRAM-SHA-1 SASL2 negotiation with an invalid signature',
       () async {
     final fakeSocket = StubTCPSocket([
