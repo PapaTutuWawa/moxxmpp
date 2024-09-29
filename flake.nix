@@ -15,20 +15,22 @@
       };
     };
     # Everything to make Flutter happy
-    sdk = android-nixpkgs.sdk.${system} (sdkPkgs: with sdkPkgs; [
-      cmdline-tools-latest
-      build-tools-30-0-3
-      build-tools-33-0-2
-      build-tools-34-0-0
-      platform-tools
-      emulator
-      patcher-v4
-      platforms-android-28
-      platforms-android-29
-      platforms-android-30
-      platforms-android-31
-      platforms-android-33
-    ]);
+    android = pkgs.androidenv.composeAndroidPackages {
+      # TODO: Find a way to pin these
+      #toolsVersion = "26.1.1";
+      #platformToolsVersion = "31.0.3";
+      #buildToolsVersions = [ "31.0.0" ];
+      #includeEmulator = true;
+      #emulatorVersion = "30.6.3";
+      platformVersions = [ "28" ];
+      includeSources = false;
+      includeSystemImages = true;
+      systemImageTypes = [ "default" ];
+      abiVersions = [ "x86_64" ];
+      includeNDK = false;
+      useGoogleAPIs = false;
+      useGoogleTVAddOns = false;
+    };
     lib = pkgs.lib;
     pinnedJDK = pkgs.jdk17;
 
@@ -68,9 +70,9 @@
       };
     in pkgs.mkShell {
       buildInputs = with pkgs; [
-        flutter pinnedJDK sdk dart # Dart
+        flutter pinnedJDK android.platform-tools dart # Dart
 	      gitlint # Code hygiene
-	      ripgrep # General utilities 
+	      ripgrep # General utilities
 
         # Flutter dependencies for Linux desktop
         atk
@@ -100,13 +102,13 @@
       CPATH = "${pkgs.xorg.libX11.dev}/include:${pkgs.xorg.xorgproto}/include";
       LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [ atk cairo epoxy gdk-pixbuf glib gtk3 harfbuzz pango ];
 
-      ANDROID_SDK_ROOT = "${sdk}/share/android-sdk";
-      ANDROID_HOME = "${sdk}/share/android-sdk";
+      ANDROID_SDK_ROOT = "${android.androidsdk}/share/android-sdk";
+      ANDROID_HOME = "${android.androidsdk}/share/android-sdk";
       JAVA_HOME = pinnedJDK;
 
       # Fix an issue with Flutter using an older version of aapt2, which does not know
       # an used parameter.
-      GRADLE_OPTS = "-Dorg.gradle.project.android.aapt2FromMavenOverride=${sdk}/share/android-sdk/build-tools/34.0.0/aapt2";
+      GRADLE_OPTS = "-Dorg.gradle.project.android.aapt2FromMavenOverride=${android.androidsdk}/share/android-sdk/build-tools/34.0.0/aapt2";
     };
 
     apps = {

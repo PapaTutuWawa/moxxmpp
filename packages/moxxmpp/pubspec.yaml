@@ -5,28 +5,28 @@ homepage: https://codeberg.org/moxxy/moxxmpp
 publish_to: https://git.polynom.me/api/packages/Moxxy/pub
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  collection: ^1.16.0
-  cryptography: ^2.0.5
+  collection: ^1.19.0
+  cryptography: ^2.7.0
   hex: ^0.2.0
-  json_serializable: ^6.3.1
-  logging: ^1.0.2
-  meta: ^1.7.0
+  json_serializable: ^6.8.0
+  logging: ^1.2.0
+  meta: ^1.16.0
   moxlib:
-   hosted: https://git.polynom.me/api/packages/Moxxy/pub
-   version: ^0.2.0
+    hosted: https://git.polynom.me/api/packages/Moxxy/pub
+    version: ^0.2.0
   omemo_dart:
     hosted: https://git.polynom.me/api/packages/PapaTutuWawa/pub
-    version: ^0.5.1
+    version: ^0.6.0
   random_string: ^2.3.1
-  saslprep: ^1.0.2
-  synchronized: ^3.0.0+2
-  uuid: ^3.0.5
-  xml: ^6.1.0
+  saslprep: ^1.0.3
+  synchronized: ^3.3.0+3
+  uuid: ^3.0.7
+  xml: ^6.5.0
 
 dev_dependencies:
-  build_runner: ^2.1.11
-  test: ^1.18.0
-  very_good_analysis: ^3.0.1
+  build_runner: ^2.4.12
+  test: ^1.25.8
+  very_good_analysis: ^6.0.0
