@@ -535,7 +535,10 @@ class OmemoManager extends XmppManagerBase {
     final pm = getAttributes().getManagerById<PubSubManager>(pubsubManager)!;
     final result = await pm.getItems(jid.toBare(), omemoDevicesXmlns);
     if (result.isType<PubSubError>()) return Result(UnknownOmemoError());
-    return Result(result.get<List<PubSubItem>>().first.payload);
+
+    final itemList = result.get<List<PubSubItem>>();
+    if (itemList.isEmpty) return Result(EmptyDeviceListException());
+    return Result(itemList.first.payload);
   }
 
   /// Retrieves the OMEMO device list from [jid].
