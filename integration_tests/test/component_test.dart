@@ -4,6 +4,8 @@ import 'package:moxxmpp_socket_tcp/moxxmpp_socket_tcp.dart';
 import 'package:test/test.dart';
 
 class TestingTCPSocketWrapper extends TCPSocketWrapper {
+  TestingTCPSocketWrapper() : super(true);
+
   @override
   bool onBadCertificate(dynamic certificate, String domain) {
     return true;
