@@ -363,6 +363,11 @@ class SaslScramNegotiator extends Sasl2AuthenticationNegotiator {
 
   @override
   Future<Result<bool, NegotiatorError>> onSasl2Success(XMLNode response) async {
+    // Don't do anything if we have not been picked for SASL2.
+    if (!pickedForSasl2) {
+      return const Result(true);
+    }
+
     // When we're done with SASL2, check the additional data to verify the server
     // signature.
     state = NegotiatorState.done;

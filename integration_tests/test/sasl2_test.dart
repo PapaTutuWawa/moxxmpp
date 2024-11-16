@@ -4,6 +4,8 @@ import 'package:moxxmpp_socket_tcp/moxxmpp_socket_tcp.dart';
 import 'package:test/test.dart';
 
 class TestingTCPSocketWrapper extends TCPSocketWrapper {
+  TestingTCPSocketWrapper() : super(true);
+
   @override
   bool onBadCertificate(dynamic certificate, String domain) {
     return true;
@@ -27,7 +29,7 @@ void main() {
       ClientToServerNegotiator(),
       TestingTCPSocketWrapper(),
     )..connectionSettings = ConnectionSettings(
-        jid: JID.fromString('testuser@localhost'),
+        jid: JID.fromString('testuser1@localhost'),
         password: 'abc123',
         host: '127.0.0.1',
         port: 5222,
@@ -40,6 +42,8 @@ void main() {
     ]);
     await conn.registerFeatureNegotiators([
       SaslPlainNegotiator(),
+      SaslScramNegotiator(9, '', '', ScramHashType.sha1),
+      SaslScramNegotiator(10, '', '', ScramHashType.sha256),
       ResourceBindingNegotiator(),
       FASTSaslNegotiator(),
       Bind2Negotiator(),
