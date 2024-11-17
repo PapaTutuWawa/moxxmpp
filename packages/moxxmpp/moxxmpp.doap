@@ -274,16 +274,16 @@
         <xmpp:version>0.2.0</xmpp:version>
       </xmpp:SupportedXep>
     </implements>
-
-    <!-- Non-Standard (Proto) XEPs -->
     <implements>
       <xmpp:SupportedXep>
- 	      <xmpp:xep rdf:resource="https://xmpp.org/extensions/inbox/xep-fast.html" />
+ 	      <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0484.html" />
 	      <xmpp:status>partial</xmpp:status>
-	      <xmpp:version>0.0.1</xmpp:version>
+	      <xmpp:version>0.1.1</xmpp:version>
 	      <xmpp:note xml:lang="en">Invalidation is never requested</xmpp:note>
-      </xmpp:SupportedXep> 
+      </xmpp:SupportedXep>
     </implements>
+
+    <!-- Non-Standard (Proto) XEPs -->
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://codeberg.org/moxxy/custom-xeps/src/branch/master/xep-xxxx-file-upload-notification.md"/>

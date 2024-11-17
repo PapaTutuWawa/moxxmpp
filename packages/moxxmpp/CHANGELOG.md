@@ -1,3 +1,6 @@
+## 0.4.1
+- Moved FAST from staging to xep_0484.dart
+
 ## 0.4.0
 
 - **BREAKING**: Remove `lastResource` from `XmppConnection`'s `connect` method. Instead, set the `StreamManagementNegotiator`'s `resource` attribute instead. Since the resource can only really be restored by stream management, this is no issue.
